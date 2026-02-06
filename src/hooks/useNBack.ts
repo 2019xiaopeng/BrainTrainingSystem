@@ -169,6 +169,7 @@ export interface UseNBackReturn {
   startGame: (overrides?: Partial<NBackConfig>) => void;
   submitAnswer: (answer: number) => void;
   advanceToNext: () => void;
+  startAnswering: () => void;
   pauseGame: () => void;
   resumeGame: () => void;
   endGame: () => void;
@@ -233,7 +234,7 @@ export function useNBack(): UseNBackReturn {
 
   const submitAnswer = useCallback(
     (answer: number) => {
-      if (phase !== 'playing' || currentIndex < config.nLevel || hasAnsweredThisRound) return;
+      if (phase !== 'answering' || currentIndex < config.nLevel || hasAnsweredThisRound) return;
 
       const now = Date.now();
       const targetIndex = currentIndex - config.nLevel;
@@ -271,7 +272,33 @@ export function useNBack(): UseNBackReturn {
   );
 
   const advanceToNext = useCallback(() => {
-    if (phase !== 'playing') return;
+    // 记忆阶段：只在playing状态下推进
+    if (phase === 'playing') {
+      const nextIndex = currentIndex + 1;
+      
+      // 检查是否记忆阶段结束（已经展示了N题）
+      if (nextIndex >= config.nLevel) {
+        // 记忆阶段结束，等待开始答题
+        setPhase('waitingToAnswer');
+        setCurrentIndex(nextIndex);
+        return;
+      }
+      
+      // 继续记忆阶段
+      const now = Date.now();
+      setSequence((prev) => {
+        const updated = [...prev];
+        updated[nextIndex] = { ...updated[nextIndex], presentedAt: now };
+        return updated;
+      });
+      stimulusPresentedAtRef.current = now;
+      setCurrentIndex(nextIndex);
+      setIsStimulusVisible(true);
+      return;
+    }
+    
+    // 答题阶段：只在answering状态下推进
+    if (phase !== 'answering') return;
 
     // If the user didn't answer and we're past the warmup rounds, record a miss
     // 只要 currentIndex >= config.nLevel，就应该记录miss（包括回答阶段）
@@ -331,7 +358,7 @@ export function useNBack(): UseNBackReturn {
       setIsStimulusVisible(true); // 重置stimulus可见性
       setLastSubmitResult(null); // 重置提交结果
     } else {
-      // Advance to next question
+      // Advance to next question in answering phase
       const now = Date.now();
       setSequence((prev) => {
         const updated = [...prev];
@@ -344,16 +371,24 @@ export function useNBack(): UseNBackReturn {
       setIsStimulusVisible(true); // 重置stimulus可见性，为下一轮做准备
       setLastSubmitResult(null); // 重置提交结果
     }
-  }, [phase, currentIndex, sequence, config, hasAnsweredThisRound]);
+  }, [phase, currentIndex, sequence, config, hasAnsweredThisRound, results]);
 
   const pauseGame = useCallback(() => {
-    if (phase === 'playing') setPhase('paused');
+    if (phase === 'playing' || phase === 'answering') setPhase('paused');
+  }, [phase]);
+
+  const startAnswering = useCallback(() => {
+    if (phase === 'waitingToAnswer') {
+      setPhase('answering');
+      stimulusPresentedAtRef.current = Date.now();
+    }
   }, [phase]);
 
   const resumeGame = useCallback(() => {
     if (phase === 'paused') {
       stimulusPresentedAtRef.current = Date.now();
-      setPhase('playing');
+      // 恢复到answering状态（因为playing阶段不应该暂停）
+      setPhase('answering');
     }
   }, [phase]);
 
@@ -402,6 +437,7 @@ export function useNBack(): UseNBackReturn {
     startGame,
     submitAnswer,
     advanceToNext,
+    startAnswering,
     pauseGame,
     resumeGame,
     endGame,

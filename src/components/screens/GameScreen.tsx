@@ -4,7 +4,6 @@ import type { RoundResult } from '../../types/game';
 import { StatusBar } from '../game/StatusBar';
 import { StimulusCard } from '../game/StimulusCard';
 import { NumericKeypad } from '../game/NumericKeypad';
-import { AnswerCountdown } from '../game/AnswerCountdown';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
 
 interface GameScreenProps {
@@ -28,35 +27,49 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
   const isWarmup = currentIndex < config.nLevel;
   const isShowingQuestion = currentIndex < sequence.length;
 
-  // Spatial mode phased interaction: stimulus display phase (1s) → input phase
-  const STIMULUS_DISPLAY_DURATION = 1000; // 1 second
+  // Spatial mode phased interaction: stimulus display phase → input phase
+  // 记忆阶段(playing)：方块持续闪烁整个2.5s
+  // 答题阶段(answering)：当前题目方块持续闪烁（让玩家记忆，同时回答N轮前的题）
 
-  // Manage stimulus visibility for spatial mode phased interaction
+  // Manage stimulus visibility for spatial mode
   useEffect(() => {
-    if (isSpatialMode && engine.phase === 'playing' && isShowingQuestion) {
-      // Show stimulus at the start of each round
+    if (!isSpatialMode) return;
+    
+    if (engine.phase === 'playing') {
+      // 记忆阶段：方块在整个回合内持续可见闪烁
       engine.setStimulusVisible(true);
-      
-      // Hide after display duration
-      const timer = setTimeout(() => {
-        engine.setStimulusVisible(false);
-      }, STIMULUS_DISPLAY_DURATION);
-
-      return () => clearTimeout(timer);
+    } else if (engine.phase === 'answering' && isShowingQuestion) {
+      // 答题阶段且还有新题：方块持续可见闪烁（玩家需要记住它）
+      engine.setStimulusVisible(true);
+    } else if (engine.phase === 'answering' && !isShowingQuestion) {
+      // 尾部答题阶段（无新题）：不显示
+      engine.setStimulusVisible(false);
     }
-  }, [currentIndex, engine.phase, isSpatialMode, isShowingQuestion]); // 简化依赖项
+  }, [currentIndex, engine.phase, isSpatialMode, isShowingQuestion]);
 
-  // 键盘事件监听（仅 numeric 模式）
+  // 记忆阶段自动推进计时器（只在playing阶段）
+  useEffect(() => {
+    if (engine.phase !== 'playing') return;
+
+    const timer = setTimeout(() => {
+      engine.advanceToNext();
+    }, config.stimulusDuration);
+
+    return () => clearTimeout(timer);
+  }, [currentIndex, engine.phase, config.stimulusDuration, engine]);
+
+  // 键盘事件监听（仅 numeric 模式，answering阶段有效）
   useEffect(() => {
     if (!isNumericMode) return;
     
     const handleKeyDown = (e: KeyboardEvent) => {
-      // 只在游戏进行中且不在暂停状态时响应键盘
-      if (engine.phase !== 'playing') return;
+      // 只在答题阶段且不在暂停状态时响应键盘
+      if (engine.phase !== 'answering') return;
       
       // 数字键 0-9
       if (/^[0-9]$/.test(e.key)) {
-        if (engine.currentIndex < engine.config.nLevel || engine.hasAnsweredThisRound) return;
+        if (engine.hasAnsweredThisRound) return;
+        playClick();
         setInputValue((prev) => {
           const newValue = prev + e.key;
           return newValue.length <= 2 ? newValue : prev;
@@ -65,12 +78,13 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
       }
       // Backspace 删除
       else if (e.key === 'Backspace') {
+        if (engine.hasAnsweredThisRound) return;
         setInputValue((prev) => prev.slice(0, -1));
         e.preventDefault();
       }
       // Enter 提交
       else if (e.key === 'Enter') {
-        if (inputValue === '' || engine.currentIndex < engine.config.nLevel) return;
+        if (inputValue === '' || engine.hasAnsweredThisRound) return;
         const answer = parseInt(inputValue, 10);
         if (!isNaN(answer)) {
           engine.submitAnswer(answer);
@@ -81,7 +95,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [engine, inputValue, isNumericMode]);
+  }, [engine, inputValue, isNumericMode, playClick]);
 
   // 使用 ref 保存最新的状态，避免计时器依赖问题
   const inputValueRef = useRef(inputValue);
@@ -93,9 +107,9 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
     lastClickedIndexRef.current = lastClickedIndex;
   }, [lastClickedIndex]);
 
-  // 结果展示计时器：提交答案后延迟推进
+  // 答题后播放音效并自动延迟推进（答对0.5s，答错1s）
   useEffect(() => {
-    if (engine.phase !== 'playing' || !engine.lastSubmitResult) return;
+    if (engine.phase !== 'answering' || !engine.lastSubmitResult) return;
 
     // 播放音效
     if (engine.lastSubmitResult.isCorrect) {
@@ -104,7 +118,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
       playWrong();
     }
 
-    // 正确答案展示 0.5s，错误答案展示 1s
+    // 答对展示0.5s，答错展示1s，然后自动进入下一题
     const displayDuration = engine.lastSubmitResult.isCorrect ? 500 : 1000;
     
     const timer = setTimeout(() => {
@@ -116,80 +130,16 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
     return () => clearTimeout(timer);
   }, [engine.lastSubmitResult, engine.phase, playCorrect, playWrong, engine]);
 
-  // 自动推进计时器（带自动提交逻辑）
-  useEffect(() => {
-    if (engine.phase !== 'playing') return;
-    // 如果已经提交答案，不启动自动推进计时器（由结果展示计时器接管）
-    if (engine.hasAnsweredThisRound) return;
-
-    const timer = setTimeout(() => {
-      // 在 warmup 阶段，直接推进，不做任何提交
-      if (currentIndex < config.nLevel) {
-        engine.advanceToNext();
-        setInputValue('');
-        setLastClickedIndex(null);
-        return;
-      }
-
-      // 非warmup阶段的处理
-      // Numeric mode: 检查是否有输入值
-      if (isNumericMode) {
-        if (inputValueRef.current !== '') {
-          // 有输入但未确认，自动提交
-          const answer = parseInt(inputValueRef.current, 10);
-          if (!isNaN(answer)) {
-            engine.submitAnswer(answer);
-            return; // 让结果展示计时器处理推进
-          }
-        }
-        // 完全没有输入，记录为错误并展示1s
-        // 但要确保不是warmup刚结束的第一题（此时targetIndex可能<0或刚好是0）
-        const targetIndex = currentIndex - config.nLevel;
-        if (targetIndex >= 0 && targetIndex < engine.sequence.length) {
-          const targetStimulus = engine.sequence[targetIndex];
-          if (targetStimulus && targetStimulus.type === 'numeric') {
-            engine.submitAnswer(-999); // 提交一个明显错误的答案
-            return; // 让结果展示计时器处理推进
-          }
-        }
-      }
-      // Spatial mode: 检查是否已选择
-      else if (isSpatialMode) {
-        if (lastClickedIndexRef.current !== null) {
-          // 已选择但未确认，自动提交
-          engine.submitAnswer(lastClickedIndexRef.current);
-          return; // 让结果展示计时器处理推进
-        }
-        // 完全没有选择，记录为错误并展示1s
-        const targetIndex = currentIndex - config.nLevel;
-        if (targetIndex >= 0 && targetIndex < engine.sequence.length) {
-          const targetStimulus = engine.sequence[targetIndex];
-          if (targetStimulus && targetStimulus.type === 'spatial') {
-            engine.submitAnswer(-1); // 提交一个无效的网格索引
-            return; // 让结果展示计时器处理推进
-          }
-        }
-      }
-      
-      // 其他情况直接推进
-      engine.advanceToNext();
-      setInputValue('');
-      setLastClickedIndex(null);
-    }, config.stimulusDuration);
-
-    return () => clearTimeout(timer);
-  }, [currentIndex, engine.phase, engine.hasAnsweredThisRound, isNumericMode, isSpatialMode, config.nLevel, config.stimulusDuration, engine]);
-
   const handleNumberInput = useCallback(
     (digit: string) => {
-      if (engine.currentIndex < engine.config.nLevel || engine.hasAnsweredThisRound) return;
+      if (engine.phase !== 'answering' || engine.hasAnsweredThisRound) return;
       playClick();
       setInputValue((prev) => {
         const newValue = prev + digit;
         return newValue.length <= 2 ? newValue : prev;
       });
     },
-    [engine.currentIndex, engine.config.nLevel, engine.hasAnsweredThisRound, playClick]
+    [engine.phase, engine.hasAnsweredThisRound, playClick]
   );
 
   const handleBackspace = useCallback(() => {
@@ -197,7 +147,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
   }, []);
 
   const handleSubmit = useCallback(() => {
-    if (inputValue === '' || engine.currentIndex < engine.config.nLevel) return;
+    if (inputValue === '' || engine.phase !== 'answering') return;
     const answer = parseInt(inputValue, 10);
     if (!isNaN(answer)) {
       engine.submitAnswer(answer);
@@ -207,7 +157,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
   // Spatial mode: handle grid cell click (只选择，不提交)
   const handleCellClick = useCallback(
     (gridIndex: number) => {
-      if (engine.currentIndex < engine.config.nLevel || engine.hasAnsweredThisRound) return;
+      if (engine.phase !== 'answering' || engine.hasAnsweredThisRound) return;
       setLastClickedIndex(gridIndex);
     },
     [engine]
@@ -215,10 +165,31 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
 
   const lastResult: RoundResult | undefined = results[results.length - 1];
   const correctSoFar = results.filter((r) => r.isCorrect).length;
-  const canInput = currentIndex >= config.nLevel;
 
   return (
     <div className="space-y-6">
+      {/* 等待开始答题的弹窗 */}
+      {engine.phase === 'waitingToAnswer' && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-md mx-4 animate-scale-in">
+            <h2 className="text-2xl font-medium text-zen-700 mb-4 text-center">
+              ✅ 记忆阶段完成
+            </h2>
+            <p className="text-zen-500 text-center mb-6">
+              已展示 {config.nLevel} 道题目<br />
+              准备好开始答题了吗？
+            </p>
+            <button
+              onClick={engine.startAnswering}
+              className="w-full py-4 rounded-xl bg-sage-500 text-white text-lg font-medium
+                         hover:bg-sage-600 active:scale-[0.98] transition-all shadow-sm"
+            >
+              开始答题
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 顶栏 */}
       <StatusBar
         onQuit={onQuit}
@@ -256,9 +227,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
               <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-teal-400">
                 <div className="text-center">
                   <div className="text-sm text-teal-600 font-medium mb-4">
-                    {isWarmup ? '记忆阶段' : (
-                      engine.isStimulusVisible ? '观察位置' : '请在下方点击答案'
-                    )}
+                    {engine.phase === 'playing' ? '记忆阶段' : '当前题目（请记住）'}
                   </div>
                   <div 
                     className="grid mx-auto"
@@ -282,22 +251,12 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
                 </div>
               </div>
               
-              {/* 下方：回答区域（始终显示，但warmup阶段禁用） */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-zen-200 relative">
-                {/* 右上角倒计时 */}
-                {!isWarmup && !engine.hasAnsweredThisRound && (
-                  <div className="absolute top-4 right-4">
-                    <AnswerCountdown
-                      duration={config.stimulusDuration}
-                      roundIndex={currentIndex}
-                      isPaused={engine.phase === 'paused'}
-                    />
-                  </div>
-                )}
-                
+              {/* 下方：回答区域（仅在answering阶段显示） */}
+              {engine.phase === 'answering' && (
+              <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-zen-200">
                 <div className="text-center">
                   <div className="text-sm text-zen-600 font-medium mb-4">
-                    {isWarmup ? '请记住位置' : `点击 ${config.nLevel} 轮前的位置`}
+                    {`点击 ${config.nLevel} 轮前的位置`}
                   </div>
                   <div 
                     className="grid mx-auto mb-4"
@@ -316,7 +275,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
                       // 显示反馈：仅在提交后显示，选中但未提交不显示错误
                       let cellClass = 'aspect-square rounded-lg transition-all ';
                       if (isAnswered && isCorrectCell && !isCorrectAnswer) {
-                        // 答错后显示正确位置
+                        // 答错后显示正确位置，持续闪烁直到确认下一题
                         cellClass += 'bg-green-500 shadow-lg animate-pulse';
                       } else if (isSelected && isAnswered) {
                         // 已提交：显示反馈颜色
@@ -326,8 +285,8 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
                       } else if (isSelected && !isAnswered) {
                         // 已选择但未提交：高亮边框
                         cellClass += 'bg-teal-100 border-2 border-teal-500 ring-2 ring-teal-300';
-                      } else if (isWarmup || isAnswered) {
-                        // warmup或已提交：禁用状态
+                      } else if (isAnswered) {
+                        // 已提交：禁用状态
                         cellClass += 'bg-zen-100 cursor-not-allowed';
                       } else {
                         // 正常可选状态
@@ -337,51 +296,39 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
                       return (
                         <button
                           key={i}
-                          onClick={() => !isWarmup && !isAnswered && setLastClickedIndex(i)}
-                          disabled={isWarmup || isAnswered || engine.phase === 'paused'}
+                          onClick={() => handleCellClick(i)}
+                          disabled={isAnswered}
                           className={cellClass}
                         />
                       );
                     })}
                   </div>
                   
-                  {/* 确认按钮 */}
-                  {!isWarmup && (
-                    <button
-                      onClick={() => {
-                        if (lastClickedIndex !== null && !engine.hasAnsweredThisRound) {
-                          engine.submitAnswer(lastClickedIndex);
-                        }
-                      }}
-                      disabled={lastClickedIndex === null || engine.hasAnsweredThisRound || engine.phase === 'paused'}
-                      className="w-full py-3 rounded-xl font-medium transition-all
-                        disabled:bg-zen-200 disabled:text-zen-400 disabled:cursor-not-allowed
-                        enabled:bg-sage-500 enabled:text-white enabled:hover:bg-sage-600 enabled:active:scale-95
-                      "
-                    >
-                      {engine.hasAnsweredThisRound ? '已提交' : (
-                        lastClickedIndex === null ? '请选择位置' : '确认答案'
-                      )}
-                    </button>
-                  )}
+                  {/* 确认答案按钮 */}
+                  <button
+                    onClick={() => {
+                      if (lastClickedIndex !== null && !engine.hasAnsweredThisRound) {
+                        engine.submitAnswer(lastClickedIndex);
+                      }
+                    }}
+                    disabled={lastClickedIndex === null || engine.hasAnsweredThisRound}
+                    className="w-full py-3 rounded-xl font-medium transition-all
+                      disabled:bg-zen-200 disabled:text-zen-400 disabled:cursor-not-allowed
+                      enabled:bg-sage-500 enabled:text-white enabled:hover:bg-sage-600 enabled:active:scale-95
+                    "
+                  >
+                    {engine.hasAnsweredThisRound ? '已提交' : (
+                      lastClickedIndex === null ? '请选择位置' : '确认答案'
+                    )}
+                  </button>
                 </div>
               </div>
+              )}
             </div>
           )}
         </>
       ) : (
-        <div className="bg-white rounded-2xl p-12 shadow-sm border border-zen-200 text-center relative">
-          {/* 右上角倒计时 (空间模式) */}
-          {isSpatialMode && !engine.hasAnsweredThisRound && (
-            <div className="absolute top-4 right-4">
-              <AnswerCountdown
-                duration={config.stimulusDuration}
-                roundIndex={currentIndex}
-                isPaused={engine.phase === 'paused'}
-              />
-            </div>
-          )}
-          
+        <div className="bg-white rounded-2xl p-12 shadow-sm border border-zen-200 text-center">
           <div className="text-zen-500 text-lg mb-2">请回答剩余题目</div>
           <div className="text-zen-400 text-sm">
             {isNumericMode
@@ -485,7 +432,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
           onBackspace={handleBackspace}
           onSubmit={handleSubmit}
           disabled={engine.hasAnsweredThisRound}
-          canInput={canInput}
+          canInput={engine.phase === 'answering'}
         />
       )}
     </div>

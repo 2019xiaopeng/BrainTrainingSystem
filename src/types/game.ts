@@ -3,7 +3,7 @@
 // ============================================================
 
 /** Possible states for the game lifecycle */
-export type GamePhase = 'idle' | 'playing' | 'paused' | 'finished';
+export type GamePhase = 'idle' | 'playing' | 'waitingToAnswer' | 'answering' | 'paused' | 'finished';
 
 /** Game mode types */
 export type GameMode = 'numeric' | 'spatial' | 'mouse';
