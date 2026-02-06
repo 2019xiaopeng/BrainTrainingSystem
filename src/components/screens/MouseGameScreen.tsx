@@ -342,8 +342,8 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
     const offY = vec.dy * t;
     const affectedSet = new Set(lineIndices);
 
-    const animalEls: JSX.Element[] = [];
-    const coverEls: JSX.Element[] = [];
+    const animalEls: React.JSX.Element[] = [];
+    const coverEls: React.JSX.Element[] = [];
 
     // 网格内所有 cell
     for (let i = 0; i < beforeGrid.length; i++) {

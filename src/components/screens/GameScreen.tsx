@@ -4,7 +4,6 @@ import type { RoundResult } from '../../types/game';
 import { StatusBar } from '../game/StatusBar';
 import { StimulusCard } from '../game/StimulusCard';
 import { NumericKeypad } from '../game/NumericKeypad';
-import { SpatialGrid } from '../game/SpatialGrid';
 import { AnswerCountdown } from '../game/AnswerCountdown';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
 

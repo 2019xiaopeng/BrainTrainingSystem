@@ -294,7 +294,7 @@ export function HomeScreen({ initialNLevel, initialRounds, initialMode, initialG
               <label className="text-sm text-zen-500 font-medium">💪 难度等级</label>
               <div className="grid grid-cols-4 gap-2">
                 {(Object.entries(MOUSE_DIFFICULTY_MAP) as [MouseDifficultyLevel, { label: string; pushes: number }][]).map(
-                  ([key, { label, pushes }]) => (
+                  ([key, { label }]) => (
                     <button
                       key={key}
                       onClick={() => setMouseDifficulty(key)}

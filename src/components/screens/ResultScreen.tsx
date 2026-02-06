@@ -19,10 +19,6 @@ export function ResultScreen({ summary, sessionHistory, userProfile, onPlayAgain
   const isNewMaxNLevel = summary.accuracy >= 80 && summary.config.nLevel === userProfile.maxNLevel &&
     sessionHistory.length > 1;
 
-  // Get last 5 sessions for chart
-  const recentSessions = sessionHistory.slice(-5);
-  const maxAccuracy = Math.max(...recentSessions.map(s => s.accuracy), 100);
-
   return (
     <div className="space-y-6 pt-8">
       <h1 className="text-3xl font-light text-zen-700 text-center animate-fade-in">训练完成</h1>
