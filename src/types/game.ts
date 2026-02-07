@@ -44,6 +44,25 @@ export interface SessionHistoryEntry {
   totalRounds: number;
 }
 
+/** User's saved game configuration for each mode */
+export interface GameConfigs {
+  numeric: {
+    nLevel: number;
+    rounds: number;
+  };
+  spatial: {
+    nLevel: number;
+    rounds: number;
+    gridSize: number;
+  };
+  mouse: {
+    count: number;
+    grid: MouseGridPreset;
+    difficulty: MouseDifficultyLevel;
+    rounds: number;
+  };
+}
+
 // ------------------------------------------------------------
 // Configuration
 // ------------------------------------------------------------

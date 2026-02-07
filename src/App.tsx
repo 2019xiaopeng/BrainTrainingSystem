@@ -82,10 +82,7 @@ function App() {
     return (
       <LayoutShell variant="home">
         <HomeScreen
-          initialNLevel={nextConfig.nLevel}
-          initialRounds={nextConfig.totalRounds}
           initialMode={nextConfig.mode}
-          initialGridSize={nextConfig.gridSize}
           userProfile={userProfile}
           onStart={handleStart}
         />

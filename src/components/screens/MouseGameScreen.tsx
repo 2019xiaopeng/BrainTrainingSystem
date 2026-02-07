@@ -487,7 +487,8 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
       {/* 顶栏 */}
       <StatusBar onQuit={onQuit} onPauseToggle={() => {}} isPaused={false}
         currentRound={currentRound + 1} totalRounds={totalRounds}
-        nLevel={mouseConfig.numPushes} />
+        nLevel={mouseConfig.numPushes}
+        gameLabel={`🐭×${mouseConfig.numMice} ${mouseConfig.cols}×${mouseConfig.rows}网格 ${mouseConfig.numPushes}推`} />
 
       {/* 进度条 */}
       <div className="w-full h-1.5 bg-zen-200 rounded-full overflow-hidden">

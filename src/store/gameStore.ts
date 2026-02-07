@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AppView, NBackConfig, SessionSummary, UserProfile, SessionHistoryEntry } from '../types/game';
+import type { AppView, NBackConfig, SessionSummary, UserProfile, SessionHistoryEntry, GameConfigs, GameMode } from '../types/game';
 import { DEFAULT_CONFIG } from '../types/game';
 
 interface GameStore {
@@ -18,11 +18,14 @@ interface GameStore {
   sessionHistory: SessionHistoryEntry[];
   /** User's persistent profile */
   userProfile: UserProfile;
+  /** User's saved game configurations */
+  gameConfigs: GameConfigs;
 
   // Actions
   setView: (view: AppView) => void;
   setNextConfig: (config: Partial<NBackConfig>) => void;
   saveSession: (summary: SessionSummary) => void;
+  updateGameConfig: (mode: GameMode, config: Partial<GameConfigs[GameMode]>) => void;
   goToGame: () => void;
   goToResult: (summary: SessionSummary) => void;
   goHome: () => void;
@@ -66,12 +69,25 @@ export const useGameStore = create<GameStore>()(
         daysStreak: 0,
         lastPlayedDate: null,
       },
+      gameConfigs: {
+        numeric: { nLevel: 1, rounds: 10 },
+        spatial: { nLevel: 1, rounds: 10, gridSize: 3 },
+        mouse: { count: 3, grid: [4, 3], difficulty: 'easy', rounds: 3 },
+      },
 
       setView: (view) => set({ currentView: view }),
 
       setNextConfig: (partial) =>
         set((state) => ({
           nextConfig: { ...state.nextConfig, ...partial },
+        })),
+
+      updateGameConfig: (mode, config) =>
+        set((state) => ({
+          gameConfigs: {
+            ...state.gameConfigs,
+            [mode]: { ...state.gameConfigs[mode], ...config },
+          },
         })),
 
       saveSession: (summary) =>
@@ -138,6 +154,7 @@ export const useGameStore = create<GameStore>()(
         // Only persist these fields (exclude transient state like currentView)
         sessionHistory: state.sessionHistory,
         userProfile: state.userProfile,
+        gameConfigs: state.gameConfigs,
       }),
     }
   )

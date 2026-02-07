@@ -29,7 +29,8 @@
 ## 4. Core Gameplay Modules (MVP)
 1.  **Numeric Flow**: Simple arithmetic + N-Back memory.
 2.  **Spatial Flow**: Grid position tracking (3x3/4x4) + N-Back.
-3.  **Verbal Flow**: Rapid reading + Keyword recall.
+3.  **Mouse Flow**: Dynamic target tracking + N-Back.
+4.  **House Flow**: [Planned] People counting / Working memory update.
 
 ## 5. Development Roadmap & Status
 - **Phase 1: Planning**

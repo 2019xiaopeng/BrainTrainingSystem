@@ -1,13 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useGameStore } from '../../store/gameStore';
 import type { UserProfile, GameMode, MouseDifficultyLevel, MouseGridPreset } from '../../types/game';
 import { MOUSE_GRID_PRESETS, MOUSE_DIFFICULTY_MAP, buildMouseGameConfig } from '../../types/game';
 import type { MouseGameConfig } from '../../types/game';
 
 interface HomeScreenProps {
-  initialNLevel: number;
-  initialRounds: number;
   initialMode: GameMode;
-  initialGridSize: number;
   userProfile: UserProfile;
   onStart: (nLevel: number, rounds: number, mode: GameMode, gridSize: number, mouseConfig?: MouseGameConfig) => void;
 }
@@ -15,28 +13,42 @@ interface HomeScreenProps {
 /**
  * HomeScreen - 首页配置界面（支持多模式选择）
  */
-export function HomeScreen({ initialNLevel, initialRounds, initialMode, initialGridSize, userProfile, onStart }: HomeScreenProps) {
+export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProps) {
+  const { gameConfigs, updateGameConfig } = useGameStore();
   const [mode, setMode] = useState<GameMode>(initialMode);
 
-  // Separate config state for numeric mode
-  const [numericNLevel, setNumericNLevel] = useState(initialMode === 'numeric' ? initialNLevel : 2);
-  const [numericRounds, setNumericRounds] = useState(initialMode === 'numeric' ? initialRounds : 10);
+  // Separate config state for numeric mode (use saved config or defaults)
+  const [numericNLevel, setNumericNLevel] = useState(gameConfigs.numeric.nLevel);
+  const [numericRounds, setNumericRounds] = useState(gameConfigs.numeric.rounds);
   
-  // Separate config state for spatial mode
-  const [spatialNLevel, setSpatialNLevel] = useState(initialMode === 'spatial' ? initialNLevel : 2);
-  const [spatialRounds, setSpatialRounds] = useState(initialMode === 'spatial' ? initialRounds : 10);
-  const [gridSize, setGridSize] = useState(initialGridSize);
+  // Separate config state for spatial mode (use saved config or defaults)
+  const [spatialNLevel, setSpatialNLevel] = useState(gameConfigs.spatial.nLevel);
+  const [spatialRounds, setSpatialRounds] = useState(gameConfigs.spatial.rounds);
+  const [gridSize, setGridSize] = useState(gameConfigs.spatial.gridSize);
 
-  // Mouse mode config state
-  const [mouseCount, setMouseCount] = useState(3);
-  const [mouseGrid, setMouseGrid] = useState<MouseGridPreset>([4, 3]);
-  const [mouseDifficulty, setMouseDifficulty] = useState<MouseDifficultyLevel>('easy');
-  const [mouseRounds, setMouseRounds] = useState(5);
+  // Mouse mode config state (use saved config or defaults)
+  const [mouseCount, setMouseCount] = useState(gameConfigs.mouse.count);
+  const [mouseGrid, setMouseGrid] = useState<MouseGridPreset>(gameConfigs.mouse.grid);
+  const [mouseDifficulty, setMouseDifficulty] = useState<MouseDifficultyLevel>(gameConfigs.mouse.difficulty);
+  const [mouseRounds, setMouseRounds] = useState(gameConfigs.mouse.rounds);
 
   // Determine current N-Back config based on mode
   const nLevel = mode === 'numeric' ? numericNLevel : spatialNLevel;
   const rounds = mode === 'numeric' ? numericRounds : spatialRounds;
   
+  // Sync changes to localStorage
+  useEffect(() => {
+    updateGameConfig('numeric', { nLevel: numericNLevel, rounds: numericRounds });
+  }, [numericNLevel, numericRounds, updateGameConfig]);
+
+  useEffect(() => {
+    updateGameConfig('spatial', { nLevel: spatialNLevel, rounds: spatialRounds, gridSize });
+  }, [spatialNLevel, spatialRounds, gridSize, updateGameConfig]);
+
+  useEffect(() => {
+    updateGameConfig('mouse', { count: mouseCount, grid: mouseGrid, difficulty: mouseDifficulty, rounds: mouseRounds });
+  }, [mouseCount, mouseGrid, mouseDifficulty, mouseRounds, updateGameConfig]);
+
   // Validate N-Back config
   const isNBackMode = mode === 'numeric' || mode === 'spatial';
   const isConfigValid = isNBackMode ? nLevel < rounds : true;
@@ -146,12 +158,12 @@ export function HomeScreen({ initialNLevel, initialRounds, initialMode, initialG
                 <button
                   onClick={() => {
                     if (mode === 'numeric') {
-                      setNumericNLevel((n) => Math.max(2, n - 1));
+                      setNumericNLevel((n) => Math.max(1, n - 1));
                     } else {
-                      setSpatialNLevel((n) => Math.max(2, n - 1));
+                      setSpatialNLevel((n) => Math.max(1, n - 1));
                     }
                   }}
-                  disabled={nLevel <= 2}
+                  disabled={nLevel <= 1}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
@@ -319,14 +331,18 @@ export function HomeScreen({ initialNLevel, initialRounds, initialMode, initialG
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setMouseRounds((r) => Math.max(3, r - 1))}
-                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all"
+                  disabled={mouseRounds <= 3}
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   −
                 </button>
                 <span className="text-2xl font-mono text-zen-700 w-12 text-center">{mouseRounds}</span>
                 <button
-                  onClick={() => setMouseRounds((r) => Math.min(20, r + 1))}
-                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all"
+                  onClick={() => setMouseRounds((r) => Math.min(5, r + 1))}
+                  disabled={mouseRounds >= 5}
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   +
                 </button>
