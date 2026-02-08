@@ -6,7 +6,7 @@
 export type GamePhase = 'idle' | 'playing' | 'waitingToAnswer' | 'answering' | 'paused' | 'finished';
 
 /** Game mode types */
-export type GameMode = 'numeric' | 'spatial' | 'mouse';
+export type GameMode = 'numeric' | 'spatial' | 'mouse' | 'house';
 
 /** The type of stimulus shown to the player (deprecated, kept for compatibility) */
 export type StimulusType = 'number' | 'position' | 'word';
@@ -59,6 +59,12 @@ export interface GameConfigs {
     count: number;
     grid: MouseGridPreset;
     difficulty: MouseDifficultyLevel;
+    rounds: number;
+  };
+  house: {
+    initialPeople: number;
+    eventCount: number;
+    speed: HouseSpeed;
     rounds: number;
   };
 }
@@ -274,6 +280,73 @@ export interface MouseGameConfig {
   totalRounds: number;
   /** Reveal/memorize duration in ms */
   revealDuration: number;
+}
+
+// ============================================================
+// House Game (人来人往 / House Flow) - Type System
+// ============================================================
+
+/** Speed preset for house game */
+export type HouseSpeed = 'easy' | 'normal' | 'fast';
+
+/** A single atomic event tick: enter and/or leave */
+export interface HouseEvent {
+  /** Event index (0-based) */
+  index: number;
+  /** Number of people entering (0, 1, 2, 3) */
+  enterCount: number;
+  /** Number of people leaving (0, 1, 2, 3) */
+  leaveCount: number;
+  /** Delay in ms before this event triggers (relative to previous event) */
+  delayMs: number;
+}
+
+/** Configuration for a single house game session */
+export interface HouseGameConfig {
+  /** Number of people inside the house at the start */
+  initialPeople: number;
+  /** Total number of atomic events per round */
+  eventCount: number;
+  /** Base delay range for events [min, max] in ms */
+  delayRange: [number, number];
+  /** Number of rounds per session */
+  totalRounds: number;
+}
+
+/** Result of one house game round */
+export interface HouseRoundResult {
+  /** Correct final count */
+  correctCount: number;
+  /** User's answer */
+  userAnswer: number | null;
+  /** Whether the user was correct */
+  isCorrect: boolean;
+  /** The sequence of events that occurred */
+  events: HouseEvent[];
+  /** Initial people count */
+  initialPeople: number;
+}
+
+/** Speed preset → delay range [min, max] ms */
+export const HOUSE_SPEED_MAP: Record<HouseSpeed, { label: string; delayRange: [number, number] }> = {
+  easy:   { label: '慢速', delayRange: [1200, 2000] },
+  normal: { label: '正常', delayRange: [800, 1500] },
+  fast:   { label: '快速', delayRange: [400, 900] },
+};
+
+/** Build a HouseGameConfig from user selections */
+export function buildHouseGameConfig(
+  initialPeople: number,
+  eventCount: number,
+  speed: HouseSpeed,
+  totalRounds: number,
+): HouseGameConfig {
+  return {
+    initialPeople: Math.max(3, Math.min(initialPeople, 7)),
+    eventCount: Math.max(5, Math.min(eventCount, 15)),
+    delayRange: HOUSE_SPEED_MAP[speed].delayRange,
+    totalRounds: Math.max(3, Math.min(totalRounds, 5)),
+  };
 }
 
 /** Build a MouseGameConfig from user selections */

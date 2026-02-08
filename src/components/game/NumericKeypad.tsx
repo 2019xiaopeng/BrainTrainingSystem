@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 interface NumericKeypadProps {
   value: string;
   onInput: (digit: string) => void;
@@ -19,12 +21,13 @@ export function NumericKeypad({
   disabled = false,
   canInput,
 }: NumericKeypadProps) {
+  const { t } = useTranslation();
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-zen-200">
       {/* 输入显示 */}
       <div className="text-center mb-3">
         <div className="text-xs text-zen-400 mb-1">
-          {canInput ? '请输入答案' : '记住这道题的答案'}
+          {canInput ? t('game.enterAnswer') : t('game.rememberAnswer')}
         </div>
         <div className="text-4xl font-mono text-zen-700 h-12 flex items-center justify-center">
           {canInput ? (value || '_') : '—'}
@@ -56,7 +59,7 @@ export function NumericKeypad({
                      disabled:opacity-30 disabled:cursor-not-allowed
                      disabled:active:scale-100"
         >
-          ← 删除
+          {t('game.delete')}
         </button>
         <button
           onClick={() => onInput('0')}
@@ -78,7 +81,7 @@ export function NumericKeypad({
                      disabled:opacity-30 disabled:cursor-not-allowed
                      disabled:active:scale-100"
         >
-          ✓ 确认
+          {t('game.confirm')}
         </button>
       </div>
     </div>

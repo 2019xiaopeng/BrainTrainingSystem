@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface SpatialGridProps {
   /** Grid size (3 = 3x3, 4 = 4x4, 5 = 5x5) */
@@ -33,6 +34,7 @@ export function SpatialGrid({
   lastClickedIndex,
   lastAnswerCorrect,
 }: SpatialGridProps) {
+  const { t } = useTranslation();
   const [feedbackIndex, setFeedbackIndex] = useState<number | null>(null);
 
   // Show feedback briefly after click
@@ -104,10 +106,10 @@ export function SpatialGrid({
 
       {/* Status indicator */}
       <div className="text-center mt-3 text-sm">
-        {isWarmup && <span className="text-zen-500">记忆阶段 - 无需点击</span>}
-        {!isWarmup && isStimulusVisible && <span className="text-teal-600">观察位置...</span>}
+        {isWarmup && <span className="text-zen-500">{t('game.noClickNeeded')}</span>}
+        {!isWarmup && isStimulusVisible && <span className="text-teal-600">{t('game.observePosition')}</span>}
         {!isWarmup && !isStimulusVisible && !isPaused && (
-          <span className="text-green-600 font-medium">✓ 可以点击</span>
+          <span className="text-green-600 font-medium">{t('game.canClick')}</span>
         )}
       </div>
     </div>

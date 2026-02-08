@@ -73,6 +73,7 @@ export const useGameStore = create<GameStore>()(
         numeric: { nLevel: 1, rounds: 10 },
         spatial: { nLevel: 1, rounds: 10, gridSize: 3 },
         mouse: { count: 3, grid: [4, 3], difficulty: 'easy', rounds: 3 },
+        house: { initialPeople: 3, eventCount: 5, speed: 'easy', rounds: 3 },
       },
 
       setView: (view) => set({ currentView: view }),

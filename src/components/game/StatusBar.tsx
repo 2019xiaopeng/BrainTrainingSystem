@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 interface StatusBarProps {
   onQuit: () => void;
   onPauseToggle: () => void;
@@ -22,22 +24,23 @@ export function StatusBar({
   nLevel,
   gameLabel,
 }: StatusBarProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between">
       <button
         onClick={onQuit}
         className="text-sm text-zen-400 hover:text-zen-600 transition"
       >
-        ← 退出
+        {t('game.quit')}
       </button>
       <span className="text-xs font-mono text-zen-400">
-        {gameLabel || `${nLevel}-Back`} · 第 {currentRound}/{totalRounds} 题
+        {gameLabel || `${nLevel}-Back`} · {t('game.round', { current: currentRound, total: totalRounds })}
       </span>
       <button
         onClick={onPauseToggle}
         className="text-sm text-zen-400 hover:text-zen-600 transition"
       >
-        {isPaused ? '▶ 继续' : '⏸ 暂停'}
+        {isPaused ? t('game.resume') : t('game.pause')}
       </button>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { UseNBackReturn } from '../../hooks/useNBack';
 import type { RoundResult } from '../../types/game';
 import { StatusBar } from '../game/StatusBar';
@@ -15,6 +16,7 @@ interface GameScreenProps {
  * GameScreen - 游戏主界面（支持多模式）
  */
 export function GameScreen({ engine, onQuit }: GameScreenProps) {
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
   const { playClick, playCorrect, playWrong } = useSoundEffects();
@@ -173,18 +175,18 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
           <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-md mx-4 animate-scale-in">
             <h2 className="text-2xl font-medium text-zen-700 mb-4 text-center">
-              ✅ 记忆阶段完成
+              {t('game.memoryDone')}
             </h2>
             <p className="text-zen-500 text-center mb-6">
-              已展示 {config.nLevel} 道题目<br />
-              准备好开始答题了吗？
+              {t('game.memoryDoneMsg', { n: config.nLevel })}<br />
+              {t('game.readyToAnswer')}
             </p>
             <button
               onClick={engine.startAnswering}
               className="w-full py-4 rounded-xl bg-sage-500 text-white text-lg font-medium
                          hover:bg-sage-600 active:scale-[0.98] transition-all shadow-sm"
             >
-              开始答题
+              {t('game.startAnswer')}
             </button>
           </div>
         </div>
@@ -227,7 +229,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
               <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-teal-400">
                 <div className="text-center">
                   <div className="text-sm text-teal-600 font-medium mb-4">
-                    {engine.phase === 'playing' ? '记忆阶段' : '当前题目（请记住）'}
+                    {engine.phase === 'playing' ? t('game.memoryPhase') : t('game.currentQuestion')}
                   </div>
                   <div 
                     className="grid mx-auto"
@@ -256,7 +258,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
               <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-zen-200">
                 <div className="text-center">
                   <div className="text-sm text-zen-600 font-medium mb-4">
-                    {`点击 ${config.nLevel} 轮前的位置`}
+                    {t('game.clickNBack', { n: config.nLevel })}
                   </div>
                   <div 
                     className="grid mx-auto mb-4"
@@ -317,8 +319,8 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
                       enabled:bg-sage-500 enabled:text-white enabled:hover:bg-sage-600 enabled:active:scale-95
                     "
                   >
-                    {engine.hasAnsweredThisRound ? '已提交' : (
-                      lastClickedIndex === null ? '请选择位置' : '确认答案'
+                    {engine.hasAnsweredThisRound ? t('game.submitted') : (
+                      lastClickedIndex === null ? t('game.selectPosition') : t('game.confirmAnswer')
                     )}
                   </button>
                 </div>
@@ -329,11 +331,11 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
         </>
       ) : (
         <div className="bg-white rounded-2xl p-12 shadow-sm border border-zen-200 text-center">
-          <div className="text-zen-500 text-lg mb-2">请回答剩余题目</div>
+          <div className="text-zen-500 text-lg mb-2">{t('game.answerRemaining')}</div>
           <div className="text-zen-400 text-sm">
             {isNumericMode
-              ? `输入 ${config.nLevel} 轮前的答案`
-              : `点击 ${config.nLevel} 轮前的位置`}
+              ? t('game.inputNBack', { n: config.nLevel })
+              : t('game.clickNBack', { n: config.nLevel })}
           </div>
           
           {/* Spatial mode: 在回答阶段也显示网格 */}
@@ -392,8 +394,8 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
                   enabled:bg-sage-500 enabled:text-white enabled:hover:bg-sage-600 enabled:active:scale-95
                 "
               >
-                {engine.hasAnsweredThisRound ? '已提交' : (
-                  lastClickedIndex === null ? '请选择位置' : '确认答案'
+                {engine.hasAnsweredThisRound ? t('game.submitted') : (
+                  lastClickedIndex === null ? t('game.selectPosition') : t('game.confirmAnswer')
                 )}
               </button>
             </div>
@@ -407,10 +409,10 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
           className={`text-center text-sm font-medium transition-all animate-fade-in
             ${lastResult.isCorrect ? 'text-green-600' : 'text-red-500'}`}
         >
-          {lastResult.isCorrect ? '✓ 正确' : '✗ 错误'}
+          {lastResult.isCorrect ? t('game.correct') : t('game.wrong')}
           {lastResult.userAnswer !== null && (
             <span className="text-zen-400 ml-2">
-              你的答案: {lastResult.userAnswer} · 正确答案: {lastResult.correctAnswer}
+              {t('game.yourAnswer', { user: lastResult.userAnswer, correct: lastResult.correctAnswer })}
             </span>
           )}
           {lastResult.reactionTimeMs && (
@@ -421,7 +423,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
 
       {/* 得分信息 */}
       <div className="bg-zen-100/50 backdrop-blur-sm rounded-xl p-3 font-mono text-xs text-zen-600 text-center">
-        <span>得分: {correctSoFar} / {results.length}</span>
+        <span>{t('game.score', { correct: correctSoFar, total: results.length })}</span>
       </div>
 
       {/* 数字键盘（仅 numeric 模式） */}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { NumericStimulus } from '../../types/game';
 
 interface StimulusCardProps {
@@ -11,10 +12,12 @@ interface StimulusCardProps {
  * 展示当前算式，带入场动画
  */
 export function StimulusCard({ stimulus, isPaused, isWarmup }: StimulusCardProps) {
+  const { t } = useTranslation();
+
   if (isPaused) {
     return (
       <div className="flex items-center justify-center h-64 bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-zen-200">
-        <span className="text-2xl text-zen-400">已暂停</span>
+        <span className="text-2xl text-zen-400">{t('game.paused')}</span>
       </div>
     );
   }
@@ -30,7 +33,7 @@ export function StimulusCard({ stimulus, isPaused, isWarmup }: StimulusCardProps
         </div>
         {isWarmup && (
           <div className="absolute bottom-6 text-sm text-sage-600 bg-sage-50 px-4 py-2 rounded-full animate-fade-in">
-            记住答案 (预热阶段)
+            {t('game.warmupHint')}
           </div>
         )}
       </div>

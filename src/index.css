@@ -3,6 +3,48 @@
 @tailwind utilities;
 
 @layer base {
+  /* ---- Theme CSS Variables ---- */
+  :root,
+  .theme-light {
+    --bg-primary: #f7f6f4;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --text-primary: #4a4139;
+    --text-secondary: #8d7f6d;
+    --border-color: #dbd7cf;
+  }
+
+  .theme-dark {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-card: #1e293b;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --border-color: #334155;
+  }
+
+  .theme-warm {
+    --bg-primary: #fdf8f0;
+    --bg-secondary: #fef7ed;
+    --bg-card: #fffbf5;
+    --text-primary: #4a4139;
+    --text-secondary: #927e73;
+    --border-color: #ddd3cd;
+  }
+
+  /* Dark theme overrides for common Tailwind utilities */
+  .theme-dark body {
+    @apply bg-gray-900 text-gray-100;
+  }
+
+  .theme-dark .bg-white {
+    background-color: var(--bg-card);
+  }
+
+  .theme-dark .border-zen-200 {
+    border-color: var(--border-color);
+  }
+
   body {
     @apply bg-zen-50 text-zen-800 antialiased;
   }

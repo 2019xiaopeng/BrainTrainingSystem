@@ -17,6 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import type { UseMouseGameReturn } from '../../hooks/useMouseGame';
 import { computePushDetails, type PushDetail } from '../../hooks/useMouseGame';
 import type { GridCell, MouseRoundResult } from '../../types/game';
@@ -141,6 +142,7 @@ function FeedbackCell({ cell, size, isMouseHere, wasSelected }: {
 // 主组件
 // ====================================================================
 export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
+  const { t } = useTranslation();
   const {
     phase, puzzle, currentRound, totalRounds, mouseConfig,
     currentPushIndex, roundResults,
@@ -488,7 +490,7 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
       <StatusBar onQuit={onQuit} onPauseToggle={() => {}} isPaused={false}
         currentRound={currentRound + 1} totalRounds={totalRounds}
         nLevel={mouseConfig.numPushes}
-        gameLabel={`🐭×${mouseConfig.numMice} ${mouseConfig.cols}×${mouseConfig.rows}网格 ${mouseConfig.numPushes}推`} />
+        gameLabel={`🐭×${mouseConfig.numMice} ${mouseConfig.cols}×${mouseConfig.rows}${t('mouse.grid')} ${mouseConfig.numPushes}${t('mouse.push')}`} />
 
       {/* 进度条 */}
       <div className="w-full h-1.5 bg-zen-200 rounded-full overflow-hidden">
@@ -545,13 +547,13 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="space-y-3 px-4">
           <div className="text-center text-sm text-zen-500">
-            已选择 <span className="font-bold text-zen-700">{selectedCells.size}</span> 个位置
+            {t('mouse.selected', { n: selectedCells.size })}
           </div>
           <button onClick={handleConfirm} disabled={selectedCells.size === 0}
             className="w-full py-3.5 rounded-xl font-medium transition-all
               disabled:bg-zen-200 disabled:text-zen-400 disabled:cursor-not-allowed
               enabled:bg-amber-500 enabled:text-white enabled:hover:bg-amber-600 enabled:active:scale-[0.97] shadow-sm">
-            {selectedCells.size === 0 ? '请点击选择老鼠位置' : '确认答案 ✓'}
+            {selectedCells.size === 0 ? t('mouse.clickToSelect') : t('mouse.confirmAnswer')}
           </button>
         </motion.div>
       )}
@@ -566,8 +568,8 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
                 ? 'bg-green-100 text-green-700'
                 : lastResult.correctCount > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
             }`}>
-              🐭 找到 {lastResult.correctCount}/{lastResult.totalMice} 只
-              {lastResult.wrongSelections > 0 && ` · 误选 ${lastResult.wrongSelections}`}
+              {t('mouse.foundShort', { found: lastResult.correctCount, total: lastResult.totalMice })}
+              {lastResult.wrongSelections > 0 && ` · ${t('mouse.wrongSelect', { n: lastResult.wrongSelections })}`}
             </div>
           </motion.div>
         )}
@@ -575,9 +577,9 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
 
       {/* 得分信息 */}
       <div className="bg-zen-100/50 backdrop-blur-sm rounded-xl p-3 font-mono text-xs text-zen-600 text-center">
-        找到老鼠: {totalCorrectMice} / {totalMiceAll}
+        {t('mouse.foundMice', { found: totalCorrectMice, total: totalMiceAll })}
         {roundResults.length > 0 && (
-          <> · 准确率: {totalMiceAll > 0 ? Math.round((totalCorrectMice / totalMiceAll) * 100) : 0}%</>
+          <> · {t('mouse.accuracy', { pct: totalMiceAll > 0 ? Math.round((totalCorrectMice / totalMiceAll) * 100) : 0 })}</>
         )}
       </div>
     </div>

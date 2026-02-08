@@ -224,7 +224,44 @@
 ## 7. 后端与数据架构 (Backend & Data Architecture)
 **核心技术栈**: Supabase (PostgreSQL + Auth + Edge Functions)
 
-### 7.1 数据库设计 (Database Schema)
+### 7.1 身份认证体系 (Authentication & Identity)
+**核心策略**: 统一身份认证 (Unified Identity)，支持多端登录与账号互通。利用 Supabase Auth 简化实现。
+
+- **支持方式 (Providers)**:
+    1.  **邮箱/密码 (Email/Password)**: 基础托底方案，需支持邮箱验证。
+    2.  **OAuth 2.0 (Social)**:
+        - **Google**: 面向国际用户 (OpenID Connect)。
+        - **微信 (WeChat)**: 面向国内用户。
+            - **PC Web**: 微信开放平台 (扫码登录)。
+            - **Mobile Web/小程序**: 必须获取 `UnionID` 以确保多端数据互通。
+- **账号体系 (Account System)**:
+    - **账号关联 (Linking)**: 用户可在设置页绑定/解绑第三方账号 (如：已用邮箱注册，后续绑定微信)。
+    - **匿名登录 (Guest)**: 允许游客试玩 (存储于 LocalStorage)，注册后数据合并 (Merge Strategy)。
+- **安全风控**:
+    - **JWT**: 无状态鉴权，Token 短效期 + Refresh Token 轮换。
+    - **敏感操作**: 修改密码、支付需 Re-authentication (二次验证)。
+
+### 7.2 支付与订单架构 (Payment Architecture)
+**设计原则**: 支付网关抽象层 (Payment Gateway Abstraction)，隔离业务逻辑与具体支付渠道。
+
+- **多渠道适配 (Adapters)**:
+    - **Stripe**: 全球信用卡、支付宝国际版 (主要面向海外)。
+    - **微信支付 (WeChat Pay)**: Native 扫码 (PC) / JSAPI (Mobile) / H5 支付。
+    - **支付宝 (Alipay)**: 备选渠道。
+- **商品系统 (Product Catalog)**:
+    - **SKU 定义**: 积分包 (Points Pack)、会员订阅 (Premium)、主题 (Theme)。
+    - **定价策略**: 支持多货币 (CNY/USD) 动态定价。
+- **订单生命周期 (Order Lifecycle)**:
+    1.  **Created**: 用户点击购买，生成本地订单号。
+    2.  **Pending**: 调用支付网关，获取支付凭证 (QR Code / Pay URL)。
+    3.  **Paid (Webhook)**: **关键**。后端接收支付渠道的异步通知，验证签名，确认支付成功。
+    4.  **Fulfilled**: 触发业务逻辑 (加积分/开会员)，更新用户资产。
+    5.  **Completed**: 订单结束。
+    - **异常处理**: 
+        - **Refunded**: 客服退款，自动扣除对应权益。
+        - **Expired**: 支付超时（15分钟未支付）。
+
+### 7.3 数据库设计 (Database Schema)
 
 #### Core Config Tables (Metadata)
 - **`public.games`**: 游戏元数据，支持动态扩展。
@@ -240,7 +277,10 @@
 
 #### User Data Tables
 - **`public.users`**:
-    - ... (原有字段)
+    - ... (原有字段: id, email, created_at)
+    - `auth_providers`: JSONB (['google', 'wechat'])
+    - `wechat_unionid`: Text (Unique index, nullable)
+    - `stripe_customer_id`: Text
     - `xp`: Integer (Experience Points)
     - `brain_level`: Integer (1-7)
     - `tutorial_status`: JSONB (Tracks completed tutorials: `{'numeric': true}`)
@@ -249,6 +289,24 @@
     - `game_id`: Text (FK)
     - `unlocked_params`: JSONB (Current max params: `{"n": 5, "grid": 4}`)
     - `completed_level_ids`: Array<Integer> (List of beaten level IDs)
+
+#### Payment & Orders Tables
+- **`public.products`**:
+    - `id`: Text (PK, e.g., 'energy_pack_1')
+    - `type`: Enum ('consumable', 'subscription', 'permanent')
+    - `price_cny`: Integer (单位: 分)
+    - `price_usd`: Integer (单位: Cent)
+    - `rewards`: JSONB (e.g., `{"energy": 5, "points": 100}`)
+- **`public.orders`**:
+    - `id`: UUID (PK)
+    - `user_id`: UUID (FK)
+    - `product_id`: Text (FK)
+    - `amount_paid`: Integer
+    - `currency`: Text ('CNY', 'USD')
+    - `status`: Enum ('created', 'pending', 'paid', 'fulfilled', 'failed', 'refunded')
+    - `gateway_ref_id`: Text (第三方支付单号)
+    - `created_at`: Timestamp
+    - `paid_at`: Timestamp
 
 #### Operational Tables
 - **`public.sync_queue`**: 离线数据同步队列。
