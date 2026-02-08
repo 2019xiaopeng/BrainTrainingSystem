@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, User } from 'lucide-react';
+import { Home, User, ShoppingBag, HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -10,7 +10,9 @@ export function MobileNav() {
 
   const items = [
     { to: '/', icon: Home, label: t('nav.home') },
+    { to: '/store', icon: ShoppingBag, label: t('nav.store') },
     { to: '/profile', icon: User, label: t('nav.profile') },
+    { to: '/instruction', icon: HelpCircle, label: t('nav.instruction') },
   ];
 
   return (

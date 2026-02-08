@@ -5,6 +5,13 @@ import type { UserProfile, GameMode, MouseDifficultyLevel, MouseGridPreset, Hous
 import { MOUSE_GRID_PRESETS, MOUSE_DIFFICULTY_MAP, buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
 import type { MouseGameConfig, HouseGameConfig } from '../../types/game';
 
+const GUEST_DEFAULTS = {
+  numeric: { nLevel: 1, rounds: 10 },
+  spatial: { nLevel: 1, rounds: 10, gridSize: 3 },
+  mouse: { count: 3, grid: [4, 3] as MouseGridPreset, difficulty: 'easy' as MouseDifficultyLevel, rounds: 3 },
+  house: { initialPeople: 3, eventCount: 5, speed: 'easy' as HouseSpeed, rounds: 3 },
+} as const;
+
 interface HomeScreenProps {
   initialMode: GameMode;
   userProfile: UserProfile;
@@ -18,27 +25,38 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   const { t } = useTranslation();
   const { gameConfigs, updateGameConfig } = useGameStore();
   const [mode, setMode] = useState<GameMode>(initialMode);
+  const isGuest = (userProfile.auth?.status ?? 'guest') === 'guest';
 
   // Separate config state for numeric mode (use saved config or defaults)
-  const [numericNLevel, setNumericNLevel] = useState(gameConfigs.numeric.nLevel);
-  const [numericRounds, setNumericRounds] = useState(gameConfigs.numeric.rounds);
+  const [numericNLevel, setNumericNLevel] = useState(() => (isGuest ? GUEST_DEFAULTS.numeric.nLevel : gameConfigs.numeric.nLevel));
+  const [numericRounds, setNumericRounds] = useState(() => (isGuest ? GUEST_DEFAULTS.numeric.rounds : gameConfigs.numeric.rounds));
   
   // Separate config state for spatial mode (use saved config or defaults)
-  const [spatialNLevel, setSpatialNLevel] = useState(gameConfigs.spatial.nLevel);
-  const [spatialRounds, setSpatialRounds] = useState(gameConfigs.spatial.rounds);
-  const [gridSize, setGridSize] = useState(gameConfigs.spatial.gridSize);
+  const [spatialNLevel, setSpatialNLevel] = useState(() => (isGuest ? GUEST_DEFAULTS.spatial.nLevel : gameConfigs.spatial.nLevel));
+  const [spatialRounds, setSpatialRounds] = useState(() => (isGuest ? GUEST_DEFAULTS.spatial.rounds : gameConfigs.spatial.rounds));
+  const [gridSize, setGridSize] = useState(() => (isGuest ? GUEST_DEFAULTS.spatial.gridSize : gameConfigs.spatial.gridSize));
 
   // Mouse mode config state (use saved config or defaults)
-  const [mouseCount, setMouseCount] = useState(gameConfigs.mouse.count);
-  const [mouseGrid, setMouseGrid] = useState<MouseGridPreset>(gameConfigs.mouse.grid);
-  const [mouseDifficulty, setMouseDifficulty] = useState<MouseDifficultyLevel>(gameConfigs.mouse.difficulty);
-  const [mouseRounds, setMouseRounds] = useState(gameConfigs.mouse.rounds);
+  const [mouseCount, setMouseCount] = useState(() => (isGuest ? GUEST_DEFAULTS.mouse.count : gameConfigs.mouse.count));
+  const [mouseGrid, setMouseGrid] = useState<MouseGridPreset>(() => (isGuest ? GUEST_DEFAULTS.mouse.grid : gameConfigs.mouse.grid));
+  const [mouseDifficulty, setMouseDifficulty] = useState<MouseDifficultyLevel>(() =>
+    isGuest ? GUEST_DEFAULTS.mouse.difficulty : gameConfigs.mouse.difficulty
+  );
+  const [mouseRounds, setMouseRounds] = useState(() => (isGuest ? GUEST_DEFAULTS.mouse.rounds : gameConfigs.mouse.rounds));
 
   // House mode config state (with fallback defaults for backward compatibility)
-  const [houseInitial, setHouseInitial] = useState(() => Math.max(3, Math.min(gameConfigs.house?.initialPeople ?? 3, 7)));
-  const [houseEvents, setHouseEvents] = useState(() => Math.max(5, Math.min(gameConfigs.house?.eventCount ?? 5, 15)));
-  const [houseSpeed, setHouseSpeed] = useState<HouseSpeed>((gameConfigs.house?.speed as HouseSpeed) ?? 'easy');
-  const [houseRounds, setHouseRounds] = useState(() => Math.max(3, Math.min(gameConfigs.house?.rounds ?? 3, 5)));
+  const [houseInitial, setHouseInitial] = useState(() =>
+    isGuest ? GUEST_DEFAULTS.house.initialPeople : Math.max(3, Math.min(gameConfigs.house?.initialPeople ?? 3, 7))
+  );
+  const [houseEvents, setHouseEvents] = useState(() =>
+    isGuest ? GUEST_DEFAULTS.house.eventCount : Math.max(5, Math.min(gameConfigs.house?.eventCount ?? 5, 15))
+  );
+  const [houseSpeed, setHouseSpeed] = useState<HouseSpeed>(() =>
+    isGuest ? GUEST_DEFAULTS.house.speed : ((gameConfigs.house?.speed as HouseSpeed) ?? 'easy')
+  );
+  const [houseRounds, setHouseRounds] = useState(() =>
+    isGuest ? GUEST_DEFAULTS.house.rounds : Math.max(3, Math.min(gameConfigs.house?.rounds ?? 3, 5))
+  );
 
   // Determine current N-Back config based on mode
   const nLevel = mode === 'numeric' ? numericNLevel : spatialNLevel;
@@ -46,20 +64,57 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   
   // Sync changes to localStorage
   useEffect(() => {
+    if (isGuest) return;
     updateGameConfig('numeric', { nLevel: numericNLevel, rounds: numericRounds });
-  }, [numericNLevel, numericRounds, updateGameConfig]);
+  }, [numericNLevel, numericRounds, updateGameConfig, isGuest]);
 
   useEffect(() => {
+    if (isGuest) return;
     updateGameConfig('spatial', { nLevel: spatialNLevel, rounds: spatialRounds, gridSize });
-  }, [spatialNLevel, spatialRounds, gridSize, updateGameConfig]);
+  }, [spatialNLevel, spatialRounds, gridSize, updateGameConfig, isGuest]);
 
   useEffect(() => {
+    if (isGuest) return;
     updateGameConfig('mouse', { count: mouseCount, grid: mouseGrid, difficulty: mouseDifficulty, rounds: mouseRounds });
-  }, [mouseCount, mouseGrid, mouseDifficulty, mouseRounds, updateGameConfig]);
+  }, [mouseCount, mouseGrid, mouseDifficulty, mouseRounds, updateGameConfig, isGuest]);
 
   useEffect(() => {
+    if (isGuest) return;
     updateGameConfig('house', { initialPeople: houseInitial, eventCount: houseEvents, speed: houseSpeed, rounds: houseRounds });
-  }, [houseInitial, houseEvents, houseSpeed, houseRounds, updateGameConfig]);
+  }, [houseInitial, houseEvents, houseSpeed, houseRounds, updateGameConfig, isGuest]);
+
+  useEffect(() => {
+    if (!isGuest) {
+      setNumericNLevel(gameConfigs.numeric.nLevel);
+      setNumericRounds(gameConfigs.numeric.rounds);
+      setSpatialNLevel(gameConfigs.spatial.nLevel);
+      setSpatialRounds(gameConfigs.spatial.rounds);
+      setGridSize(gameConfigs.spatial.gridSize);
+      setMouseCount(gameConfigs.mouse.count);
+      setMouseGrid(gameConfigs.mouse.grid);
+      setMouseDifficulty(gameConfigs.mouse.difficulty);
+      setMouseRounds(gameConfigs.mouse.rounds);
+      setHouseInitial(Math.max(3, Math.min(gameConfigs.house?.initialPeople ?? 3, 7)));
+      setHouseEvents(Math.max(5, Math.min(gameConfigs.house?.eventCount ?? 5, 15)));
+      setHouseSpeed((gameConfigs.house?.speed as HouseSpeed) ?? 'easy');
+      setHouseRounds(Math.max(3, Math.min(gameConfigs.house?.rounds ?? 3, 5)));
+      return;
+    }
+
+    setNumericNLevel(GUEST_DEFAULTS.numeric.nLevel);
+    setNumericRounds(GUEST_DEFAULTS.numeric.rounds);
+    setSpatialNLevel(GUEST_DEFAULTS.spatial.nLevel);
+    setSpatialRounds(GUEST_DEFAULTS.spatial.rounds);
+    setGridSize(GUEST_DEFAULTS.spatial.gridSize);
+    setMouseCount(GUEST_DEFAULTS.mouse.count);
+    setMouseGrid(GUEST_DEFAULTS.mouse.grid);
+    setMouseDifficulty(GUEST_DEFAULTS.mouse.difficulty);
+    setMouseRounds(GUEST_DEFAULTS.mouse.rounds);
+    setHouseInitial(GUEST_DEFAULTS.house.initialPeople);
+    setHouseEvents(GUEST_DEFAULTS.house.eventCount);
+    setHouseSpeed(GUEST_DEFAULTS.house.speed);
+    setHouseRounds(GUEST_DEFAULTS.house.rounds);
+  }, [isGuest, gameConfigs]);
 
   // Validate N-Back config
   const isNBackMode = mode === 'numeric' || mode === 'spatial';
@@ -84,15 +139,15 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   return (
     <div className="space-y-6 pt-8">
       <div className="text-center">
-        <h1 className="text-4xl font-light text-zen-700 dark:text-zen-200 tracking-wider">{t('app.title')}</h1>
-        <p className="text-sm text-zen-400 dark:text-zen-500 mt-2">{t('app.subtitle')}</p>
+        <h1 className="text-4xl font-light text-zen-700 tracking-wider">{t('app.title')}</h1>
+        <p className="text-sm text-zen-400 mt-2">{t('app.subtitle')}</p>
       </div>
 
       {/* Profile Summary Card */}
-      <div className="bg-gradient-to-br from-sage-400 to-sage-500 dark:from-sage-600 dark:to-sage-700 rounded-2xl p-6 shadow-lg text-white">
+      <div className="bg-gradient-to-br from-sage-400 to-sage-500 rounded-2xl p-6 shadow-lg text-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-medium">{t('home.profile')}</h2>
-          {userProfile.daysStreak > 0 && (
+          {!isGuest && userProfile.daysStreak > 0 && (
             <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
               {t('home.streak', { days: userProfile.daysStreak })}
             </div>
@@ -101,87 +156,103 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
         
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-            <div className="text-2xl font-mono font-bold">{userProfile.maxNLevel || '-'}</div>
+            <div className="text-2xl font-mono font-bold">{isGuest ? '-' : userProfile.maxNLevel || '-'}</div>
             <div className="text-xs text-white/80 mt-1">{t('home.maxLevel')}</div>
           </div>
           <div className=" bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-            <div className="text-2xl font-mono font-bold">{userProfile.totalScore}</div>
+            <div className="text-2xl font-mono font-bold">{isGuest ? 0 : userProfile.totalScore}</div>
             <div className="text-xs text-white/80 mt-1">{t('home.totalScore')}</div>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-            <div className="text-2xl font-mono font-bold">{userProfile.daysStreak}</div>
+            <div className="text-2xl font-mono font-bold">{isGuest ? 0 : userProfile.daysStreak}</div>
             <div className="text-xs text-white/80 mt-1">{t('home.streakDays')}</div>
           </div>
         </div>
       </div>
 
       {/* 游戏模式选择 */}
-      <div className="bg-white dark:bg-zen-800 rounded-xl p-6 shadow-sm border border-zen-200 dark:border-zen-700">
-        <h2 className="text-lg font-medium text-zen-600 dark:text-zen-300 mb-4">{t('home.gameMode')}</h2>
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-zen-200">
+        <h2 className="text-lg font-medium text-zen-600 mb-4">{t('home.gameMode')}</h2>
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => setMode('numeric')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'numeric'
-                ? 'border-sage-500 bg-sage-50 dark:bg-sage-900/30 dark:border-sage-400'
-                : 'border-zen-200 dark:border-zen-700 bg-white dark:bg-zen-800 hover:border-sage-300 dark:hover:border-sage-600'
+                ? 'border-sage-500 bg-sage-50'
+                : 'border-zen-200 bg-white hover:border-sage-300'
             }`}
           >
             <div className="text-2xl mb-1">🔢</div>
-            <div className="font-medium text-zen-700 dark:text-zen-200 text-sm">{t('home.numeric')}</div>
-            <div className="text-xs text-zen-400 dark:text-zen-500 mt-1">{t('home.numericDesc')}</div>
+            <div className="font-medium text-zen-700 text-sm">{t('home.numeric')}</div>
+            <div className="text-xs text-zen-400 mt-1">{t('home.numericDesc')}</div>
           </button>
           
           <button
             onClick={() => setMode('spatial')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'spatial'
-                ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/30 dark:border-teal-400'
-                : 'border-zen-200 dark:border-zen-700 bg-white dark:bg-zen-800 hover:border-teal-300 dark:hover:border-teal-600'
+                ? 'border-teal-500 bg-teal-50'
+                : 'border-zen-200 bg-white hover:border-teal-300'
             }`}
           >
             <div className="text-2xl mb-1">🎯</div>
-            <div className="font-medium text-zen-700 dark:text-zen-200 text-sm">{t('home.spatial')}</div>
-            <div className="text-xs text-zen-400 dark:text-zen-500 mt-1">{t('home.spatialDesc')}</div>
+            <div className="font-medium text-zen-700 text-sm">{t('home.spatial')}</div>
+            <div className="text-xs text-zen-400 mt-1">{t('home.spatialDesc')}</div>
           </button>
 
           <button
             onClick={() => setMode('mouse')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'mouse'
-                ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 dark:border-amber-400'
-                : 'border-zen-200 dark:border-zen-700 bg-white dark:bg-zen-800 hover:border-amber-300 dark:hover:border-amber-600'
+                ? 'border-amber-500 bg-amber-50'
+                : 'border-zen-200 bg-white hover:border-amber-300'
             }`}
           >
             <div className="text-2xl mb-1">🐭</div>
-            <div className="font-medium text-zen-700 dark:text-zen-200 text-sm">{t('home.mouse')}</div>
-            <div className="text-xs text-zen-400 dark:text-zen-500 mt-1">{t('home.mouseDesc')}</div>
+            <div className="font-medium text-zen-700 text-sm">{t('home.mouse')}</div>
+            <div className="text-xs text-zen-400 mt-1">{t('home.mouseDesc')}</div>
           </button>
 
           <button
             onClick={() => setMode('house')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'house'
-                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 dark:border-purple-400'
-                : 'border-zen-200 dark:border-zen-700 bg-white dark:bg-zen-800 hover:border-purple-300 dark:hover:border-purple-600'
+                ? 'border-purple-500 bg-purple-50'
+                : 'border-zen-200 bg-white hover:border-purple-300'
             }`}
           >
             <div className="text-2xl mb-1">🏠</div>
-            <div className="font-medium text-zen-700 dark:text-zen-200 text-sm">{t('home.house')}</div>
-            <div className="text-xs text-zen-400 dark:text-zen-500 mt-1">{t('home.houseDesc')}</div>
+            <div className="font-medium text-zen-700 text-sm">{t('home.house')}</div>
+            <div className="text-xs text-zen-400 mt-1">{t('home.houseDesc')}</div>
           </button>
         </div>
       </div>
 
       {/* 配置面板 */}
-      <div className="bg-white dark:bg-zen-800 rounded-xl p-6 shadow-sm border border-zen-200 dark:border-zen-700 space-y-4">
-        <h2 className="text-lg font-medium text-zen-600 dark:text-zen-300">{t('home.config')}</h2>
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-zen-200 space-y-4">
+        <h2 className="text-lg font-medium text-zen-600">{t('home.config')}</h2>
 
+        {isGuest && (
+          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+            <div className="font-medium mb-1">{t('profile.auth.guest')}</div>
+            <div className="flex items-center justify-between gap-3">
+              <span>{t('profile.auth.guestLockHint')}</span>
+              <a
+                href="/signup"
+                className="shrink-0 px-3 py-1.5 rounded-md bg-amber-600 text-white font-medium hover:bg-amber-700 transition-colors"
+              >
+                {t('profile.auth.goSignup')}
+              </a>
+            </div>
+          </div>
+        )}
+
+        <div className={`space-y-4 ${isGuest ? 'pointer-events-none opacity-60' : ''}`}>
         {/* ===== N-Back 模式配置 ===== */}
         {isNBackMode && (
           <>
             <div className="flex items-center gap-4">
-              <label className="text-sm text-zen-500 dark:text-zen-400 w-28">{t('home.nLevel')}</label>
+              <label className="text-sm text-zen-500 w-28">{t('home.nLevel')}</label>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
@@ -192,12 +263,12 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                     }
                   }}
                   disabled={nLevel <= 1}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all
-                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100 dark:disabled:hover:bg-zen-700"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   −
                 </button>
-                <span className="text-2xl font-mono text-zen-700 dark:text-zen-200 w-10 text-center">{nLevel}</span>
+                <span className="text-2xl font-mono text-zen-700 w-10 text-center">{nLevel}</span>
                 <button
                   onClick={() => {
                     if (mode === 'numeric') {
@@ -207,8 +278,8 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                     }
                   }}
                   disabled={nLevel >= Math.min(12, rounds - 1)}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all
-                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100 dark:disabled:hover:bg-zen-700"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   +
                 </button>
@@ -216,7 +287,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
             </div>
 
             <div className="flex items-center gap-4">
-              <label className="text-sm text-zen-500 dark:text-zen-400 w-28">{t('home.rounds')}</label>
+              <label className="text-sm text-zen-500 w-28">{t('home.rounds')}</label>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
@@ -226,11 +297,11 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                       setSpatialRounds((r) => Math.max(5, r - 5));
                     }
                   }}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all"
                 >
                   −
                 </button>
-                <span className="text-2xl font-mono text-zen-700 dark:text-zen-200 w-12 text-center">{rounds}</span>
+                <span className="text-2xl font-mono text-zen-700 w-12 text-center">{rounds}</span>
                 <button
                   onClick={() => {
                     if (mode === 'numeric') {
@@ -239,7 +310,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                       setSpatialRounds((r) => Math.min(30, r + 5));
                     }
                   }}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all"
                 >
                   +
                 </button>
@@ -249,7 +320,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
             {/* 网格大小选择（仅空间模式） */}
             {mode === 'spatial' && (
               <div className="flex items-center gap-4">
-                <label className="text-sm text-zen-500 dark:text-zen-400 w-28">{t('home.gridSize')}</label>
+                <label className="text-sm text-zen-500 w-28">{t('home.gridSize')}</label>
                 <div className="flex gap-2">
                   {[3, 4, 5].map((size) => (
                     <button
@@ -257,8 +328,8 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                       onClick={() => setGridSize(size)}
                       className={`px-4 py-2 rounded-lg font-medium transition-all ${
                         gridSize === size
-                          ? 'bg-teal-500 dark:bg-teal-600 text-white shadow-sm'
-                          : 'bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600'
+                          ? 'bg-teal-500 text-white shadow-sm'
+                          : 'bg-zen-100 text-zen-600 hover:bg-zen-200'
                       }`}
                     >
                       {size}×{size}
@@ -269,7 +340,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
             )}
 
             {!isConfigValid && (
-              <div className="bg-red-50 dark:bg-red-900/30 rounded-lg p-3 text-xs text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
+              <div className="bg-red-50 rounded-lg p-3 text-xs text-red-700 border border-red-200">
                 <div className="font-medium mb-1">{t('home.configError')}</div>
                 <p>{t('home.configErrorMsg', { n: nLevel, rounds })}</p>
               </div>
@@ -282,22 +353,22 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
           <>
             {/* 老鼠个数 */}
             <div className="flex items-center gap-4">
-              <label className="text-sm text-zen-500 dark:text-zen-400 font-medium w-28">{t('home.mouseCount')}</label>
+              <label className="text-sm text-zen-500 font-medium w-28">{t('home.mouseCount')}</label>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setMouseCount((n) => Math.max(3, n - 1))}
                   disabled={mouseCount <= 3}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all
-                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100 dark:disabled:hover:bg-zen-700"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   −
                 </button>
-                <span className="text-2xl font-mono text-zen-700 dark:text-zen-200 w-12 text-center">{effectiveMouseCount}</span>
+                <span className="text-2xl font-mono text-zen-700 w-12 text-center">{effectiveMouseCount}</span>
                 <button
                   onClick={() => setMouseCount((n) => Math.min(Math.min(9, maxMice), n + 1))}
                   disabled={mouseCount >= maxMice || mouseCount >= 9}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all
-                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100 dark:disabled:hover:bg-zen-700"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   +
                 </button>
@@ -306,7 +377,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
 
             {/* 网格大小 */}
             <div className="space-y-2">
-              <label className="text-sm text-zen-500 dark:text-zen-400 font-medium">{t('home.mouseGrid')}</label>
+              <label className="text-sm text-zen-500 font-medium">{t('home.mouseGrid')}</label>
               <div className="flex gap-2">
                 {MOUSE_GRID_PRESETS.map(({ label, value }) => (
                   <button
@@ -319,8 +390,8 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                     }}
                     className={`flex-1 py-2.5 rounded-lg font-medium transition-all text-sm ${
                       mouseGrid[0] === value[0] && mouseGrid[1] === value[1]
-                        ? 'bg-amber-500 dark:bg-amber-600 text-white shadow-sm'
-                        : 'bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                        ? 'bg-amber-500 text-white shadow-sm'
+                        : 'bg-zen-100 text-zen-600 hover:bg-amber-100'
                     }`}
                   >
                     {label}
@@ -331,7 +402,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
 
             {/* 难度等级 */}
             <div className="space-y-2">
-              <label className="text-sm text-zen-500 dark:text-zen-400 font-medium">{t('home.mouseDifficulty')}</label>
+              <label className="text-sm text-zen-500 font-medium">{t('home.mouseDifficulty')}</label>
               <div className="grid grid-cols-4 gap-2">
                 {(Object.entries(MOUSE_DIFFICULTY_MAP) as [MouseDifficultyLevel, { label: string; pushes: number }][]).map(
                   ([key, { label }]) => (
@@ -341,9 +412,9 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                       className={`py-3 rounded-lg font-medium transition-all ${
                         mouseDifficulty === key
                           ? key === 'hell'
-                            ? 'bg-red-500 dark:bg-red-600 text-white shadow-sm'
-                            : 'bg-amber-500 dark:bg-amber-600 text-white shadow-sm'
-                          : 'bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                            ? 'bg-red-500 text-white shadow-sm'
+                            : 'bg-amber-500 text-white shadow-sm'
+                          : 'bg-zen-100 text-zen-600 hover:bg-amber-100'
                       }`}
                     >
                       {label}
@@ -355,22 +426,22 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
 
             {/* 挑战轮数 */}
             <div className="flex items-center gap-4">
-              <label className="text-sm text-zen-500 dark:text-zen-400 w-28">{t('home.mouseRounds')}</label>
+              <label className="text-sm text-zen-500 w-28">{t('home.mouseRounds')}</label>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setMouseRounds((r) => Math.max(3, r - 1))}
                   disabled={mouseRounds <= 3}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all
-                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100 dark:disabled:hover:bg-zen-700"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   −
                 </button>
-                <span className="text-2xl font-mono text-zen-700 dark:text-zen-200 w-12 text-center">{mouseRounds}</span>
+                <span className="text-2xl font-mono text-zen-700 w-12 text-center">{mouseRounds}</span>
                 <button
                   onClick={() => setMouseRounds((r) => Math.min(5, r + 1))}
                   disabled={mouseRounds >= 5}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all
-                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100 dark:disabled:hover:bg-zen-700"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   +
                 </button>
@@ -384,22 +455,22 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
           <>
             {/* 初始人数 */}
             <div className="flex items-center gap-4">
-              <label className="text-sm text-zen-500 dark:text-zen-400 font-medium w-28">{t('home.houseInitial')}</label>
+              <label className="text-sm text-zen-500 font-medium w-28">{t('home.houseInitial')}</label>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setHouseInitial((n) => Math.max(3, n - 1))}
                   disabled={houseInitial <= 3}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all
-                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100 dark:disabled:hover:bg-zen-700"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   −
                 </button>
-                <span className="text-2xl font-mono text-zen-700 dark:text-zen-200 w-12 text-center">{houseInitial}</span>
+                <span className="text-2xl font-mono text-zen-700 w-12 text-center">{houseInitial}</span>
                 <button
                   onClick={() => setHouseInitial((n) => Math.min(7, n + 1))}
                   disabled={houseInitial >= 7}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all
-                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100 dark:disabled:hover:bg-zen-700"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   +
                 </button>
@@ -408,22 +479,22 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
 
             {/* 事件数量 */}
             <div className="flex items-center gap-4">
-              <label className="text-sm text-zen-500 dark:text-zen-400 font-medium w-28">{t('home.houseEvents')}</label>
+              <label className="text-sm text-zen-500 font-medium w-28">{t('home.houseEvents')}</label>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setHouseEvents((n) => Math.max(5, n - 1))}
                   disabled={houseEvents <= 5}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all
-                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100 dark:disabled:hover:bg-zen-700"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   −
                 </button>
-                <span className="text-2xl font-mono text-zen-700 dark:text-zen-200 w-12 text-center">{houseEvents}</span>
+                <span className="text-2xl font-mono text-zen-700 w-12 text-center">{houseEvents}</span>
                 <button
                   onClick={() => setHouseEvents((n) => Math.min(15, n + 1))}
                   disabled={houseEvents >= 15}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all
-                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100 dark:disabled:hover:bg-zen-700"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   +
                 </button>
@@ -432,7 +503,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
 
             {/* 速度选择 */}
             <div className="space-y-2">
-              <label className="text-sm text-zen-500 dark:text-zen-400 font-medium">{t('home.houseSpeed')}</label>
+              <label className="text-sm text-zen-500 font-medium">{t('home.houseSpeed')}</label>
               <div className="flex gap-2">
                 {(['easy', 'normal', 'fast'] as const).map((speed) => (
                   <button
@@ -440,8 +511,8 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                     onClick={() => setHouseSpeed(speed)}
                     className={`flex-1 py-2.5 rounded-lg font-medium transition-all text-sm ${
                       houseSpeed === speed
-                        ? 'bg-purple-500 dark:bg-purple-600 text-white shadow-sm'
-                        : 'bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-purple-100 dark:hover:bg-purple-900/30'
+                        ? 'bg-purple-500 text-white shadow-sm'
+                        : 'bg-zen-100 text-zen-600 hover:bg-purple-100'
                     }`}
                   >
                     {t(`speed.${speed}`)}
@@ -452,22 +523,22 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
 
             {/* 轮次数量 */}
             <div className="flex items-center gap-4">
-              <label className="text-sm text-zen-500 dark:text-zen-400 font-medium w-28">{t('home.houseRounds')}</label>
+              <label className="text-sm text-zen-500 font-medium w-28">{t('home.houseRounds')}</label>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setHouseRounds((n) => Math.max(3, n - 1))}
                   disabled={houseRounds <= 3}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all
-                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100 dark:disabled:hover:bg-zen-700"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   −
                 </button>
-                <span className="text-2xl font-mono text-zen-700 dark:text-zen-200 w-12 text-center">{houseRounds}</span>
+                <span className="text-2xl font-mono text-zen-700 w-12 text-center">{houseRounds}</span>
                 <button
                   onClick={() => setHouseRounds((n) => Math.min(5, n + 1))}
                   disabled={houseRounds >= 5}
-                  className="w-9 h-9 rounded-lg bg-zen-100 dark:bg-zen-700 text-zen-600 dark:text-zen-300 hover:bg-zen-200 dark:hover:bg-zen-600 active:scale-95 transition-all
-                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100 dark:disabled:hover:bg-zen-700"
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   +
                 </button>
@@ -477,7 +548,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
         )}
 
         {/* 玩法说明 */}
-        <div className="bg-sage-50 dark:bg-sage-900/30 rounded-lg p-3 text-xs text-sage-700 dark:text-sage-300 border border-sage-200 dark:border-sage-800">
+        <div className="bg-sage-50 rounded-lg p-3 text-xs text-sage-700 border border-sage-200">
           <div className="font-medium mb-1">{t('home.howToPlay')}</div>
           <p>
             {mode === 'numeric' 
@@ -499,15 +570,16 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
             }
           </p>
         </div>
+        </div>
       </div>
 
       {/* 开始按钮 */}
       <button
         onClick={handleStart}
         disabled={!isConfigValid}
-        className="w-full py-4 rounded-xl bg-sage-500 dark:bg-sage-600 text-white text-lg font-medium
-                   hover:bg-sage-600 dark:hover:bg-sage-700 active:scale-[0.98] transition-all shadow-sm
-                   disabled:bg-zen-300 dark:disabled:bg-zen-700 disabled:cursor-not-allowed disabled:hover:bg-zen-300 dark:disabled:hover:bg-zen-700"
+        className="w-full py-4 rounded-xl bg-sage-500 text-white text-lg font-medium
+                   hover:bg-sage-600 active:scale-[0.98] transition-all shadow-sm
+                   disabled:bg-zen-300 disabled:cursor-not-allowed disabled:hover:bg-zen-300"
       >
         {mode === 'mouse'
           ? t('home.startMouse', { difficulty: MOUSE_DIFFICULTY_MAP[mouseDifficulty].label, rounds: mouseRounds })

@@ -2,7 +2,6 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from '../components/layout/Sidebar';
 import { RightPanel } from '../components/layout/RightPanel';
 import { MobileNav } from '../components/layout/MobileNav';
-import { useTheme } from '../contexts/ThemeContext';
 
 /**
  * MainLayout - 响应式三栏布局（游戏中保持三栏结构）
@@ -11,18 +10,10 @@ import { useTheme } from '../contexts/ThemeContext';
  */
 export function MainLayout() {
   const location = useLocation();
-  const { theme } = useTheme();
-
   const isGameActive = location.pathname.startsWith('/train/');
 
-  const bgClass = theme === 'dark'
-    ? 'bg-gray-900 text-gray-100'
-    : theme === 'warm'
-    ? 'bg-amber-50 text-zen-800'
-    : 'bg-zen-50 text-zen-800';
-
   return (
-    <div className={`min-h-screen ${bgClass} transition-colors duration-300`}>
+    <div className="min-h-screen bg-zen-50 text-zen-800 transition-colors duration-300">
       {/* Desktop 三栏布局 —— 始终保持三栏，游戏中也不隐藏 */}
       <div className="hidden lg:flex min-h-screen">
         <aside className="w-[250px] flex-shrink-0 border-r border-zen-200/50 overflow-y-auto">

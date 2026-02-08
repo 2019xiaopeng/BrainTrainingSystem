@@ -30,20 +30,43 @@
 ### 2.2 脑力体检 (Assessment Mode)
 - **目标**: 定量评估，生成雷达图。
 - **机制**:
-    - **标准化**: 固定题目序列，固定难度梯度，严格限时。
-    - **周期性**: 建议每月一次，避免频繁测试导致练习效应偏差。
-    - **产出**: 五维雷达图（记忆力、计算力、专注力、观察力、处理速度）及详细分析报告。
+    - **标准化序列**: Numeric (2-Back) -> Spatial (2-Back) -> Mouse (Tracking) -> House (Dynamic Counting)。
+    - **严格限时**: 全程约 5 分钟，无暂停。
+    - **产出**: 六维雷达图（记忆力、计算力、专注力、观察力、负载力、反应力）及详细分析报告。
 
 ## 3. 经济与成长系统 (Economy & Progression)
 ### 3.1 脑力段位体系 (The Rank System)
 **核心逻辑**: `Rank = XP (活跃度) + Milestones (硬实力)`。
-- **LV1 见习 (Novice)**: 初始状态。
-- **LV2 觉醒 (Awakened)**: XP 500 + 解锁 2-Back (Numeric)。
-- **LV3 敏捷 (Agile)**: XP 2000 + 解锁 3-Back (Numeric) + 3x3 空间 (Spatial)。
-- **LV4 逻辑 (Logical)**: XP 5000 + 解锁 5-Back (Numeric) + 4x4 空间。
-- **LV5 深邃 (Profound)**: XP 10000 + 解锁 7-Back。
-- **LV6 大师 (Master)**: XP 30000 + 解锁 9-Back。
-- **LV7 超凡 (Transcendent)**: XP 80000 + 解锁 11-Back + 全模式毕业。
+用户必须同时满足 XP 要求和**任意一项**核心能力考核指标，才能晋升。
+
+- **LV1 见习 (Novice)**: 
+    - XP: 0
+    - 考核: 无
+    - 解锁: 基础训练 (1-Back, 3x3 Spatial, 3-Mouse, Easy House)
+- **LV2 觉醒 (Awakened)**: 
+    - XP: 500
+    - 考核: Numeric 2-Back > 90% **或** Spatial 3x3(2-Back) > 90%
+    - 解锁: Numeric 2-Back, House (Normal Speed)
+- **LV3 敏捷 (Agile)**: 
+    - XP: 2000
+    - 考核: Spatial 4x4(2-Back) > 85% **或** Mouse (4-Mice) > 90%
+    - 解锁: Spatial 4x4, Mouse (5-Mice), Numeric 3-Back
+- **LV4 逻辑 (Logical)**: 
+    - XP: 5000
+    - 考核: Numeric 3-Back > 85% **或** House (Normal Speed, 10 Events) > 90%
+    - 解锁: Numeric 5-Back, House (Double Door)
+- **LV5 深邃 (Profound)**: 
+    - XP: 10000
+    - 考核: Spatial 5x5(3-Back) > 80% **或** Mouse (7-Mice) > 85%
+    - 解锁: Numeric 7-Back, Spatial 5x5
+- **LV6 大师 (Master)**: 
+    - XP: 30000
+    - 考核: Numeric 5-Back > 80% **或** House (Fast Speed, 15 Events) > 85%
+    - 解锁: Numeric 9-Back, Mouse (9-Mice/Hell)
+- **LV7 超凡 (Transcendent)**: 
+    - XP: 80000
+    - 考核: 全模式核心关卡毕业 (Numeric 7-Back + Spatial 5x5 + Mouse 9-Mice + House Double Door)
+    - 解锁: 11-Back, 荣誉徽章, 隐藏主题
 
 ### 3.2 游戏模式解锁树 (Progression Trees)
 **整合规则**: 部分高难度内容需要 **Brain Rank (LV)** 和 **前置关卡通关** 双重条件。
@@ -118,11 +141,19 @@
     - 体力药水: 200 积分。
 
 ### 3.4 积分与体力经济 (Economy System)
-- **体力 (Energy)**: 
-    - **上限**: 默认 5 点。
-    - **消耗**: 每次完整训练消耗 1 点。中途退出不返还。
-    - **恢复**: 每 4 小时自动恢复 1 点。
-    - **无限体力**: 特殊道具（如“3日全勤奖”），生效期间不扣减体力。
+- **体力 (Energy) 架构设计**: 
+    - **存储**: `users` 表中的 `energy_current` (Int) 和 `energy_last_updated` (Timestamp)。
+    - **消耗机制 (Client-Optimistic)**: 
+        - 前端: 扣除本地体力，允许立即开始游戏。
+        - 后端: 游戏结算接口 (`POST /session`) 校验体力。如果作弊（体力不足强行提交），则拒绝记录该次成绩。
+    - **恢复机制 (Lazy Calculation)**:
+        - **不使用 Cron Job** (太重)。
+        - **计算逻辑**: 每次用户请求用户信息或开始游戏时，Edge Function 触发计算：
+          `NewEnergy = Min(MaxEnergy, Current + Floor((Now - LastUpdated) / 4h))`
+          `RemainderTime = (Now - LastUpdated) % 4h` (用于前端倒计时显示)
+        - 这样可确保用户长时间离线后回归，体力能瞬间回满。
+    - **无限体力**: `users.unlimited_energy_until` (Timestamp)。若当前时间在此之前，不扣减体力。
+
 - **积分 (Brain Points)**: 
     - **获取**: 
         - 每日打卡（完成至少一局有效训练）。
@@ -165,10 +196,30 @@
     2.  **专注力 (Focus)**: `近 20 局平均准确率`。
     3.  **计算力 (Math)**: `Numeric Flow` 的正确率与反应速度加权。
     4.  **观察力 (Observation)**: `Mouse Flow` (追踪) 和 `Spatial Flow` 的表现。
-    5.  **速度 (Speed)**: 所有模式的平均反应时间 (基准值 2000ms 倒扣)。
-- **数据流**: 每次 `Assessment` 或 `Training` 结算后，后端重新计算并更新 `users.brain_stats`。
+    5.  **负载力 (Load Capacity)**: 由 `House Flow` (动态更新) 和 `Numeric Flow` (N-Back) 共同决定。
+    6.  **反应力 (Reaction)**: 所有模式的平均反应时间 (基准值 2000ms 倒扣)。
+- **数据流**: 每次 `Assessment` (包含 Numeric -> Spatial -> Mouse -> House 序列) 或 `Training` 结算后，后端重新计算并更新 `users.brain_stats`。
 
-## 4. 排行榜与社交 (Leaderboards)
+##### 3.8 数据关联与热力图 (Data & Heatmap)
+**设计目标**: 确保每一次有效训练都能在“热力图”和“经验值”上得到反馈，形成正向循环。
+
+- **数据链路**:
+    1.  **Game Session (游戏结算)**: 
+        - 前端提交 `game_sessions` 记录 (含 `score`, `n_level`, `timestamp`)。
+    2.  **XP Calculation (Edge Function)**:
+        - 触发器监听 `INSERT game_sessions`。
+        - 根据公式计算本次 XP。
+        - 更新 `users.xp` (累加) 和 `users.brain_level` (判断阈值)。
+    3.  **Daily Activity (Heatmap Aggregation)**:
+        - **表结构**: `public.user_daily_activity`
+            - `user_id`: UUID
+            - `date`: Date (YYYY-MM-DD)
+            - `total_xp`: Integer
+            - `sessions_count`: Integer
+        - **逻辑**: Edge Function 自动 Upsert 这张表。
+        - **热力图渲染**: 前端直接查询这张表，根据 `sessions_count` 渲染颜色深浅 (0=灰色, 1-2=浅绿, 3-5=中绿, 6+=深绿)。
+
+### 4. 排行榜与社交 (Leaderboards)
 **核心逻辑**: 分 N 值赛道，比拼平均速度。
 - **榜单分类**:
     - **2-Back 速通榜**: 仅统计 2-Back 难度的成绩。
@@ -394,8 +445,15 @@
     - i18n 文件添加对应翻译。
 3.  **Backend**: 无需修改代码，API 自动透传新的 `game_id` 和 `stats`。
 
-## 10. 安全与隐私 (Security & Privacy)
-- **RLS (Row Level Security)**: 
-    - 用户只能读写自己的 `game_sessions`。
-    - `users` 表公开部分字段（如昵称、头像）供排行榜读取，敏感字段（如 email）不可见。
-- **GDPR Compliance**: 提供“导出我的数据”和“彻底删除账户”功能。
+## 11. 帮助与说明中心 (Help & Instruction)
+**入口**: 设置菜单或首页 "?" 按钮。
+
+- **游戏玩法百科**:
+    - 图文展示每种模式的核心规则（如 N-Back 机制图解）。
+    - 高级技巧（如“声音记忆法”、“位置分组法”）。
+- **等级制度说明**:
+    - 详细列出 LV1-LV7 的 XP 门槛和解锁权益。
+    - 解释雷达图六维（记忆、专注、计算、观察、负载、反应）的具体含义。
+- **关于我们**:
+    - 项目愿景（心流体验）。
+    - 隐私政策与服务条款。

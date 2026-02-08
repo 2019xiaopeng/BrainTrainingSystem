@@ -115,6 +115,10 @@ export function HouseGameScreen({ engine, onQuit }: HouseGameScreenProps) {
   const moverIdRef = useRef(0);
   const eventTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const removeMover = useCallback((id: number) => {
+    setMovers((prev) => prev.filter((m) => m.id !== id));
+  }, []);
+
   // Preload on mount
   useEffect(() => { preloadAssets(); }, []);
 
@@ -188,7 +192,7 @@ export function HouseGameScreen({ engine, onQuit }: HouseGameScreenProps) {
     return () => {
       if (eventTimerRef.current) clearTimeout(eventTimerRef.current);
     };
-  }, [engine.phase, engine.currentEventIndex, engine, playClick]);
+  }, [engine.phase, engine.currentEventIndex, engine, playClick, removeMover]);
 
   // ── Phase: revealing → house rise → revealed + finishReveal ────
   useEffect(() => {
@@ -253,10 +257,6 @@ export function HouseGameScreen({ engine, onQuit }: HouseGameScreenProps) {
     const answer = parseInt(inputValue, 10);
     if (!isNaN(answer)) engine.submitAnswer(answer);
   }, [inputValue, engine]);
-
-  const removeMover = useCallback((id: number) => {
-    setMovers(prev => prev.filter(m => m.id !== id));
-  }, []);
 
   // ── Computed values ────────────────────────────────────────────
   const correctSoFar = engine.roundResults.filter(r => r.isCorrect).length;

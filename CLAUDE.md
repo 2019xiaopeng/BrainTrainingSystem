@@ -25,13 +25,20 @@
 - **State Management**: Zustand 5 (Lightweight, for game loop & N-Back queues)
   - **Persistence**: Zustand persist middleware → localStorage (`brain-flow-storage`)
   - **Data Structure**:
-    - `sessionHistory`: Last 50 game sessions (timestamp, nLevel, accuracy, score)
-    - `userProfile`: { totalScore, maxNLevel, daysStreak, lastPlayedDate }
+    - `sessionHistory`: Last 50 game sessions (timestamp, nLevel, accuracy, score, mode, avgReactionTimeMs)
+    - `userProfile`: { totalScore, totalXP, maxNLevel, daysStreak, lastPlayedDate, brainStats, auth, brainPoints, energy, checkIn, ownedItems }
     - `gameConfigs`: Per-mode saved configurations (numeric, spatial, mouse, house)
+    - `brainStats`: Six-dimension radar { memory, focus, math, observation, workingMemory, speed }
+    - `auth`: AuthProfile placeholder { status, displayName, avatarUrl, linkedProviders }
+    - `energy`: EnergyState { current, max, lastUpdated, unlimitedUntil }
+    - `checkIn`: CheckInState { lastCheckInDate, consecutiveDays }
+    - `brainPoints`: number (in-game currency earned from sessions)
+    - `ownedItems`: string[] (permanent item IDs)
 - **Routing**: react-router-dom v7 (BrowserRouter)
 - **Internationalization**: i18next + react-i18next (zh/en)
-- **Theming**: React Context (light/dark/warm) with CSS Variables
+- **Theming**: Fixed Light (Zen) theme — CSS Variables only for `:root/.theme-light` (dark/warm removed)
 - **Animation**: Framer Motion 12, Tailwind keyframes
+- **Charts**: Recharts (radar chart, theme-adaptive Morandi colors)
 - **Icons**: Lucide React
 - **Testing**: Vitest + React Testing Library
 - **Deployment**: Vercel (with SPA rewrites via `vercel.json`)
@@ -67,9 +74,26 @@
     - [x] Sidebar + RightPanel + MobileNav components
     - [x] SPA routing support (vercel.json rewrites)
     - [x] Local Storage Persistence (User Profile + Game Configs)
-    - [ ] Energy System
+    - [x] Energy System (5 max, 4h recovery, lazy calculation)
+    - [x] Brain Points economy (earned from training, spent in store)
+    - [x] Daily Check-in system (streak rewards)
+    - [x] Virtual Store page (/store route)
+    - [x] Instruction/Help page (/instruction route)
+    - [x] Theme simplified to fixed light (dark/warm removed)
     - [x] Full i18n coverage for all game components (useTranslation in all screens/game components)
     - [x] 3-column layout persists during gameplay (sidebars always visible on desktop)
+- **Phase 5: Profile & Dashboard** (NEW)
+    - [x] Brain Rank system (LV1-7 段位, XP 进度条, Morandi 渐变卡片)
+    - [x] Six-dimension Brain Radar Chart (recharts, Morandi palette, theme-adaptive)
+    - [x] Activity Heatmap (GitHub-style 365-day contribution grid with tooltips)
+    - [x] Auth Section UI (Guest/User status, WeChat/Google link placeholders)
+    - [x] Enhanced Dashboard (RightPanel) with History + Leaderboard tabs + CheckInWidget
+    - [x] Mock data system for demo UI (mocks/userData.ts — 365-day generators)
+    - [x] Sidebar integration (compact BrainRank card + mini radar + EnergyBar)
+    - [x] Full i18n for profile/radar/heatmap/auth sections (zh+en)
+    - [x] Extended type system: BrainStats, BrainRankLevel, AuthProfile
+    - [x] XP calculation formula: `20 * (nCoeff + modeCoeff) * accuracy%`
+    - [x] Dynamic brain stats update per session
 - **Phase 6: Backend Services**
     - [ ] **Auth System**: Supabase Auth + WeChat/Google OAuth + Account Linking.
     - [ ] **Payment Gateway**: Adapter pattern for Stripe/WeChat Pay.
@@ -113,28 +137,40 @@
 - Debug panel showing N-back target (for testing).
 
 ## 9. Component Architecture
-**Current Structure** (as of Phase 4 architecture upgrade):
+**Current Structure** (as of Phase 5 — Profile & Dashboard upgrade):
 
 ```
 src/
-├── App.tsx                          # BrowserRouter + Routes (replaces manual view state)
+├── App.tsx                          # BrowserRouter + Routes (/, /train/:mode, /result, /profile, /store, /instruction)
 ├── main.tsx                         # Entry: i18n init + ThemeProvider + App
-├── index.css                        # Tailwind + CSS theme variables
+├── index.css                        # Tailwind + CSS theme variables (light only)
 ├── i18n/
 │   ├── config.ts                    # i18next initialization
 │   └── locales/
-│       ├── zh.json                  # Chinese translations (~80 keys)
-│       └── en.json                  # English translations (~80 keys)
+│       ├── zh.json                  # Chinese translations (~200 keys)
+│       └── en.json                  # English translations (~200 keys)
 ├── contexts/
-│   └── ThemeContext.tsx             # Theme provider (light/dark/warm)
+│   └── ThemeContext.tsx             # Fixed light theme provider (toggle removed)
 ├── layouts/
 │   └── MainLayout.tsx               # Responsive 3-column layout + <Outlet/>
+├── mocks/
+│   └── userData.ts                  # Comprehensive mock data (365-day history, brain stats, heatmap, leaderboard, profile)
 ├── components/
+│   ├── ui/
+│   │   └── Card.tsx                 # Reusable base card component (cn() utility, padding variants)
+│   ├── economy/
+│   │   ├── EnergyBar.tsx            # Energy bar with recovery countdown timer
+│   │   └── CheckInWidget.tsx        # Daily check-in widget with streak display + reward animation
 │   ├── layout/
 │   │   ├── LayoutShell.tsx          # (Legacy) single-column layout wrapper
-│   │   ├── Sidebar.tsx              # Desktop left sidebar (nav + profile + theme/lang)
-│   │   ├── RightPanel.tsx           # Desktop right panel (history)
-│   │   └── MobileNav.tsx            # Mobile bottom navigation bar
+│   │   ├── Sidebar.tsx              # Desktop left sidebar (EnergyBar + BrainRank + mini radar + nav + lang)
+│   │   ├── RightPanel.tsx           # Desktop right panel (CheckIn + History + Leaderboard tabs)
+│   │   └── MobileNav.tsx            # Mobile bottom navigation bar (Home/Store/Profile/Help)
+│   ├── profile/
+│   │   ├── BrainRankCard.tsx        # Brain Rank card (LV badge, XP progress bar, compact/full modes)
+│   │   ├── RadarChartWidget.tsx     # Six-dimension radar chart (recharts, Morandi light-only)
+│   │   ├── ActivityHeatmap.tsx      # GitHub-style 365-day activity heatmap with tooltips & month labels
+│   │   └── AuthSection.tsx          # Auth status + WeChat/Google link placeholders
 │   ├── pages/
 │   │   ├── HomePage.tsx             # Route wrapper: HomeScreen + navigate
 │   │   ├── TrainPage.tsx            # Route wrapper: engine start + GameScreen/MouseGameScreen
@@ -143,9 +179,11 @@ src/
 │   │   ├── HomeScreen.tsx           # Config UI (mode/param selection, 4 game modes, full i18n)
 │   │   ├── GameScreen.tsx           # N-Back game (numeric + spatial, i18n)
 │   │   ├── MouseGameScreen.tsx      # Mouse game (independent engine, i18n)
-│   │   ├── HouseGameScreen.tsx      # House game (people counting, SVG + Framer Motion, i18n) (NEW)
+│   │   ├── HouseGameScreen.tsx      # House game (people counting, SVG + Framer Motion, i18n)
 │   │   ├── ResultScreen.tsx         # Post-game statistics (i18n)
-│   │   └── ProfileScreen.tsx        # User profile + history
+│   │   ├── ProfileScreen.tsx        # Full profile page (BrainRank, radar, 365-day heatmap, history, economy widgets, auth)
+│   │   ├── StoreScreen.tsx          # Virtual store (Brain Points purchase, animated feedback)
+│   │   └── InstructionScreen.tsx    # Help page (N-Back mechanism, rank table, radar explanation, energy system)
 │   └── game/
 │       ├── AnswerCountdown.tsx      # SVG circular countdown
 │       ├── NumericKeypad.tsx        # 0-9 input keypad
@@ -155,21 +193,24 @@ src/
 ├── hooks/
 │   ├── useNBack.ts               # Core N-Back engine (numeric + spatial)
 │   ├── useMouseGame.ts           # Mouse game engine
-│   ├── useHouseGame.ts           # House game engine (people counting) (NEW)
+│   ├── useHouseGame.ts           # House game engine (people counting)
 │   └── useSoundEffects.ts        # Audio hook (click/correct/wrong)
 ├── lib/
 │   └── utils.ts                  # cn() utility (clsx + twMerge)
 ├── store/
-│   └── gameStore.ts              # Zustand global store (persisted)
+│   ├── gameStore.ts              # Zustand global store v3 (persisted) — includes economy actions
+│   └── mockData.ts               # [LEGACY] Old mock data — use mocks/userData.ts instead
 └── types/
-    └── game.ts                   # All TypeScript type definitions
+    └── game.ts                   # All TypeScript type definitions (BrainStats, BrainRank, AuthProfile, EnergyState, CheckInState, StoreProduct)
 ```
 
 **Routing Architecture**:
 - `/` → `HomePage` → `HomeScreen` (config + start)
 - `/train/:mode` → `TrainPage` (engine management + GameScreen/MouseGameScreen)
 - `/result` → `ResultPage` → `ResultScreen` (stats + replay)
-- `/profile` → `ProfileScreen` (user stats + history)
+- `/profile` → `ProfileScreen` (user stats + history + economy widgets)
+- `/store` → `StoreScreen` (virtual store with Brain Points)
+- `/instruction` → `InstructionScreen` (help & game explanations)
 
 **Layout Strategy**:
 - Desktop (lg+): 3-column grid — Sidebar(250px) | Stage(flex) | RightPanel(300px)
@@ -349,9 +390,32 @@ function generateSpatialPosition(gridSize: number): number {
 ```typescript
 interface UserProfile {
   totalScore: number;           // Accumulative points
+  totalXP: number;              // Experience points for rank system
   maxNLevel: number;            // Highest N-Back passed with ≥80% accuracy
   daysStreak: number;           // Consecutive days played
   lastPlayedDate: string | null; // ISO date for streak calculation
+  brainStats: BrainStats;       // Six-dimension radar data
+  auth: AuthProfile;            // Authentication profile (placeholder)
+  brainPoints: number;          // In-game currency
+  energy: EnergyState;          // Energy system state
+  checkIn: CheckInState;        // Check-in system state
+  ownedItems: string[];         // Permanent item IDs from store
+}
+
+interface BrainStats {
+  memory: number;               // 0-100, from max N-levels
+  focus: number;                // 0-100, rolling average accuracy
+  math: number;                 // 0-100, numeric mode performance
+  observation: number;          // 0-100, spatial + mouse mode
+  workingMemory: number;        // 0-100, house + high N-back
+  speed: number;                // 0-100, inverted reaction time
+}
+
+interface AuthProfile {
+  status: 'guest' | 'authenticated';
+  displayName: string;
+  avatarUrl: string | null;
+  linkedProviders: AuthProvider[];  // 'guest' | 'email' | 'google' | 'wechat'
 }
 
 interface SessionHistoryEntry {
@@ -360,16 +424,107 @@ interface SessionHistoryEntry {
   accuracy: number;             // Percentage (0-100)
   score: number;                // Points = (accuracy × nLevel × totalRounds) / 10
   totalRounds: number;
+  mode: GameMode;               // Which game mode
+  avgReactionTimeMs?: number;   // Average reaction time
 }
 ```
 
 **Score Formula**: `(accuracy × nLevel × totalRounds) / 10`
 - Example: 90% accuracy, 3-Back, 20 rounds = 540 points
 
+**XP Formula**: `20 × (nCoeff + modeCoeff) × accuracy%`
+- nCoeff: `1 + (N-1) × 0.2`
+- modeCoeff: 1.0 (short) / 1.5 (long sessions)
+
+**Brain Rank Levels** (from PRD §3.1):
+| Level | Title (zh) | Title (en) | XP Required |
+|-------|-----------|------------|-------------|
+| LV1 | 见习 | Novice | 0 |
+| LV2 | 觉醒 | Awakened | 500 |
+| LV3 | 敏捷 | Agile | 2,500 |
+| LV4 | 逻辑 | Logical | 10,000 |
+| LV5 | 深邃 | Profound | 25,000 |
+| LV6 | 大师 | Master | 50,000 |
+| LV7 | 超凡 | Transcendent | 80,000 |
+
 **Streak Logic**:
 - Same day = no change
 - Next day = increment by 1
 - Gap > 1 day = reset to 1
+
+## 13. Profile & Dashboard System (Phase 5)
+
+### Profile Screen Components
+- **BrainRankCard**: Gradient card showing LV badge, XP progress bar (animated via Framer Motion), next level preview. Supports compact (sidebar) and full (profile page) modes.
+- **RadarChartWidget**: Six-dimension recharts RadarChart with Morandi light palette. Supports compact mode for sidebar display.
+- **ActivityHeatmap**: GitHub-style 365-day heatmap grid with month labels and hover tooltips (date, count, XP). Morandi green 5-level color scale.
+- **AuthSection**: Current login status (Guest/User) + placeholder buttons for WeChat/Google account linking. SVG icons for providers.
+
+### Economy Components
+- **EnergyBar**: Gradient progress bar showing `current/max` energy. Recovery countdown timer (HH:MM:SS). Uses Zustand selector for precision updates.
+- **CheckInWidget**: Daily check-in button with streak display. Framer Motion `AnimatePresence` reward notification. Auto-hides after 3 seconds.
+- **StoreScreen**: Virtual store with `STORE_PRODUCTS` card grid. Brain Points balance. Purchase flow with loading spinner + success/failure feedback. Consumable/permanent item tags.
+- **InstructionScreen**: Help page with 4 sections: N-Back mechanism (visual 1-Back example), LV1-7 rank table, six-dimension radar explanation (with icons), energy system explanation.
+
+### Dashboard (RightPanel) Components
+- **CheckInWidget**: Displayed at top of panel for daily engagement.
+- **History Tab**: Last 5 sessions with mode emoji, N-level, accuracy, score, date, and avg reaction time.
+- **Leaderboard Tab**: Tab switcher (2-Back / 3-Back) showing mock ranked entries with avg time and accuracy badges.
+
+### Mock Data System (`mocks/userData.ts`)
+- `generateMockYearlyHistory(count)`: Generates realistic session history across 365 days with time-biased distribution.
+- `generateMockRecentHistory(count)`: Lightweight 30-day history generator.
+- `MOCK_BRAIN_STATS` / `MOCK_BEGINNER_STATS` / `MOCK_ADVANCED_STATS`: Tiered brain stats presets.
+- `generateYearlyHeatmap(history)`: Converts session history to 365-day { date, count, xp } array.
+- `MOCK_LEADERBOARD_2BACK` / `MOCK_LEADERBOARD_3BACK`: Ranked mock entries.
+- `MOCK_USER_PROFILE`: Complete user profile with economy fields.
+- UI shows mock data when no real data exists, with "示例数据" hint.
+
+### Sidebar Integration
+- EnergyBar widget displayed in card container.
+- Compact BrainRankCard + mini RadarChartWidget.
+- Navigation: Home, Profile, Store, Instruction + language toggle.
+- Theme toggle removed (fixed light theme).
+
+## 14. Economy System (Phase 5.5)
+
+### Energy System
+- **Max energy**: 5 (constant `ENERGY_MAX`)
+- **Recovery**: 1 point every 4 hours (constant `ENERGY_RECOVERY_INTERVAL_MS`)
+- **Lazy calculation**: `calculateRecoveredEnergy()` runs on demand (not cron-based)
+- **Unlimited energy**: `unlimitedUntil` timestamp for future promotions
+- **UI**: `EnergyBar` component with gradient bar + countdown timer
+
+### Brain Points (Currency)
+- **Earned**: `Math.round(score * 0.5)` per training session (in `saveSession`)
+- **Spent**: In virtual store for items
+- **Display**: Sidebar stats, ProfileScreen stats grid, StoreScreen balance
+
+### Check-in System
+- **Daily check-in**: Once per day (ISO date comparison)
+- **Streak tracking**: `consecutiveDays` increments on consecutive days, resets on gaps
+- **Rewards**: Tiered — base 50 XP + 50 BP; 3-day streak 50 XP + 100 BP; 7+ day streak 50 XP + 300 BP
+- **UI**: `CheckInWidget` with claim button, streak display, reward animation
+
+### Store Products
+| ID | Type | Price | Effect |
+|---|---|---|---|
+| `energy_1` | Consumable | 100 BP | +1 Energy |
+| `energy_5` | Consumable | 450 BP | +5 Energy (full) |
+| `streak_saver` | Consumable | 500 BP | Restore broken streak |
+| `premium_report` | Permanent | 1000 BP | Unlock detailed analysis |
+
+### Zustand Store v3
+- Store version bumped to 3 with migration logic for new economy fields
+- Uses `(set, get)` pattern for actions that need to read state (e.g., `consumeEnergy`, `purchaseProduct`)
+- Economy actions: `recalculateEnergy`, `consumeEnergy`, `addEnergy`, `performCheckIn`, `purchaseProduct`, `addBrainPoints`
+
+### Theme Simplification
+- Removed light/dark/warm theme switching entirely
+- `ThemeContext` simplified to fixed `'light'` theme
+- All `dark:` Tailwind classes removed from every component
+- `index.css` cleaned: only `:root/.theme-light` CSS variables remain
+- Sidebar theme toggle button removed
 
 **Features Implemented**:
 - ✅ Profile card on HomeScreen (max level, total score, streak)

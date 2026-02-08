@@ -132,25 +132,164 @@
     "startFirst": "Complete your first session to see history here",
     "level": "Level",
     "accuracyLabel": "Accuracy",
-    "scoreLabel": "Score"
+    "scoreLabel": "Score",
+    "brainRadar": "Brain Radar",
+    "noRadarData": "Complete training to unlock radar chart",
+    "activityHeatmap": "📅 Activity Heatmap (365 days)",
+    "brainPoints": "Brain Points",
+    "mockDataHint": "Demo data · Your real stats will appear after training",
+    "nextRank": "Next: {{rank}}",
+    "xpToNext": "{{xp}} XP to next level",
+    "maxRank": "Max rank achieved 🏆",
+    "milestoneRequired": "Required",
+    "radar": {
+      "memory": "Memory",
+      "focus": "Focus",
+      "math": "Math",
+      "observation": "Observation",
+      "loadCapacity": "Load Cap.",
+      "speed": "Speed"
+    },
+    "heatmap": {
+      "sessions": "{{count}} sessions",
+      "activeDays": "{{count}} active days",
+      "less": "Less",
+      "more": "More",
+      "sessionLabel": "sessions",
+      "weekdays": {
+        "mon": "Mon",
+        "wed": "Wed",
+        "fri": "Fri"
+      }
+    },
+    "auth": {
+      "guest": "Guest Mode",
+      "authenticated": "Signed In",
+      "linkAccounts": "Link Accounts",
+      "linkGoogle": "Link Google",
+      "guestWarning": "Guest data is stored locally only. Link an account to sync.",
+      "guestLockHint": "You can try training, but stats, check-in, history and settings require an account",
+      "goSignup": "Sign up",
+      "goSignin": "Sign in"
+    }
   },
   "nav": {
     "home": "Home",
     "train": "Train",
     "profile": "Profile",
-    "settings": "Settings"
+    "settings": "Settings",
+    "store": "Store",
+    "instruction": "Help"
   },
   "sidebar": {
     "leaderboard": "Leaderboard",
     "history": "History",
     "recentSessions": "Recent Sessions",
-    "noSessions": "No sessions yet"
+    "noSessions": "No sessions yet",
+    "leaderboardHint": "📊 Resets weekly · Accuracy ≥ 90% to rank",
+    "leaderboardComingSoon": "Leaderboard coming soon",
+    "leaderboardLoginRequired": "Sign in to participate"
   },
-  "theme": {
-    "light": "Light",
-    "dark": "Dark",
-    "warm": "Warm",
-    "toggle": "Toggle Theme"
+  "energy": {
+    "in": "",
+    "insufficient": "Insufficient energy! Please wait or purchase Energy Potion."
+  },
+  "checkin": {
+    "title": "Daily Check-in",
+    "streak": "\ud83d\udd25 {{days}} day streak",
+    "done": "\u2705 Checked in today",
+    "claim": "Claim Reward",
+    "points": "Brain Points"
+  },
+  "store": {
+    "title": "Brain Store",
+    "subtitle": "Redeem items with Brain Points",
+    "points": "BP",
+    "purchaseSuccess": "Purchase successful!",
+    "notEnoughPoints": "Not enough Brain Points",
+    "alreadyOwned": "Already owned",
+    "owned": "Owned",
+    "permanent": "Permanent",
+    "consumable": "Consumable",
+    "earnHint": "\ud83d\udca1 Complete training to earn Brain Points",
+    "energyPotion1": "Energy Potion +1",
+    "energyPotion1Desc": "Instantly restore 1 energy",
+    "energyPotion5": "Energy Potion +5",
+    "energyPotion5Desc": "Instantly restore 5 energy (full)",
+    "streakSaver": "Streak Shield",
+    "streakSaverDesc": "Protect your streak from one missed day",
+    "premiumReport": "Premium Analysis",
+    "premiumReportDesc": "Unlock detailed six-dimension cognitive analysis and training recommendations"
+  },
+  "instruction": {
+    "title": "Help & Instructions",
+    "subtitle": "Understand N-Back training and the system",
+    "nback": {
+      "title": "N-Back Mechanism",
+      "intro": "N-Back is a classic working memory training method. You need to recall information from N rounds ago and respond in the current round. The higher the N, the greater the challenge.",
+      "example": "1-Back Example (Numeric Flow)",
+      "round": "Round",
+      "remember": "Remember answer",
+      "input": "Input",
+      "exampleHint": "1-Back = recall 1 round ago;  2-Back = recall 2 rounds ago, and so on"
+    },
+    "modes": {
+      "numeric": "Delayed recall of equation answers, training working memory and math",
+      "spatial": "Remember highlighted grid positions, training spatial memory and observation",
+      "mouse": "Track final mouse positions after cats push them around",
+      "house": "Observe enter/leave events and remember the final head count"
+    },
+    "rank": {
+      "title": "Brain Rank LV1-LV7",
+      "desc": "Accumulate XP through training to advance ranks. Each session earns XP based on N-level, accuracy, and rounds.",
+      "initial": "Starting rank",
+      "xpRequired": "Requires {{xp}} XP",
+      "formula": "💡 XP = 20 × (N coefficient + mode coefficient) × accuracy%",
+      "milestone": {
+        "numeric_2back": "Numeric 2-Back",
+        "numeric_3back": "Numeric 3-Back",
+        "numeric_5back": "Numeric 5-Back",
+        "numeric_7back": "Numeric 7-Back",
+        "numeric_9back": "Numeric 9-Back",
+        "numeric_11back": "Numeric 11-Back",
+        "spatial_3x3": "Spatial 3x3",
+        "spatial_4x4": "Spatial 4x4"
+      }
+    },
+    "radar": {
+      "title": "Six-Dimension Brain Radar",
+      "desc": "The radar chart displays your overall cognitive ability across six dimensions. Each dimension is driven by different training modes and performance metrics.",
+      "memory": {
+        "name": "Memory",
+        "desc": "Based on your highest N-Back level achieved, reflecting working memory capacity"
+      },
+      "focus": {
+        "name": "Focus",
+        "desc": "Based on average accuracy from your last 20 sessions"
+      },
+      "math": {
+        "name": "Math",
+        "desc": "Performance in Numeric Flow mode, reflecting mental math speed and accuracy"
+      },
+      "observation": {
+        "name": "Observation",
+        "desc": "Performance in Spatial Flow and Devilish Mice modes"
+      },
+      "loadCapacity": {
+        "name": "Load Capacity",
+        "desc": "Combined performance in House Flow and high-level N-Back"
+      },
+      "speed": {
+        "name": "Speed",
+        "desc": "Based on average reaction time (faster = higher)"
+      }
+    },
+    "energy": {
+      "title": "Energy System",
+      "desc1": "Each training session costs 1 energy. Maximum energy is 5.",
+      "desc2": "Energy recovers 1 point every 4 hours automatically.",
+      "desc3": "You can also purchase Energy Potions in the store for instant recovery."
+    }
   },
   "difficulty": {
     "easy": "Easy",
