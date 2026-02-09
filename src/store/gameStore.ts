@@ -641,7 +641,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'brain-flow-storage', // localStorage key
-      version: 4,
+      version: 5,
       partialize: (state) => ({
         // Only persist these fields (exclude transient state like currentView)
         sessionHistory: state.sessionHistory,
@@ -650,7 +650,7 @@ export const useGameStore = create<GameStore>()(
         cloudUnlocks: state.cloudUnlocks,
       }),
       migrate: (persistedState: unknown, version: number) => {
-        if (version >= 4) return persistedState;
+        if (version >= 5) return persistedState;
         if (!persistedState || typeof persistedState !== 'object') return persistedState;
 
         const state = persistedState as {

@@ -121,7 +121,7 @@ export function ProfileScreen() {
             <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-zen-200/50">
               <Coins className="w-5 h-5 mx-auto mb-1.5 text-amber-600" />
               <div className="text-xl font-mono font-bold text-zen-700">
-                {userProfile.brainCoins.toLocaleString()}
+                {(userProfile.brainCoins ?? 0).toLocaleString()}
               </div>
               <div className="text-xs text-zen-400 mt-0.5">{t('profile.brainPoints')}</div>
             </div>

@@ -15,7 +15,7 @@ export function StoreScreen() {
   const { t } = useTranslation();
   const authStatus = useGameStore((s) => s.userProfile.auth?.status ?? 'guest');
   const isGuest = authStatus === 'guest';
-  const brainCoins = useGameStore((s) => s.userProfile.brainCoins);
+  const brainCoins = useGameStore((s) => s.userProfile.brainCoins ?? 0);
   const ownedItems = useGameStore((s) => s.userProfile.ownedItems);
   const purchaseProduct = useGameStore((s) => s.purchaseProduct);
 
