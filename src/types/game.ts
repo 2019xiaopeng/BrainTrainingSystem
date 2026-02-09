@@ -317,6 +317,12 @@ export const STORE_PRODUCTS: StoreProduct[] = [
   },
 ];
 
+export interface DailyActivityEntry {
+  date: string;
+  totalXp: number;
+  sessionsCount: number;
+}
+
 /** Simplified session entry for history list */
 export interface SessionHistoryEntry {
   /** When this session was played (timestamp) */

@@ -14,21 +14,22 @@
 **目标**: 打通“本地游戏”与“云端数据库”的任督二脉，确保用户玩游戏能产生持久化数据。
 
 ### 6.1 数据库表结构完善 (Schema Migration)
-- [ ] **设计并执行迁移**: 
+- [x] **设计并执行迁移**: 
     - `users`: 扩充字段 (xp, brain_coins, energy_current, energy_updated_at, brain_radar_json)。
     - `game_sessions`: 存储每一局的游戏结果 (user_id, game_mode, n_level, score, accuracy, timestamp)。
-    - `user_unlocks`: 存储解锁状态 (user_id, game_mode, max_n_level)。
-- [ ] **后端 API 开发 (tRPC/NextAPI)**:
+    - `user_unlocks`: 存储解锁状态 (user_id, game_id, unlocked_params, updated_at)。
+- [x] **后端 API 开发 (tRPC/NextAPI)**:
     - `POST /api/game/session`: 接收游戏结果，**原子性**地更新 Session 表、XP、Brain Coins。
-    - `GET /api/user/profile`: 获取用户完整画像 (含雷达图数据)。
+    - `GET /api/user/profile`: 获取用户画像 (XP/体力/签到/解锁等；雷达图目前在前端侧计算)。
 
 ### 6.2 游戏结算逻辑上云 (Sync Logic)
-- [ ] **前端改造**:
+- [x] **前端改造**:
     - 在 `GameScreen` 结算时，判断登录状态。
     - 若已登录，调用 `POST /api/game/session`。
     - 若未登录，暂存 LocalStorage (暂不实现复杂合并，仅提示注册)。
-- [ ] **热力图数据源切换**:
-    - 废弃 Mock 数据，改为从 `game_sessions` 聚合生成每日 XP 数据。
+- [x] **热力图数据源切换**:
+    - 后端在 `POST /api/game/session` 写入 `daily_activity(total_xp, sessions_count)` 聚合数据。
+    - 前端 Profile 热力图从云端 `daily_activity` 取数（通过 `GET /api/user/profile` 返回当年聚合记录）。
 
 ### 6.3 静态资源私有化 (Assets)
 - [ ] **图标/插画替换**:
@@ -61,7 +62,7 @@
 ### 7.3 排行榜系统 (Leaderboard)
 - [ ] **后端 API**:
     - `GET /api/leaderboard`: 按 `game_mode` + `n_level` 查询 Top 50。
-    - 逻辑：基于 `game_sessions` 聚合 `MAX(score)` 或 `MIN(reaction_time)`。
+    - 逻辑：基于 `game_sessions` 聚合 `AVG(avg_reaction_time)`，仅统计 `accuracy >= 90%` 的记录；周榜按周一 00:00 重置。
 - [ ] **前端 UI**:
     - 修复移动端侧栏消失问题：将排行榜移入独立的 `/leaderboard` 路由 (Mobile) 或 侧边栏 (Desktop)。
     - 增加“我的排名”高亮显示。
@@ -72,28 +73,30 @@
 **目标**: 构建循环机制 (Core Loop)，让用户玩得越久越爽。
 
 ### 8.1 经验与等级 (XP & Rank)
-- [ ] **后端计算**:
-    - 实现 PRD 3.1 的等级公式。
-    - 在 `POST /session` 结算时，判断是否升级，返回 `levelUp: true` 标志。
+- [x] **后端计算**:
+    - 已在 `POST /api/game/session` 实现 PRD 3.3 的 XP 公式与等级阈值，并返回 `xpEarned/xpAfter/brainLevelAfter`。
+- [ ] **升级事件**:
+    - 结算响应增加 `levelUp: true/false`（或返回 `brainLevelBefore` 供前端自行判断）。
 - [ ] **前端反馈**:
     - 制作精美的“升级弹窗”动画。
     - 个人主页展示 LV 徽章。
 
 ### 8.2 体力系统 (Energy System)
-- [ ] **后端逻辑 (Lazy Calc)**:
+- [x] **后端逻辑 (Lazy Calc)**:
     - 实现“惰性恢复”算法：`current = min(5, prev + (now - last_update)/4h)`。
-    - 每次请求 Profile 时更新体力值。
+    - 每次请求 Profile/结算写入时更新体力值。
 - [ ] **前端限制**:
-    - 开始游戏前检查体力。
-    - 结算时扣除体力 (服务端校验)。
-    - 倒计时组件：显示“距离下一点体力恢复还有 XX:XX”。
+    - [x] 开始游戏前检查并扣除本地体力（游客态也适用）。
+    - [x] 结算写入时服务端校验体力（体力不足拒绝记录本局）。
+    - [ ] 倒计时组件：显示“距离下一点体力恢复还有 XX:XX”（当前仅自动补点，无倒计时展示）。
 
 ### 8.3 虚拟商城 (Store)
 - [ ] **商品配置**:
     - 数据库 `products` 表 (ID, 价格, 效果)。
 - [ ] **购买逻辑**:
-    - `POST /api/store/buy`: 扣除 Brain Coins -> 增加体力/道具。
-    - 前端商城页面 UI 开发。
+    - `POST /api/store/buy`: 扣除 Brain Coins(积分) -> 增加体力/道具。
+- [x] **前端商城页面**:
+    - 已实现本地商品配置与购买交互（尚未对接后端与数据库）。
 
 ---
 
@@ -101,19 +104,20 @@
 **目标**: 让游戏不仅仅是枯燥的训练，而是有目标的闯关。
 
 ### 9.1 解锁树实现 (Unlock Tree)
-- [ ] **后端校验**:
-    - 在 `POST /session` 中，判断成绩是否满足“下一级解锁条件” (如 1-Back 准确率 > 90%)。
-    - 若满足，更新 `user_unlocks` 表。
+- [x] **后端校验**:
+    - 已在 `POST /api/game/session` 中校验“本局参数是否已解锁”，未解锁直接拒绝写入。
+    - 已在结算时按 `accuracy >= 90%` 计算并更新 `user_unlocks`（并返回 `newlyUnlocked`；首通返还体力已实现）。
 - [ ] **前端可视化**:
     - 首页模式选择器改造为“技能树”或“闯关地图”样式。
     - 锁定的关卡显示灰色锁头图标。
 
 ### 9.2 每日任务与签到 (Daily Tasks)
-- [ ] **签到系统**:
-    - `daily_checkins` 表。
-    - 连续签到逻辑 (7天奖励)。
+- [x] **签到系统**:
+    - 已实现 `POST /api/user/checkin`，并在 `users` 记录 `check_in_last_date/check_in_streak`（当前未使用 `daily_checkins` 表）。
 - [ ] **每日首胜**:
-    - 逻辑：判断 `game_sessions` 今日是否有记录。
+    - 逻辑：判断 `game_sessions` 今日是否有记录，并发放首胜奖励。
+- [x] **每日完美 (Daily Perfect)**:
+    - 已实现：每日首次 `accuracy == 100%` 额外奖励。
 
 ---
 

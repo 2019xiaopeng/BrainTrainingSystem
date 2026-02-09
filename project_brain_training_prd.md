@@ -129,23 +129,24 @@
     - **LV6**: 50,000 (约 4.5 个月)
     - **LV7**: 80,000 (约 6 个月 - 毕业)
 
-- **打卡奖励**:
-    - 普通签到: +50 积分。
-    - 3日连胜: +100 积分。
-    - 7日连胜: +300 积分 + 1瓶体力药水。
-- **首胜奖励**:
-    - 关卡首通 (First Clear): +200 积分 + 返还体力。
-    - 每日完美 (Perfect): +100 积分。
-- **消耗**:
-    - 补签卡: 500 积分。
-    - 体力药水: 200 积分。
+- **签到奖励 (Daily Check-in)**:
+    - 每日签到: +50 XP，+10 Brain Coins。
+    - 连续 3 天: 当天签到 +20 Brain Coins（随 streak 结算）。
+    - 连续 7 天: 当天签到 +60 Brain Coins（随 streak 结算）。
+- **训练结算奖励 (Session Rewards)**:
+    - **基础金币**: `BrainCoins = Round(score * 0.1)`。
+    - **解锁奖励 (First Clear Bonus)**: 当本局触发 `newlyUnlocked` 时，每条解锁 +100 Brain Coins，且返还本局消耗的 1 点体力。
+    - **每日完美 (Daily Perfect)**: 每日首次 `accuracy == 100%` 额外 +50 Brain Coins。
+- **商城主要定价 (Brain Coins)**:
+    - 体力药水: +1 体力 (100) / +5 体力 (450)。
+    - 补签卡: 500。
 
 ### 3.4 积分与体力经济 (Economy System)
 - **体力 (Energy) 架构设计**: 
     - **存储**: `users` 表中的 `energy_current` (Int) 和 `energy_last_updated` (Timestamp)。
     - **消耗机制 (Client-Optimistic)**: 
         - 前端: 扣除本地体力，允许立即开始游戏。
-        - 后端: 游戏结算接口 (`POST /session`) 校验体力。如果作弊（体力不足强行提交），则拒绝记录该次成绩。
+        - 后端: 游戏结算接口 (`POST /api/game/session`) 校验体力。如果作弊（体力不足强行提交），则拒绝记录该次成绩。
     - **恢复机制 (Lazy Calculation)**:
         - **不使用 Cron Job** (太重)。
         - **计算逻辑**: 每次用户请求用户信息或开始游戏时，Edge Function 触发计算：
@@ -154,7 +155,7 @@
         - 这样可确保用户长时间离线后回归，体力能瞬间回满。
     - **无限体力**: `users.unlimited_energy_until` (Timestamp)。若当前时间在此之前，不扣减体力。
 
-- **积分 (Brain Points)**: 
+- **Brain Coins (积分)**: 
     - **获取**: 
         - 每日打卡（完成至少一局有效训练）。
         - 达成成就（如首次通关 N-Back 3）。
@@ -173,9 +174,9 @@
     - **纵向突破 (Intensity)**: 当 10题模式达到 90% 准确率时，同时解锁下一级 N 值的 10题模式（如 1-Back 10题 -> 2-Back 10题）。
 - **首通奖励 (First Clear Bonus)**:
     - 首次成功解锁新关卡时，**返还本次消耗的 1 点体力**（相当于免费挑战）。
-    - 额外奖励大量积分。
+    - 额外奖励 Brain Coins（每条解锁 +100 Brain Coins）。
 - **每日首胜 (Daily Perfect)**:
-    - 每日首次获得 100% 准确率（任意难度），奖励额外积分。
+    - 每日首次获得 100% 准确率（任意难度），奖励额外 +50 Brain Coins。
 
 ### 3.6 虚拟商城 (Brain Store)
 - **入口**: 顶部导航栏显眼位置。
@@ -206,18 +207,16 @@
 - **数据链路**:
     1.  **Game Session (游戏结算)**: 
         - 前端提交 `game_sessions` 记录 (含 `score`, `n_level`, `timestamp`)。
-    2.  **XP Calculation (Edge Function)**:
-        - 触发器监听 `INSERT game_sessions`。
-        - 根据公式计算本次 XP。
-        - 更新 `users.xp` (累加) 和 `users.brain_level` (判断阈值)。
+    2.  **XP Calculation (Session API)**:
+        - 由结算接口计算本次 XP 并更新 `users.xp` / `users.brain_level`。
     3.  **Daily Activity (Heatmap Aggregation)**:
-        - **表结构**: `public.user_daily_activity`
-            - `user_id`: UUID
+        - **表结构**: `public.daily_activity`
+            - `user_id`: Text/UUID
             - `date`: Date (YYYY-MM-DD)
             - `total_xp`: Integer
             - `sessions_count`: Integer
-        - **逻辑**: Edge Function 自动 Upsert 这张表。
-        - **热力图渲染**: 前端直接查询这张表，根据 `sessions_count` 渲染颜色深浅 (0=灰色, 1-2=浅绿, 3-5=中绿, 6+=深绿)。
+        - **逻辑**: 结算接口对该表原子 Upsert。
+        - **热力图渲染**: 前端通过 Profile 接口读取聚合记录，根据 `sessions_count` 渲染颜色深浅 (0=灰色, 1-2=浅绿, 3-5=中绿, 6+=深绿)。
 
 ### 4. 排行榜与社交 (Leaderboards)
 **核心逻辑**: 分 N 值赛道，比拼平均速度。

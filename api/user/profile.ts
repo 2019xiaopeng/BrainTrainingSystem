@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "../_lib/db/index.js";
-import { user, userUnlocks } from "../_lib/db/schema/index.js";
+import { dailyActivity, user, userUnlocks } from "../_lib/db/schema/index.js";
 import { requireSessionUser } from "../_lib/session.js";
 import type { RequestLike, ResponseLike } from "../_lib/http.js";
 import { isRecord } from "../_lib/http.js";
@@ -145,6 +145,19 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     });
   }
 
+  const year = now.getUTCFullYear();
+  const startDateKey = `${year}-01-01`;
+  const endDateKey = `${year}-12-31`;
+
+  const activityRows = await db
+    .select({
+      date: dailyActivity.date,
+      totalXp: dailyActivity.totalXp,
+      sessionsCount: dailyActivity.sessionsCount,
+    })
+    .from(dailyActivity)
+    .where(and(eq(dailyActivity.userId, sessionUser.id), gte(dailyActivity.date, startDateKey), lte(dailyActivity.date, endDateKey)));
+
   res.status(200).json({
     xp: u.xp ?? 0,
     brainLevel: u.brainLevel ?? 1,
@@ -160,5 +173,10 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       consecutiveDays: u.checkInStreak ?? 0,
     },
     unlocks,
+    dailyActivity: activityRows.map((row) => ({
+      date: String(row.date),
+      totalXp: row.totalXp ?? 0,
+      sessionsCount: row.sessionsCount ?? 0,
+    })),
   });
 }

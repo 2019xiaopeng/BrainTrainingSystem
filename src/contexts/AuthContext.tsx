@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = useSession();
   const setAuthProfile = useGameStore((s) => s.setAuthProfile);
   const setCloudUnlocks = useGameStore((s) => s.setCloudUnlocks);
+  const setCloudDailyActivity = useGameStore((s) => s.setCloudDailyActivity);
 
   useEffect(() => {
     if (isPending) return;
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!session) {
       setAuthProfile(guestProfile);
       setCloudUnlocks(null);
+      setCloudDailyActivity(null);
       return;
     }
 
@@ -66,12 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             checkIn: data.checkIn ?? s.userProfile.checkIn,
           },
           cloudUnlocks: data.unlocks ?? s.cloudUnlocks,
+          cloudDailyActivity: Array.isArray(data.dailyActivity) ? data.dailyActivity : s.cloudDailyActivity,
         }));
       } catch {
         return;
       }
     })();
-  }, [isPending, session, setAuthProfile, setCloudUnlocks]);
+  }, [isPending, session, setAuthProfile, setCloudUnlocks, setCloudDailyActivity]);
 
   return children;
 }

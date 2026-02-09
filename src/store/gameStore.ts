@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AppView, NBackConfig, SessionSummary, UserProfile, SessionHistoryEntry, GameConfigs, GameMode, BrainStats, AuthProfile, EnergyState, GameUnlocks } from '../types/game';
+import type { AppView, NBackConfig, SessionSummary, UserProfile, SessionHistoryEntry, GameConfigs, GameMode, BrainStats, AuthProfile, EnergyState, GameUnlocks, DailyActivityEntry } from '../types/game';
 import { DEFAULT_CONFIG, ENERGY_MAX, calculateRecoveredEnergy, getCheckInReward, STORE_PRODUCTS } from '../types/game';
 
 const ENERGY_STORAGE_KEY_GUEST = 'brain-flow-energy:guest';
@@ -67,11 +67,14 @@ interface GameStore {
   gameConfigs: GameConfigs;
   /** Cloud-sourced unlocks (skill trees) for each mode */
   cloudUnlocks: GameUnlocks | null;
+  /** Cloud-sourced daily activity for heatmap */
+  cloudDailyActivity: DailyActivityEntry[] | null;
 
   // Actions
   setView: (view: AppView) => void;
   setAuthProfile: (auth: AuthProfile) => void;
   setCloudUnlocks: (unlocks: GameUnlocks | null) => void;
+  setCloudDailyActivity: (activity: DailyActivityEntry[] | null) => void;
   setNextConfig: (config: Partial<NBackConfig>) => void;
   saveSession: (summary: SessionSummary) => void;
   updateGameConfig: (mode: GameMode, config: Partial<GameConfigs[GameMode]>) => void;
@@ -212,6 +215,7 @@ export const useGameStore = create<GameStore>()(
         house: { initialPeople: 3, eventCount: 5, speed: 'easy', rounds: 3 },
       },
       cloudUnlocks: null,
+      cloudDailyActivity: null,
 
       setView: (view) => set({ currentView: view }),
 
@@ -355,6 +359,7 @@ export const useGameStore = create<GameStore>()(
         }),
 
       setCloudUnlocks: (unlocks) => set({ cloudUnlocks: unlocks }),
+      setCloudDailyActivity: (activity) => set({ cloudDailyActivity: activity }),
 
       setNextConfig: (partial) =>
         set((state) => ({
@@ -538,6 +543,7 @@ export const useGameStore = create<GameStore>()(
                     checkIn: p.checkIn ?? s.userProfile.checkIn,
                   },
                   cloudUnlocks: p.unlocks ?? s.cloudUnlocks,
+                  cloudDailyActivity: Array.isArray(p.dailyActivity) ? p.dailyActivity : s.cloudDailyActivity,
                 }));
               }
               return;
@@ -553,6 +559,24 @@ export const useGameStore = create<GameStore>()(
               },
               lastUnlocks: Array.isArray(data.newlyUnlocked) ? data.newlyUnlocked : s.lastUnlocks,
               cloudUnlocks: data.unlocks ?? s.cloudUnlocks,
+              cloudDailyActivity: (() => {
+                if (!Array.isArray(s.cloudDailyActivity)) return s.cloudDailyActivity;
+                const dateKey = new Date().toISOString().slice(0, 10);
+                const xpEarned = Number(data.xpEarned ?? 0) || 0;
+                const next = [...s.cloudDailyActivity];
+                const idx = next.findIndex((e) => e.date === dateKey);
+                if (idx === -1) {
+                  next.push({ date: dateKey, totalXp: xpEarned, sessionsCount: 1 });
+                  return next;
+                }
+                const prev = next[idx];
+                next[idx] = {
+                  ...prev,
+                  totalXp: (prev.totalXp ?? 0) + xpEarned,
+                  sessionsCount: (prev.sessionsCount ?? 0) + 1,
+                };
+                return next;
+              })(),
             }));
           } catch {
             return;
