@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "../api/_lib/auth";
+import { ensureSchemaReady } from "../api/_lib/db/index.js";
 import gameSessionHandler from "../api/game/session";
 import storeBuyHandler from "../api/store/buy";
 import userProfileHandler from "../api/user/profile";
@@ -9,6 +10,15 @@ import userProfileHandler from "../api/user/profile";
 const app = express();
 
 app.use(express.json());
+
+app.use(async (_req, _res, next) => {
+  try {
+    await ensureSchemaReady();
+    next();
+  } catch {
+    next();
+  }
+});
 
 app.all("/api/auth", toNodeHandler(auth));
 app.all("/api/auth/{*any}", toNodeHandler(auth));
