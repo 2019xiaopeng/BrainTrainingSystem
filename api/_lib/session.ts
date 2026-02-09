@@ -1,7 +1,7 @@
 import { and, eq, gt } from "drizzle-orm";
-import { db } from "./db";
-import { session, user } from "./db/schema";
-import type { RequestLike } from "./http";
+import { db } from "./db/index.js";
+import { session, user } from "./db/schema/index.js";
+import type { RequestLike } from "./http.js";
 
 type SessionUser = {
   id: string;

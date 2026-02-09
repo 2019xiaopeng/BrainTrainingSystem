@@ -1,9 +1,9 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../_lib/db";
-import { dailyActivity, gameSessions, user, userUnlocks } from "../_lib/db/schema";
-import { requireSessionUser } from "../_lib/session";
-import type { RequestLike, ResponseLike } from "../_lib/http";
-import { isRecord } from "../_lib/http";
+import { db } from "../_lib/db/index.js";
+import { dailyActivity, gameSessions, user, userUnlocks } from "../_lib/db/schema/index.js";
+import { requireSessionUser } from "../_lib/session.js";
+import type { RequestLike, ResponseLike } from "../_lib/http.js";
+import { isRecord } from "../_lib/http.js";
 
 const ENERGY_MAX = 5;
 const ENERGY_RECOVERY_INTERVAL_MS = 4 * 60 * 60 * 1000;
@@ -128,10 +128,11 @@ const updateUnlocksAfterSession = (
 
   const newlyUnlocked: string[] = [];
   const next: Record<string, unknown> = { ...(unlocks ?? {}) };
+  const cfg = isRecord(summary.config) ? summary.config : {};
 
   if (mode === "numeric") {
-    const n = clampInt(summary?.config?.nLevel, 1);
-    const rounds = clampInt(summary?.config?.totalRounds, 10);
+    const n = clampInt(cfg.nLevel, 1);
+    const rounds = clampInt(cfg.totalRounds, 10);
     const maxN = clampInt(next.maxN, 1);
     const roundsList: number[] = Array.isArray(next.rounds) ? (next.rounds as unknown[]).map((r) => clampInt(r)) : [10];
 
@@ -150,11 +151,14 @@ const updateUnlocksAfterSession = (
   }
 
   if (mode === "spatial") {
-    const gridSize = clampInt(summary?.config?.gridSize ?? 3, 3);
-    const n = clampInt(summary?.config?.nLevel, 1);
+    const gridSize = clampInt((cfg.gridSize ?? 3) as unknown, 3);
+    const n = clampInt(cfg.nLevel, 1);
 
     const grids: number[] = Array.isArray(next.grids) ? (next.grids as unknown[]).map((g) => clampInt(g)) : [3];
-    const maxNByGrid: Record<string, number> = next.maxNByGrid && typeof next.maxNByGrid === "object" ? next.maxNByGrid : { "3": 1 };
+    const maxNByGridRaw = isRecord(next.maxNByGrid) ? next.maxNByGrid : { "3": 1 };
+    const maxNByGrid: Record<string, number> = Object.fromEntries(
+      Object.entries(maxNByGridRaw).map(([k, v]) => [k, clampInt(v, 1)])
+    );
 
     const caps: Record<string, number> = { "3": 5, "4": 12, "5": 12 };
     const prevCap = clampInt(maxNByGrid[String(gridSize)] ?? 1, 1);
@@ -172,8 +176,8 @@ const updateUnlocksAfterSession = (
     }
 
     if (gridSize === 4 && n >= 4 && !grids.includes(5)) {
-      next.grids = [...(next.grids ?? grids), 5].sort((a, b) => a - b);
-      next.maxNByGrid = { ...(next.maxNByGrid ?? maxNByGrid), "5": 1 };
+      next.grids = [...grids, 5].sort((a, b) => a - b);
+      next.maxNByGrid = { ...maxNByGrid, "5": 1 };
       newlyUnlocked.push("spatial_grid_5");
     }
   }
@@ -357,7 +361,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       const configSnapshot = {
         ...(summary.config ?? {}),
         metrics: {
-          totalRounds: clampInt(summary.totalRounds ?? summary?.config?.totalRounds ?? 0, 0),
+          totalRounds: clampInt(summary.totalRounds ?? config.totalRounds ?? 0, 0),
           correctCount: clampInt(summary.correctCount ?? 0, 0),
           incorrectCount: clampInt(summary.incorrectCount ?? 0, 0),
           missedCount: clampInt(summary.missedCount ?? 0, 0),

@@ -1,5 +1,5 @@
 import { integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { user } from "./auth/user";
+import { user } from "./auth/user.js";
 
 // --- Enums ---
 export const productTypeEnum = pgEnum("product_type", ["consumable", "subscription", "permanent"]);

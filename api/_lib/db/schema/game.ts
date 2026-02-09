@@ -1,5 +1,5 @@
 import { integer, jsonb, pgTable, primaryKey, text, timestamp, uuid, date } from "drizzle-orm/pg-core";
-import { user } from "./auth/user";
+import { user } from "./auth/user.js";
 
 // --- Game Sessions (History) ---
 // 存储每一局的游戏结果

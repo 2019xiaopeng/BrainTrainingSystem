@@ -1,9 +1,9 @@
 import { eq } from "drizzle-orm";
-import { db } from "../_lib/db";
-import { user, userUnlocks } from "../_lib/db/schema";
-import { requireSessionUser } from "../_lib/session";
-import type { RequestLike, ResponseLike } from "../_lib/http";
-import { isRecord } from "../_lib/http";
+import { db } from "../_lib/db/index.js";
+import { user, userUnlocks } from "../_lib/db/schema/index.js";
+import { requireSessionUser } from "../_lib/session.js";
+import type { RequestLike, ResponseLike } from "../_lib/http.js";
+import { isRecord } from "../_lib/http.js";
 
 const ENERGY_MAX = 5;
 const ENERGY_RECOVERY_INTERVAL_MS = 4 * 60 * 60 * 1000;
