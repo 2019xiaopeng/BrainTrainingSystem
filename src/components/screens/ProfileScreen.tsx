@@ -102,28 +102,28 @@ export function ProfileScreen() {
               <div className="text-xl font-mono font-bold text-zen-700">
                 {userProfile.maxNLevel || '-'}
               </div>
-              <div className="text-[10px] text-zen-400 mt-0.5">{t('home.maxLevel')}</div>
+              <div className="text-xs text-zen-400 mt-0.5">{t('home.maxLevel')}</div>
             </div>
             <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-zen-200/50">
               <Target className="w-5 h-5 mx-auto mb-1.5 text-sage-500" />
               <div className="text-xl font-mono font-bold text-zen-700">
                 {userProfile.totalScore.toLocaleString()}
               </div>
-              <div className="text-[10px] text-zen-400 mt-0.5">{t('home.totalScore')}</div>
+              <div className="text-xs text-zen-400 mt-0.5">{t('home.totalScore')}</div>
             </div>
             <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-zen-200/50">
               <Flame className="w-5 h-5 mx-auto mb-1.5 text-orange-500" />
               <div className="text-xl font-mono font-bold text-zen-700">
                 {userProfile.daysStreak}
               </div>
-              <div className="text-[10px] text-zen-400 mt-0.5">{t('home.streakDays')}</div>
+              <div className="text-xs text-zen-400 mt-0.5">{t('home.streakDays')}</div>
             </div>
             <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-zen-200/50">
               <Coins className="w-5 h-5 mx-auto mb-1.5 text-amber-600" />
               <div className="text-xl font-mono font-bold text-zen-700">
                 {userProfile.brainPoints.toLocaleString()}
               </div>
-              <div className="text-[10px] text-zen-400 mt-0.5">{t('profile.brainPoints')}</div>
+              <div className="text-xs text-zen-400 mt-0.5">{t('profile.brainPoints')}</div>
             </div>
           </div>
 
@@ -134,7 +134,7 @@ export function ProfileScreen() {
               {t('profile.brainRadar')}
             </h2>
             {!hasRealData && (
-              <p className="text-[10px] text-zen-400 mb-2 italic">
+              <p className="text-xs text-zen-400 mb-2 italic">
                 {t('profile.startFirst')}
               </p>
             )}

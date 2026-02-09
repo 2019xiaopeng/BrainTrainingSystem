@@ -86,7 +86,7 @@ export const MOCK_BRAIN_STATS: BrainStats = {
   math: 65,
   observation: 58,
   loadCapacity: 70,
-  speed: 62,
+  reaction: 62,
 };
 
 /** Beginner brain stats */
@@ -96,7 +96,7 @@ export const MOCK_BEGINNER_STATS: BrainStats = {
   math: 20,
   observation: 15,
   loadCapacity: 22,
-  speed: 28,
+  reaction: 28,
 };
 
 /** Advanced player brain stats */
@@ -106,7 +106,7 @@ export const MOCK_ADVANCED_STATS: BrainStats = {
   math: 85,
   observation: 80,
   loadCapacity: 87,
-  speed: 78,
+  reaction: 78,
 };
 
 // ------------------------------------------------------------
@@ -125,12 +125,14 @@ export interface HeatmapDay {
  */
 export function generateYearlyHeatmap(history: SessionHistoryEntry[]): HeatmapDay[] {
   const now = new Date();
-  const dayMs = 24 * 60 * 60 * 1000;
+  const year = now.getFullYear();
+  const startOfYear = new Date(year, 0, 1); // Jan 1st
+  const endOfYear = new Date(year, 11, 31); // Dec 31st
+  
   const map = new Map<string, { count: number; xp: number }>();
 
-  // Initialize all 365 days
-  for (let i = 364; i >= 0; i--) {
-    const d = new Date(now.getTime() - i * dayMs);
+  // Initialize all days of current year
+  for (let d = new Date(startOfYear); d <= endOfYear; d.setDate(d.getDate() + 1)) {
     const key = d.toISOString().slice(0, 10);
     map.set(key, { count: 0, xp: 0 });
   }
@@ -147,11 +149,14 @@ export function generateYearlyHeatmap(history: SessionHistoryEntry[]): HeatmapDa
     }
   }
 
-  return Array.from(map.entries()).map(([date, data]) => ({
-    date,
-    count: data.count,
-    xp: data.xp,
-  }));
+  // Convert map to array and sort by date
+  return Array.from(map.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, data]) => ({
+      date,
+      count: data.count,
+      xp: data.xp,
+    }));
 }
 
 /**

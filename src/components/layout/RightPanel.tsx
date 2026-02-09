@@ -46,7 +46,7 @@ export function RightPanel() {
       ) : (
         <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm">
           <div className="text-xs font-medium text-zen-700 mb-1">{t('profile.auth.guest')}</div>
-          <div className="text-[11px] text-zen-500">{t('profile.auth.guestLockHint')}</div>
+          <div className="text-xs text-zen-500">{t('profile.auth.guestLockHint')}</div>
           <div className="mt-3 flex gap-2">
             <a
               href="/signup"
@@ -132,12 +132,12 @@ export function RightPanel() {
                     </span>
                   </div>
                   {/* Row 2: Details */}
-                  <div className="flex justify-between text-[10px] text-zen-400">
+                  <div className="flex justify-between text-xs text-zen-400">
                     <span className="font-mono">{session.nLevel}-Back · {session.totalRounds}R</span>
                     <span>+{session.score} {t('result.points')}</span>
                   </div>
                   {/* Row 3: Time + RT */}
-                  <div className="flex justify-between text-[10px] text-zen-300 mt-1">
+                  <div className="flex justify-between text-xs text-zen-300 mt-1">
                     <span>{new Date(session.timestamp).toLocaleString(undefined, {
                       month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                     })}</span>

@@ -156,13 +156,13 @@ const updateBrainStats = (
     ? clamp(Math.max(current.loadCapacity, acc * 0.75 + n * 3))
     : current.loadCapacity;
 
-  // Speed: inverted reaction time (2000ms baseline → 100, 5000ms → 0)
-  const speedScore = clamp(((5000 - avgRT) / 3000) * 100);
-  const speed = current.speed > 0
-    ? clamp((current.speed * 0.7 + speedScore * 0.3))
-    : speedScore;
+  // Reaction: inverted reaction time (2000ms baseline → 100, 5000ms → 0)
+  const reactionScore = clamp(((5000 - avgRT) / 3000) * 100);
+  const reaction = current.reaction > 0
+    ? clamp((current.reaction * 0.7 + reactionScore * 0.3))
+    : reactionScore;
 
-  return { memory, focus, math, observation, loadCapacity, speed };
+  return { memory, focus, math, observation, loadCapacity, reaction };
 };
 
 export const useGameStore = create<GameStore>()(
@@ -184,7 +184,7 @@ export const useGameStore = create<GameStore>()(
           math: 0,
           observation: 0,
           loadCapacity: 0,
-          speed: 0,
+          reaction: 0,
         },
         auth: {
           status: 'guest',
@@ -564,7 +564,7 @@ export const useGameStore = create<GameStore>()(
               math: 0,
               observation: 0,
               loadCapacity: 0,
-              speed: 0,
+              reaction: 0,
             },
             auth: p.auth ?? {
               status: 'guest',

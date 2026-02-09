@@ -30,8 +30,8 @@ export interface BrainStats {
   observation: number;
   /** Load Capacity (负载力) — house + numeric N-Back combined */
   loadCapacity: number;
-  /** Speed — average reaction time inverted (higher = faster) */
-  speed: number;
+  /** Reaction (反应力) — average reaction time inverted (higher = faster) */
+  reaction: number;
 }
 
 /** Brain Rank level definition */
@@ -40,8 +40,16 @@ export interface BrainRankLevel {
   titleZh: string;
   titleEn: string;
   xpRequired: number;
-  /** Milestone requirements (e.g., unlock 2-Back Numeric) */
+  /** 
+   * Milestone requirements (e.g., unlock 2-Back Numeric). 
+   * Each inner array is an OR group (any one of them satisfied is enough).
+   * Wait, PRD says "A > 90% OR B > 90%". 
+   * Let's simplify: `milestones` is a list of milestone IDs.
+   * If `milestoneLogic` is 'OR', then meeting ANY one is sufficient.
+   * If `milestoneLogic` is 'AND' (default), then ALL must be met.
+   */
   milestones?: string[];
+  milestoneLogic?: 'AND' | 'OR';
 }
 
 /** All brain rank levels */
@@ -52,42 +60,48 @@ export const BRAIN_RANK_LEVELS: BrainRankLevel[] = [
     titleZh: '觉醒', 
     titleEn: 'Awakened', 
     xpRequired: 500,
-    milestones: ['numeric_2back']
+    milestones: ['numeric_2back', 'spatial_3x3_2back'],
+    milestoneLogic: 'OR'
   },
   { 
     level: 3, 
     titleZh: '敏捷', 
     titleEn: 'Agile', 
-    xpRequired: 2500,
-    milestones: ['numeric_3back', 'spatial_3x3']
+    xpRequired: 2000,
+    milestones: ['spatial_4x4_2back', 'mouse_4mice'],
+    milestoneLogic: 'OR'
   },
   { 
     level: 4, 
     titleZh: '逻辑', 
     titleEn: 'Logical', 
-    xpRequired: 10000,
-    milestones: ['numeric_5back', 'spatial_4x4']
+    xpRequired: 5000,
+    milestones: ['numeric_3back', 'house_normal_10'],
+    milestoneLogic: 'OR'
   },
   { 
     level: 5, 
     titleZh: '深邃', 
     titleEn: 'Profound', 
-    xpRequired: 25000,
-    milestones: ['numeric_7back']
+    xpRequired: 10000,
+    milestones: ['spatial_5x5_3back', 'mouse_7mice'],
+    milestoneLogic: 'OR'
   },
   { 
     level: 6, 
     titleZh: '大师', 
     titleEn: 'Master', 
-    xpRequired: 50000,
-    milestones: ['numeric_9back']
+    xpRequired: 30000,
+    milestones: ['numeric_5back', 'house_fast_15'],
+    milestoneLogic: 'OR'
   },
   { 
     level: 7, 
     titleZh: '超凡', 
     titleEn: 'Transcendent', 
     xpRequired: 80000,
-    milestones: ['numeric_11back']
+    milestones: ['numeric_7back', 'spatial_5x5', 'mouse_9mice', 'house_double'],
+    milestoneLogic: 'AND' // All required for Transcendent
   },
 ];
 
@@ -98,8 +112,14 @@ export function getBrainRank(xp: number, completedMilestones: string[] = []): Br
     if (xp >= rank.xpRequired) {
       // Check if milestones are met (if any)
       if (rank.milestones && rank.milestones.length > 0) {
-        const allMet = rank.milestones.every(m => completedMilestones.includes(m));
-        if (allMet) return rank;
+        if (rank.milestoneLogic === 'OR') {
+          const anyMet = rank.milestones.some(m => completedMilestones.includes(m));
+          if (anyMet) return rank;
+        } else {
+          // Default AND
+          const allMet = rank.milestones.every(m => completedMilestones.includes(m));
+          if (allMet) return rank;
+        }
       } else {
         // No milestones required
         return rank;

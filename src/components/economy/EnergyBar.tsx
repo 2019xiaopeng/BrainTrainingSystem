@@ -23,34 +23,17 @@ export function EnergyBar() {
     recalculateEnergy();
   }, [recalculateEnergy]);
 
-  // Countdown timer for next recovery
-  const updateCountdown = useCallback(() => {
-    if (energy.current >= energy.max) {
-      setCountdown('');
-      return;
-    }
-    const remainMs = getNextRecoveryMs(energy);
-    const hours = Math.floor(remainMs / 3600000);
-    const mins = Math.floor((remainMs % 3600000) / 60000);
-    const secs = Math.floor((remainMs % 60000) / 1000);
-    setCountdown(
-      `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-    );
-  }, [energy]);
-
+  // Periodic energy check (only update internal store, no countdown display)
   useEffect(() => {
-    updateCountdown();
     if (energy.current >= energy.max) return;
     const timer = setInterval(() => {
-      updateCountdown();
-      // Check if we should recalculate
       const remainMs = getNextRecoveryMs(energy);
       if (remainMs <= 1000) {
         recalculateEnergy();
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, [energy, updateCountdown, recalculateEnergy]);
+  }, [energy, recalculateEnergy]);
 
   const energyPercent = (energy.current / energy.max) * 100;
 
@@ -77,13 +60,6 @@ export function EnergyBar() {
           }}
         />
       </div>
-
-      {/* Recovery countdown */}
-      {countdown && (
-        <span className="text-[10px] text-zen-400 font-mono whitespace-nowrap">
-          +1 {t('energy.in')} {countdown}
-        </span>
-      )}
     </div>
   );
 }

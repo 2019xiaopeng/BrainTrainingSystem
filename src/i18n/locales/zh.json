@@ -138,10 +138,13 @@
     "activityHeatmap": "📅 训练热力图（365 天）",
     "brainPoints": "脑力币",
     "mockDataHint": "示例数据 · 完成训练后显示你的真实数据",
-    "nextRank": "下一阶段: {{rank}}",
-    "xpToNext": "距下一级还需 {{xp}} XP",
-    "maxRank": "已达最高段位 🏆",
-    "milestoneRequired": "需要完成任务",
+    "nextRank": "下一段位：{{rank}}",
+    "xpToNext": "距离下一段位还需 {{xp}} XP",
+    "maxRank": "已达最高段位",
+    "milestoneRequired": "晋级考核",
+    "milestoneOneOf": "完成任一考核即可晋级",
+    "required": "考核要求",
+    "oneOf": "任一考核",
     "radar": {
       "memory": "记忆力",
       "focus": "专注力",
@@ -197,7 +200,7 @@
   "checkin": {
     "title": "每日签到",
     "streak": "🔥 连续 {{days}} 天",
-    "done": "✅ 今日已签到",
+    "done": "今日已签到",
     "claim": "领取奖励",
     "points": "脑力币"
   },
@@ -246,14 +249,24 @@
       "xpRequired": "需要 {{xp}} XP",
       "formula": "💡 XP = 20 × (N系数 + 模式系数) × 准确率%",
       "milestone": {
-        "numeric_2back": "数字 2-Back",
-        "numeric_3back": "数字 3-Back",
-        "numeric_5back": "数字 5-Back",
-        "numeric_7back": "数字 7-Back",
-        "numeric_9back": "数字 9-Back",
-        "numeric_11back": "数字 11-Back",
-        "spatial_3x3": "空间 3x3",
-        "spatial_4x4": "空间 4x4"
+        "numeric_2back": "数字流 2-Back > 90%",
+        "numeric_3back": "数字流 3-Back > 85%",
+        "numeric_5back": "数字流 5-Back > 80%",
+        "numeric_7back": "数字流 7-Back > 90%",
+        "numeric_9back": "数字流 9-Back",
+        "numeric_11back": "数字流 11-Back",
+        "spatial_3x3": "空间流 3x3",
+        "spatial_4x4": "空间流 4x4",
+        "spatial_3x3_2back": "空间流 3x3(2-Back) > 90%",
+        "spatial_4x4_2back": "空间流 4x4(2-Back) > 85%",
+        "spatial_5x5": "空间流 5x5",
+        "spatial_5x5_3back": "空间流 5x5(3-Back) > 80%",
+        "mouse_4mice": "魔鬼老鼠 (4-Mice) > 90%",
+        "mouse_7mice": "魔鬼老鼠 (7-Mice) > 85%",
+        "mouse_9mice": "魔鬼老鼠 (9-Mice)",
+        "house_normal_10": "人来人往 (普通, 10事件) > 90%",
+        "house_fast_15": "人来人往 (快速, 15事件) > 85%",
+        "house_double": "人来人往 (双门)"
       }
     },
     "radar": {
@@ -279,8 +292,8 @@
         "name": "负载力",
         "desc": "人来人往和高阶 N-Back 的综合表现"
       },
-      "speed": {
-        "name": "速度",
+      "reaction": {
+        "name": "反应力",
         "desc": "基于平均反应时间（越快越高）"
       }
     },

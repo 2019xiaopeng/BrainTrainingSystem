@@ -164,7 +164,7 @@ export function StoreScreen() {
 
               {/* Tag for product type */}
               <div
-                className={`absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded ${
+                className={`absolute top-2 right-2 text-xs px-1.5 py-0.5 rounded ${
                   product.type === 'permanent'
                     ? 'bg-purple-50 text-purple-500 border border-purple-200/50'
                     : 'bg-zen-50 text-zen-400 border border-zen-200/30'
@@ -178,7 +178,7 @@ export function StoreScreen() {
       </div>
 
       {/* Hint */}
-      <p className="text-[10px] text-zen-400 text-center">
+      <p className="text-xs text-zen-400 text-center">
         {t('store.earnHint')}
       </p>
     </div>

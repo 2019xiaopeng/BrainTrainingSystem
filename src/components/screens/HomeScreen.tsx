@@ -159,7 +159,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
             <div className="text-2xl font-mono font-bold">{isGuest ? '-' : userProfile.maxNLevel || '-'}</div>
             <div className="text-xs text-white/80 mt-1">{t('home.maxLevel')}</div>
           </div>
-          <div className=" bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
             <div className="text-2xl font-mono font-bold">{isGuest ? 0 : userProfile.totalScore}</div>
             <div className="text-xs text-white/80 mt-1">{t('home.totalScore')}</div>
           </div>

@@ -35,7 +35,7 @@ export function CheckInWidget() {
           <span className="text-sm font-medium text-zen-600">{t('checkin.title')}</span>
         </div>
         {checkIn.consecutiveDays > 0 && (
-          <div className="flex items-center gap-1 text-[10px] text-orange-500">
+          <div className="flex items-center gap-1 text-xs text-orange-500">
             <Flame className="w-3 h-3" />
             <span>{t('checkin.streak', { days: checkIn.consecutiveDays })}</span>
           </div>
@@ -44,7 +44,6 @@ export function CheckInWidget() {
 
       {isCheckedIn ? (
         <div className="flex items-center gap-2 py-2 px-3 rounded-lg bg-sage-50 border border-sage-200/50">
-          <Check className="w-4 h-4 text-sage-600" />
           <span className="text-sm text-sage-700">{t('checkin.done')}</span>
         </div>
       ) : (
