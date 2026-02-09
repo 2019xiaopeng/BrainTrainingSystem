@@ -9,7 +9,7 @@ import { ResultScreen } from '../screens/ResultScreen';
  */
 export function ResultPage() {
   const navigate = useNavigate();
-  const { lastSummary, sessionHistory, userProfile, nextConfig, lastUnlocks } = useGameStore();
+  const { lastSummary, sessionHistory, userProfile, nextConfig, lastUnlocks, isSessionSyncing, sessionSyncError, lastRewards } = useGameStore();
 
   const handlePlayAgain = useCallback(() => {
     // 直接 navigate 到上次的训练模式
@@ -33,6 +33,9 @@ export function ResultPage() {
       sessionHistory={sessionHistory}
       userProfile={userProfile}
       unlockIds={lastUnlocks}
+      isSyncing={isSessionSyncing}
+      syncError={sessionSyncError}
+      rewards={lastRewards}
       onPlayAgain={handlePlayAgain}
       onBackHome={handleBackHome}
     />

@@ -6,6 +6,19 @@ interface ResultScreenProps {
   sessionHistory: SessionHistoryEntry[];
   userProfile: UserProfile;
   unlockIds: string[];
+  isSyncing: boolean;
+  syncError: string | null;
+  rewards: {
+    xpEarned: number;
+    unlockBonusCoins: number;
+    dailyPerfectBonus: number;
+    brainCoinsEarned: number;
+    brainCoinsAfter: number;
+    xpAfter: number;
+    brainLevelAfter: number;
+    energyConsumed: number;
+    energyRefunded: number;
+  } | null;
   onPlayAgain: () => void;
   onBackHome: () => void;
 }
@@ -13,7 +26,7 @@ interface ResultScreenProps {
 /**
  * ResultScreen - 结果展示界面
  */
-export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, onPlayAgain, onBackHome }: ResultScreenProps) {
+export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, isSyncing, syncError, rewards, onPlayAgain, onBackHome }: ResultScreenProps) {
   const { t } = useTranslation();
 
   // Check for new achievements
@@ -29,9 +42,24 @@ export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, 
     return id;
   };
 
+  const totalCoinsGained = rewards
+    ? (rewards.brainCoinsEarned ?? 0) + (rewards.unlockBonusCoins ?? 0) + (rewards.dailyPerfectBonus ?? 0)
+    : 0;
+
   return (
     <div className="space-y-6 pt-8">
       <h1 className="text-3xl font-light text-zen-700 text-center animate-fade-in">{t('result.title')}</h1>
+
+      {(isSyncing || syncError) && (
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow border border-zen-200 animate-slide-up">
+          <div className="text-sm font-medium text-zen-700">
+            {isSyncing ? t('result.syncing') : t('result.syncFailed')}
+          </div>
+          {syncError && (
+            <div className="text-xs text-zen-400 mt-1">{syncError}</div>
+          )}
+        </div>
+      )}
 
       {/* Achievement Badges */}
       {(isNewHighScore || isNewMaxNLevel) && (
@@ -59,6 +87,33 @@ export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, 
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {rewards && (
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow border border-zen-200 animate-slide-up">
+          <div className="text-sm font-medium text-zen-700 mb-2">{t('result.rewardsTitle')}</div>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="bg-zen-50 rounded-xl p-3">
+              <div className="text-lg font-mono text-zen-700">+{rewards.xpEarned}</div>
+              <div className="text-xs text-zen-400">{t('result.xp')}</div>
+            </div>
+            <div className="bg-zen-50 rounded-xl p-3">
+              <div className="text-lg font-mono text-zen-700">+{totalCoinsGained}</div>
+              <div className="text-xs text-zen-400">{t('result.brainCoins')}</div>
+            </div>
+            <div className="bg-zen-50 rounded-xl p-3">
+              <div className="text-lg font-mono text-zen-700">
+                {rewards.energyRefunded > 0 ? '0' : `-${rewards.energyConsumed}`}
+              </div>
+              <div className="text-xs text-zen-400">{t('result.energy')}</div>
+            </div>
+          </div>
+          {rewards.dailyPerfectBonus > 0 && (
+            <div className="mt-3 text-xs text-sage-700 bg-sage-50 border border-sage-200/50 rounded-lg px-3 py-2">
+              {t('result.dailyPerfectBonus', { coins: rewards.dailyPerfectBonus })}
+            </div>
+          )}
         </div>
       )}
 
@@ -113,6 +168,7 @@ export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, 
       <div className="space-y-3">
         <button
           onClick={onPlayAgain}
+          disabled={isSyncing}
           className="w-full py-4 rounded-xl bg-sage-500 text-white text-lg font-medium
                      hover:bg-sage-600 active:scale-[0.98] transition-all shadow-sm"
         >
@@ -120,6 +176,7 @@ export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, 
         </button>
         <button
           onClick={onBackHome}
+          disabled={isSyncing}
           className="w-full py-3 rounded-xl bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-[0.98] transition-all"
         >
           {t('result.backHome')}

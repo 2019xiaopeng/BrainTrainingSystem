@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { getNextRecoveryMs } from '../../types/game';
+import { useTranslation } from 'react-i18next';
 import { Zap } from 'lucide-react';
 
 /**
@@ -9,9 +10,11 @@ import { Zap } from 'lucide-react';
  * 利用 Zustand selector 实现精准更新，无需刷新整个页面
  */
 export function EnergyBar() {
+  const { t } = useTranslation();
   // Zustand selector: 只订阅 energy 字段，其他字段变化不会触发重渲染
   const energy = useGameStore((s) => s.userProfile.energy);
   const recalculateEnergy = useGameStore((s) => s.recalculateEnergy);
+  const [remainMs, setRemainMs] = useState(() => getNextRecoveryMs(energy));
 
   // Recalculate energy on mount
   useEffect(() => {
@@ -23,12 +26,27 @@ export function EnergyBar() {
     if (energy.current >= energy.max) return;
     const timer = setInterval(() => {
       const remainMs = getNextRecoveryMs(energy);
+      setRemainMs(remainMs);
       if (remainMs <= 1000) {
         recalculateEnergy();
       }
     }, 1000);
     return () => clearInterval(timer);
   }, [energy, recalculateEnergy]);
+
+  useEffect(() => {
+    setRemainMs(getNextRecoveryMs(energy));
+  }, [energy]);
+
+  const remainText = useMemo(() => {
+    if (energy.current >= energy.max) return null;
+    const totalSeconds = Math.max(0, Math.floor(remainMs / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const mmss = `${String(minutes + hours * 60).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return t('energy.recoverIn', { time: mmss });
+  }, [energy.current, energy.max, remainMs, t]);
 
   const energyPercent = (energy.current / energy.max) * 100;
 
@@ -55,6 +73,12 @@ export function EnergyBar() {
           }}
         />
       </div>
+
+      {remainText && (
+        <div className="text-xs text-zen-400 tabular-nums whitespace-nowrap">
+          {remainText}
+        </div>
+      )}
     </div>
   );
 }

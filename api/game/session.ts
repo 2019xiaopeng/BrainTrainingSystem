@@ -526,6 +526,10 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         xpAfter,
         brainLevelAfter,
         brainCoinsEarned,
+        unlockBonusCoins,
+        dailyPerfectBonus,
+        energyConsumed: isUnlimited ? 0 : 1,
+        energyRefunded: !isUnlimited && unlockUpdate.newlyUnlocked.length > 0 ? 1 : 0,
         brainCoinsAfter,
         energy: {
           current: energyAfterRefund,

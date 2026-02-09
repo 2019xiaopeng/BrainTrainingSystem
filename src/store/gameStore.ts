@@ -59,6 +59,22 @@ interface GameStore {
   lastSummary: SessionSummary | null;
   /** Server-confirmed unlock IDs from the most recent session */
   lastUnlocks: string[];
+  /** Whether the most recent session is syncing to cloud */
+  isSessionSyncing: boolean;
+  /** Cloud sync error for the most recent session, if any */
+  sessionSyncError: string | null;
+  /** Rewards confirmed by server for the most recent session */
+  lastRewards: {
+    xpEarned: number;
+    unlockBonusCoins: number;
+    dailyPerfectBonus: number;
+    brainCoinsEarned: number;
+    brainCoinsAfter: number;
+    xpAfter: number;
+    brainLevelAfter: number;
+    energyConsumed: number;
+    energyRefunded: number;
+  } | null;
   /** Simplified history of last 50 sessions */
   sessionHistory: SessionHistoryEntry[];
   /** User's persistent profile */
@@ -173,6 +189,9 @@ export const useGameStore = create<GameStore>()(
       nextConfig: DEFAULT_CONFIG,
       lastSummary: null,
       lastUnlocks: [],
+      isSessionSyncing: false,
+      sessionSyncError: null,
+      lastRewards: null,
       sessionHistory: [],
       userProfile: {
         totalScore: 0,
@@ -453,6 +472,9 @@ export const useGameStore = create<GameStore>()(
         set({
           lastSummary: enrichedSummary,
           lastUnlocks: [],
+          isSessionSyncing: true,
+          sessionSyncError: null,
+          lastRewards: null,
           sessionHistory: newHistory,
           userProfile: {
             ...state.userProfile,
@@ -547,6 +569,7 @@ export const useGameStore = create<GameStore>()(
                   cloudDailyActivity: Array.isArray(p.dailyActivity) ? p.dailyActivity : s.cloudDailyActivity,
                 }));
               }
+              set({ isSessionSyncing: false, sessionSyncError: 'server_error' });
               return;
             }
 
@@ -559,6 +582,19 @@ export const useGameStore = create<GameStore>()(
                 energy: data.energy ?? s.userProfile.energy,
               },
               lastUnlocks: Array.isArray(data.newlyUnlocked) ? data.newlyUnlocked : s.lastUnlocks,
+              isSessionSyncing: false,
+              sessionSyncError: null,
+              lastRewards: {
+                xpEarned: Number(data.xpEarned ?? 0) || 0,
+                unlockBonusCoins: Number(data.unlockBonusCoins ?? 0) || 0,
+                dailyPerfectBonus: Number(data.dailyPerfectBonus ?? 0) || 0,
+                brainCoinsEarned: Number(data.brainCoinsEarned ?? 0) || 0,
+                brainCoinsAfter: Number(data.brainCoinsAfter ?? s.userProfile.brainCoins) || s.userProfile.brainCoins,
+                xpAfter: Number(data.xpAfter ?? s.userProfile.totalXP) || s.userProfile.totalXP,
+                brainLevelAfter: Number(data.brainLevelAfter ?? 1) || 1,
+                energyConsumed: Number(data.energyConsumed ?? 0) || 0,
+                energyRefunded: Number(data.energyRefunded ?? 0) || 0,
+              },
               cloudUnlocks: data.unlocks ?? s.cloudUnlocks,
               cloudDailyActivity: (() => {
                 if (!Array.isArray(s.cloudDailyActivity)) return s.cloudDailyActivity;
@@ -580,6 +616,7 @@ export const useGameStore = create<GameStore>()(
               })(),
             }));
           } catch {
+            set({ isSessionSyncing: false, sessionSyncError: 'network_error' });
             return;
           }
         })();

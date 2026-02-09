@@ -112,6 +112,13 @@
   },
   "result": {
     "title": "Training Complete",
+    "syncing": "Syncing to cloud...",
+    "syncFailed": "Cloud sync failed",
+    "rewardsTitle": "Rewards",
+    "xp": "XP",
+    "brainCoins": "Coins",
+    "energy": "Energy",
+    "dailyPerfectBonus": "Daily Perfect +{{coins}} Coins",
     "newRecord": "🏆 New Record!",
     "newLevel": "⭐ New Level Unlocked!",
     "unlocksTitle": "Unlocks",
@@ -200,6 +207,7 @@
   },
   "energy": {
     "in": "",
+    "recoverIn": "Next +1 in {{time}}",
     "insufficient": "Insufficient energy! Please wait or purchase Energy Potion."
   },
   "checkin": {
