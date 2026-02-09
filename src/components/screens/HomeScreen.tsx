@@ -25,13 +25,15 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   const { t } = useTranslation();
   const { gameConfigs } = useGameStore();
   const cloudUnlocks = useGameStore((s) => s.cloudUnlocks);
+  const optimisticUnlocks = useGameStore((s) => s.optimisticUnlocks);
   const [mode, setMode] = useState<GameMode>(initialMode);
   const isGuest = (userProfile.auth?.status ?? 'guest') === 'guest';
 
-  const numericUnlocks = !isGuest && cloudUnlocks ? cloudUnlocks.numeric : null;
-  const spatialUnlocks = !isGuest && cloudUnlocks ? cloudUnlocks.spatial : null;
-  const mouseUnlocks = !isGuest && cloudUnlocks ? cloudUnlocks.mouse : null;
-  const houseUnlocks = !isGuest && cloudUnlocks ? cloudUnlocks.house : null;
+  const effectiveUnlocks = !isGuest ? (cloudUnlocks ?? optimisticUnlocks) : null;
+  const numericUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.numeric : null;
+  const spatialUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.spatial : null;
+  const mouseUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.mouse : null;
+  const houseUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.house : null;
 
   // Separate config state for numeric mode (use saved config or defaults)
   const [numericNLevel, setNumericNLevel] = useState(() => (isGuest ? GUEST_DEFAULTS.numeric.nLevel : gameConfigs.numeric.nLevel));

@@ -6,8 +6,6 @@ interface ResultScreenProps {
   sessionHistory: SessionHistoryEntry[];
   userProfile: UserProfile;
   unlockIds: string[];
-  isSyncing: boolean;
-  syncError: string | null;
   rewards: {
     xpEarned: number;
     unlockBonusCoins: number;
@@ -26,7 +24,7 @@ interface ResultScreenProps {
 /**
  * ResultScreen - 结果展示界面
  */
-export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, isSyncing, syncError, rewards, onPlayAgain, onBackHome }: ResultScreenProps) {
+export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, rewards, onPlayAgain, onBackHome }: ResultScreenProps) {
   const { t } = useTranslation();
 
   // Check for new achievements
@@ -49,17 +47,6 @@ export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, 
   return (
     <div className="space-y-6 pt-8">
       <h1 className="text-3xl font-light text-zen-700 text-center animate-fade-in">{t('result.title')}</h1>
-
-      {(isSyncing || syncError) && (
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow border border-zen-200 animate-slide-up">
-          <div className="text-sm font-medium text-zen-700">
-            {isSyncing ? t('result.syncing') : t('result.syncFailed')}
-          </div>
-          {syncError && (
-            <div className="text-xs text-zen-400 mt-1">{syncError}</div>
-          )}
-        </div>
-      )}
 
       {/* Achievement Badges */}
       {(isNewHighScore || isNewMaxNLevel) && (
@@ -104,7 +91,7 @@ export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, 
             </div>
             <div className="bg-zen-50 rounded-xl p-3">
               <div className="text-lg font-mono text-zen-700">
-                {rewards.energyRefunded > 0 ? '0' : `-${rewards.energyConsumed}`}
+                {rewards.energyRefunded > 0 ? `-${rewards.energyConsumed} +${rewards.energyRefunded}` : `-${rewards.energyConsumed}`}
               </div>
               <div className="text-xs text-zen-400">{t('result.energy')}</div>
             </div>
@@ -168,7 +155,6 @@ export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, 
       <div className="space-y-3">
         <button
           onClick={onPlayAgain}
-          disabled={isSyncing}
           className="w-full py-4 rounded-xl bg-sage-500 text-white text-lg font-medium
                      hover:bg-sage-600 active:scale-[0.98] transition-all shadow-sm"
         >
@@ -176,7 +162,6 @@ export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, 
         </button>
         <button
           onClick={onBackHome}
-          disabled={isSyncing}
           className="w-full py-3 rounded-xl bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-[0.98] transition-all"
         >
           {t('result.backHome')}
