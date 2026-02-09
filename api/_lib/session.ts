@@ -14,7 +14,7 @@ type SessionUser = {
 
 const parseCookies = (cookieHeader: string): Map<string, string> => {
   const cookieMap = new Map<string, string>();
-  const parts = cookieHeader.split("; ");
+  const parts = cookieHeader.split(/;\s*/g);
   for (const part of parts) {
     const [name, value] = part.split(/=(.*)/s);
     if (name) cookieMap.set(name, value ?? "");

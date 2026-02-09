@@ -69,6 +69,10 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   const rounds = mode === 'numeric' ? numericRounds : spatialRounds;
   const numericRoundsUnlocked = numericUnlocks?.roundsByN?.[String(numericNLevel)] ?? [5, 10];
   const numericMaxNUnlocked = numericUnlocks?.maxN ?? 12;
+  const numericAllowedRounds = [...numericRoundsUnlocked].sort((a, b) => a - b);
+  const numericRoundIndex = numericAllowedRounds.indexOf(numericRounds);
+  const canDecrementNumericRounds = numericRoundIndex > 0;
+  const canIncrementNumericRounds = numericRoundIndex >= 0 && numericRoundIndex < numericAllowedRounds.length - 1;
   const spatialGridsUnlocked = spatialUnlocks?.grids ?? [3, 4, 5];
   const spatialMaxNUnlocked = spatialUnlocks?.maxNByGrid?.[String(gridSize)] ?? 12;
   const mouseMaxMiceUnlocked = mouseUnlocks?.maxMice ?? 9;
@@ -329,27 +333,28 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
             {mode === 'numeric' ? (
               <div className="flex items-center gap-4">
                 <label className="text-sm text-zen-500 w-28">{t('home.rounds')}</label>
-                <div className="flex gap-2">
-                  {[5, 10, 15, 20, 25, 30].map((r) => {
-                    const unlocked = numericRoundsUnlocked.includes(r);
-                    const active = numericRounds === r;
-                    return (
-                      <button
-                        key={r}
-                        onClick={() => unlocked && setNumericRounds(r)}
-                        disabled={!unlocked}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                          active
-                            ? 'bg-sage-500 text-white shadow-sm'
-                            : unlocked
-                              ? 'bg-zen-100 text-zen-600 hover:bg-zen-200'
-                              : 'bg-zen-100 text-zen-400 opacity-60 cursor-not-allowed'
-                        }`}
-                      >
-                        {r}
-                      </button>
-                    );
-                  })}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      if (canDecrementNumericRounds) setNumericRounds(numericAllowedRounds[numericRoundIndex - 1]);
+                    }}
+                    disabled={!canDecrementNumericRounds}
+                    className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
+                  >
+                    −
+                  </button>
+                  <span className="text-2xl font-mono text-zen-700 w-12 text-center">{numericRounds}</span>
+                  <button
+                    onClick={() => {
+                      if (canIncrementNumericRounds) setNumericRounds(numericAllowedRounds[numericRoundIndex + 1]);
+                    }}
+                    disabled={!canIncrementNumericRounds}
+                    className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
+                  >
+                    +
+                  </button>
                 </div>
               </div>
             ) : (

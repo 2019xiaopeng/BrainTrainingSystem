@@ -257,6 +257,93 @@ export const useGameStore = create<GameStore>()(
             }
           }
 
+          const isAuthUser =
+            auth.status === 'authenticated' && typeof auth.userId === 'string' && auth.userId.length > 0;
+          const wasAuthUser =
+            prevAuth?.status === 'authenticated' && typeof prevAuth.userId === 'string' && prevAuth.userId.length > 0;
+          const isUserChanged = isAuthUser && wasAuthUser && auth.userId !== prevAuth.userId;
+          const isAuthTransition = isAuthUser && (!wasAuthUser || isUserChanged);
+
+          if (isAuthTransition) {
+            return {
+              currentView: 'home',
+              lastSummary: null,
+              lastUnlocks: [],
+              sessionHistory: [],
+              userProfile: {
+                totalScore: 0,
+                totalXP: 0,
+                maxNLevel: 0,
+                daysStreak: 0,
+                lastPlayedDate: null,
+                brainStats: {
+                  memory: 0,
+                  focus: 0,
+                  math: 0,
+                  observation: 0,
+                  loadCapacity: 0,
+                  reaction: 0,
+                },
+                auth,
+                completedMilestones: [],
+                brainCoins: 0,
+                energy: nextEnergy,
+                checkIn: {
+                  lastCheckInDate: null,
+                  consecutiveDays: 0,
+                },
+                ownedItems: [],
+              },
+              gameConfigs: {
+                numeric: { nLevel: 1, rounds: 10 },
+                spatial: { nLevel: 1, rounds: 10, gridSize: 3 },
+                mouse: { count: 3, grid: [4, 3], difficulty: 'easy', rounds: 3 },
+                house: { initialPeople: 3, eventCount: 5, speed: 'easy', rounds: 3 },
+              },
+              cloudUnlocks: null,
+            };
+          }
+
+          if (auth.status === 'guest' && prevAuth?.status !== 'guest') {
+            return {
+              currentView: 'home',
+              lastSummary: null,
+              lastUnlocks: [],
+              sessionHistory: [],
+              userProfile: {
+                totalScore: 0,
+                totalXP: 0,
+                maxNLevel: 0,
+                daysStreak: 0,
+                lastPlayedDate: null,
+                brainStats: {
+                  memory: 0,
+                  focus: 0,
+                  math: 0,
+                  observation: 0,
+                  loadCapacity: 0,
+                  reaction: 0,
+                },
+                auth,
+                completedMilestones: [],
+                brainCoins: 0,
+                energy: nextEnergy,
+                checkIn: {
+                  lastCheckInDate: null,
+                  consecutiveDays: 0,
+                },
+                ownedItems: [],
+              },
+              gameConfigs: {
+                numeric: { nLevel: 1, rounds: 10 },
+                spatial: { nLevel: 1, rounds: 10, gridSize: 3 },
+                mouse: { count: 3, grid: [4, 3], difficulty: 'easy', rounds: 3 },
+                house: { initialPeople: 3, eventCount: 5, speed: 'easy', rounds: 3 },
+              },
+              cloudUnlocks: null,
+            };
+          }
+
           return {
             userProfile: {
               ...state.userProfile,
@@ -641,7 +728,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'brain-flow-storage', // localStorage key
-      version: 5,
+      version: 6,
       partialize: (state) => ({
         // Only persist these fields (exclude transient state like currentView)
         sessionHistory: state.sessionHistory,
@@ -650,7 +737,7 @@ export const useGameStore = create<GameStore>()(
         cloudUnlocks: state.cloudUnlocks,
       }),
       migrate: (persistedState: unknown, version: number) => {
-        if (version >= 5) return persistedState;
+        if (version >= 6) return persistedState;
         if (!persistedState || typeof persistedState !== 'object') return persistedState;
 
         const state = persistedState as {
