@@ -173,8 +173,8 @@ export interface UserProfile {
   auth: AuthProfile;
   /** Completed milestones (e.g., ['numeric_2back', 'spatial_3x3']) */
   completedMilestones: string[];
-  /** In-game currency (Brain Points) */
-  brainPoints: number;
+  /** In-game currency (Brain Coins) */
+  brainCoins: number;
   /** Energy system state */
   energy: EnergyState;
   /** Check-in system state */
@@ -184,7 +184,7 @@ export interface UserProfile {
 }
 
 export type GameUnlocks = {
-  numeric: { maxN: number; rounds: number[] };
+  numeric: { maxN: number; roundsByN: Record<string, number[]> };
   spatial: { grids: number[]; maxNByGrid: Record<string, number> };
   mouse: { maxMice: number; grids: [number, number][]; difficulties: MouseDifficultyLevel[]; maxRounds: number };
   house: { speeds: HouseSpeed[]; maxEvents: number; maxRounds: number };
@@ -250,10 +250,10 @@ export interface CheckInState {
 }
 
 /** Check-in reward tiers */
-export function getCheckInReward(consecutiveDays: number): { xp: number; points: number } {
-  if (consecutiveDays >= 7) return { xp: 50, points: 300 };
-  if (consecutiveDays >= 3) return { xp: 50, points: 100 };
-  return { xp: 50, points: 50 };
+export function getCheckInReward(consecutiveDays: number): { xp: number; coins: number } {
+  if (consecutiveDays >= 7) return { xp: 50, coins: 60 };
+  if (consecutiveDays >= 3) return { xp: 50, coins: 20 };
+  return { xp: 50, coins: 10 };
 }
 
 // ------------------------------------------------------------

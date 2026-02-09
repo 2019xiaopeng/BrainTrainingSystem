@@ -12,16 +12,16 @@ export function CheckInWidget() {
   const { t } = useTranslation();
   const checkIn = useGameStore((s) => s.userProfile.checkIn);
   const performCheckIn = useGameStore((s) => s.performCheckIn);
-  const [reward, setReward] = useState<{ xp: number; points: number } | null>(null);
+  const [reward, setReward] = useState<{ xp: number; coins: number } | null>(null);
 
   const today = new Date().toISOString().slice(0, 10);
   const isCheckedIn = checkIn.lastCheckInDate === today;
 
-  const handleCheckIn = () => {
+  const handleCheckIn = async () => {
     if (isCheckedIn) return;
-    const result = performCheckIn();
+    const result = await performCheckIn();
     if (result) {
-      setReward({ xp: result.xpGained, points: result.pointsGained });
+      setReward({ xp: result.xpGained, coins: result.coinsGained });
       // Auto-hide reward after 3 seconds
       setTimeout(() => setReward(null), 3000);
     }
@@ -65,7 +65,7 @@ export function CheckInWidget() {
             exit={{ opacity: 0, y: -10 }}
             className="mt-2 text-center text-xs text-sage-700 bg-sage-50 rounded-lg py-2 border border-sage-200/50"
           >
-            ✨ +{reward.xp} XP · +{reward.points} {t('checkin.points')}
+            ✨ +{reward.xp} XP · +{reward.coins} {t('checkin.points')}
           </motion.div>
         )}
       </AnimatePresence>

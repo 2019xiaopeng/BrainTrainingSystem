@@ -57,6 +57,8 @@ interface GameStore {
   nextConfig: NBackConfig;
   /** The most recent session summary (for the result screen) */
   lastSummary: SessionSummary | null;
+  /** Server-confirmed unlock IDs from the most recent session */
+  lastUnlocks: string[];
   /** Simplified history of last 50 sessions */
   sessionHistory: SessionHistoryEntry[];
   /** User's persistent profile */
@@ -81,9 +83,9 @@ interface GameStore {
   recalculateEnergy: () => void;
   consumeEnergy: () => boolean;
   addEnergy: (amount: number) => void;
-  performCheckIn: () => { xpGained: number; pointsGained: number } | null;
+  performCheckIn: () => Promise<{ xpGained: number; coinsGained: number } | null>;
   purchaseProduct: (productId: string) => boolean;
-  addBrainPoints: (amount: number) => void;
+  addBrainCoins: (amount: number) => void;
 }
 
 const calculateScore = (summary: SessionSummary): number => {
@@ -167,6 +169,7 @@ export const useGameStore = create<GameStore>()(
       currentView: 'home',
       nextConfig: DEFAULT_CONFIG,
       lastSummary: null,
+      lastUnlocks: [],
       sessionHistory: [],
       userProfile: {
         totalScore: 0,
@@ -189,7 +192,7 @@ export const useGameStore = create<GameStore>()(
           linkedProviders: ['guest'],
         },
         completedMilestones: [],
-        brainPoints: 0,
+        brainCoins: 0,
         energy: {
           current: ENERGY_MAX,
           max: ENERGY_MAX,
@@ -348,6 +351,7 @@ export const useGameStore = create<GameStore>()(
 
         set({
           lastSummary: enrichedSummary,
+          lastUnlocks: [],
           sessionHistory: newHistory,
           userProfile: {
             ...state.userProfile,
@@ -356,7 +360,7 @@ export const useGameStore = create<GameStore>()(
             daysStreak: newStreak,
             lastPlayedDate: new Date().toISOString(),
             brainStats: newBrainStats,
-            brainPoints: state.userProfile.brainPoints + Math.round(score * 0.5),
+            brainCoins: state.userProfile.brainCoins + Math.round(score * 0.1),
             completedMilestones: milestones,
           },
         });
@@ -433,7 +437,9 @@ export const useGameStore = create<GameStore>()(
                   userProfile: {
                     ...s.userProfile,
                     totalXP: p.xp ?? s.userProfile.totalXP,
+                    brainCoins: p.brainCoins ?? s.userProfile.brainCoins,
                     energy: p.energy ?? s.userProfile.energy,
+                    checkIn: p.checkIn ?? s.userProfile.checkIn,
                   },
                   cloudUnlocks: p.unlocks ?? s.cloudUnlocks,
                 }));
@@ -446,8 +452,10 @@ export const useGameStore = create<GameStore>()(
               userProfile: {
                 ...s.userProfile,
                 totalXP: data.xpAfter ?? s.userProfile.totalXP,
+                brainCoins: data.brainCoinsAfter ?? s.userProfile.brainCoins,
                 energy: data.energy ?? s.userProfile.energy,
               },
+              lastUnlocks: Array.isArray(data.newlyUnlocked) ? data.newlyUnlocked : s.lastUnlocks,
               cloudUnlocks: data.unlocks ?? s.cloudUnlocks,
             }));
           } catch {
@@ -464,7 +472,7 @@ export const useGameStore = create<GameStore>()(
           lastSummary: summary,
         }),
 
-      goHome: () => set({ currentView: 'home', lastSummary: null }),
+      goHome: () => set({ currentView: 'home', lastSummary: null, lastUnlocks: [] }),
 
       // ---- Economy Actions ----
 
@@ -515,7 +523,7 @@ export const useGameStore = create<GameStore>()(
           },
         })),
 
-      performCheckIn: () => {
+      performCheckIn: async () => {
         const state = get();
         if (state.userProfile.auth?.status === 'guest') return null;
         const today = new Date().toISOString().slice(0, 10);
@@ -535,21 +543,29 @@ export const useGameStore = create<GameStore>()(
           }
         }
 
-        const reward = getCheckInReward(newConsecutive);
-
-        set({
-          userProfile: {
-            ...state.userProfile,
-            totalXP: state.userProfile.totalXP + reward.xp,
-            brainPoints: state.userProfile.brainPoints + reward.points,
-            checkIn: {
-              lastCheckInDate: today,
-              consecutiveDays: newConsecutive,
+        try {
+          const resp = await fetch('/api/user/checkin', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            credentials: 'include',
+          });
+          if (!resp.ok) return null;
+          const data = await resp.json();
+          if (data?.alreadyCheckedIn) return null;
+          set((s) => ({
+            userProfile: {
+              ...s.userProfile,
+              totalXP: data.xpAfter ?? s.userProfile.totalXP,
+              brainCoins: data.brainCoinsAfter ?? s.userProfile.brainCoins,
+              checkIn: data.checkIn ?? s.userProfile.checkIn,
             },
-          },
-        });
+          }));
 
-        return { xpGained: reward.xp, pointsGained: reward.points };
+          const reward = data.reward ?? getCheckInReward(newConsecutive);
+          return { xpGained: reward.xp ?? 0, coinsGained: reward.coins ?? 0 };
+        } catch {
+          return null;
+        }
       },
 
       purchaseProduct: (productId) => {
@@ -557,7 +573,7 @@ export const useGameStore = create<GameStore>()(
         if (state.userProfile.auth?.status === 'guest') return false;
         const product = STORE_PRODUCTS.find((p) => p.id === productId);
         if (!product) return false;
-        if (state.userProfile.brainPoints < product.price) return false;
+        if (state.userProfile.brainCoins < product.price) return false;
 
         // Check if permanent item already owned
         if (product.type === 'permanent' && state.userProfile.ownedItems.includes(productId)) {
@@ -566,7 +582,7 @@ export const useGameStore = create<GameStore>()(
 
         let newProfile = {
           ...state.userProfile,
-          brainPoints: state.userProfile.brainPoints - product.price,
+          brainCoins: state.userProfile.brainCoins - product.price,
         };
 
         // Apply product effect
@@ -603,13 +619,13 @@ export const useGameStore = create<GameStore>()(
         return true;
       },
 
-      addBrainPoints: (amount) =>
+      addBrainCoins: (amount) =>
         set((state) => {
           if (state.userProfile.auth?.status === 'guest') return state;
           return {
             userProfile: {
               ...state.userProfile,
-              brainPoints: state.userProfile.brainPoints + amount,
+              brainCoins: state.userProfile.brainCoins + amount,
             },
           };
         }),
@@ -657,7 +673,7 @@ export const useGameStore = create<GameStore>()(
               linkedProviders: ['guest'],
             },
             completedMilestones: p.completedMilestones ?? [],
-            brainPoints: p.brainPoints ?? 0,
+            brainCoins: (p as unknown as { brainCoins?: number }).brainCoins ?? (p as unknown as { brainPoints?: number }).brainPoints ?? 0,
             energy: p.energy ?? {
               current: ENERGY_MAX,
               max: ENERGY_MAX,

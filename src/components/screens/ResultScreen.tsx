@@ -5,6 +5,7 @@ interface ResultScreenProps {
   summary: SessionSummary;
   sessionHistory: SessionHistoryEntry[];
   userProfile: UserProfile;
+  unlockIds: string[];
   onPlayAgain: () => void;
   onBackHome: () => void;
 }
@@ -12,14 +13,21 @@ interface ResultScreenProps {
 /**
  * ResultScreen - 结果展示界面
  */
-export function ResultScreen({ summary, sessionHistory, userProfile, onPlayAgain, onBackHome }: ResultScreenProps) {
+export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, onPlayAgain, onBackHome }: ResultScreenProps) {
   const { t } = useTranslation();
+
   // Check for new achievements
   const isNewHighScore = summary.score && sessionHistory.length > 1 && 
     summary.score > Math.max(...sessionHistory.slice(0, -1).map(s => s.score));
   
   const isNewMaxNLevel = summary.accuracy >= 80 && summary.config.nLevel === userProfile.maxNLevel &&
     sessionHistory.length > 1;
+
+  const formatUnlock = (id: string) => {
+    const m = id.match(/^numeric_n_(\d+)_r_(\d+)$/);
+    if (m) return t('unlock.numeric', { n: m[1], rounds: m[2] });
+    return id;
+  };
 
   return (
     <div className="space-y-6 pt-8">
@@ -38,6 +46,19 @@ export function ResultScreen({ summary, sessionHistory, userProfile, onPlayAgain
               {t('result.newLevel')}
             </div>
           )}
+        </div>
+      )}
+
+      {unlockIds.length > 0 && (
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow border border-zen-200 animate-slide-up">
+          <div className="text-sm font-medium text-zen-700 mb-2">{t('result.unlocksTitle')}</div>
+          <div className="flex flex-wrap gap-2">
+            {unlockIds.map((id) => (
+              <div key={id} className="text-xs px-2.5 py-1 rounded-full bg-sage-50 text-sage-700 border border-sage-200/50">
+                {formatUnlock(id)}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

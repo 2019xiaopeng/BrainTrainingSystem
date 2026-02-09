@@ -15,7 +15,7 @@ export function StoreScreen() {
   const { t } = useTranslation();
   const authStatus = useGameStore((s) => s.userProfile.auth?.status ?? 'guest');
   const isGuest = authStatus === 'guest';
-  const brainPoints = useGameStore((s) => s.userProfile.brainPoints);
+  const brainCoins = useGameStore((s) => s.userProfile.brainCoins);
   const ownedItems = useGameStore((s) => s.userProfile.ownedItems);
   const purchaseProduct = useGameStore((s) => s.purchaseProduct);
 
@@ -31,7 +31,7 @@ export function StoreScreen() {
       const success = purchaseProduct(product.id);
       if (success) {
         setFeedback({ success: true, message: t('store.purchaseSuccess') });
-      } else if (brainPoints < product.price) {
+      } else if (brainCoins < product.price) {
         setFeedback({ success: false, message: t('store.notEnoughPoints') });
       } else {
         setFeedback({ success: false, message: t('store.alreadyOwned') });
@@ -62,7 +62,7 @@ export function StoreScreen() {
         </div>
         <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-amber-100 px-4 py-2 rounded-xl border border-amber-200/50">
           <Coins className="w-4 h-4 text-amber-600" />
-          <span className="font-mono font-bold text-amber-700">{(isGuest ? 0 : brainPoints).toLocaleString()}</span>
+          <span className="font-mono font-bold text-amber-700">{(isGuest ? 0 : brainCoins).toLocaleString()}</span>
           <span className="text-xs text-amber-500">{t('store.points')}</span>
         </div>
       </div>
@@ -111,7 +111,7 @@ export function StoreScreen() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {STORE_PRODUCTS.map((product) => {
           const isOwned = !isGuest && product.type === 'permanent' && ownedItems.includes(product.id);
-          const canAfford = !isGuest && brainPoints >= product.price;
+          const canAfford = !isGuest && brainCoins >= product.price;
           const isPurchasing = purchasingId === product.id;
 
           return (

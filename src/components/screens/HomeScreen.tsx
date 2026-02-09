@@ -67,7 +67,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   // Determine current N-Back config based on mode
   const nLevel = mode === 'numeric' ? numericNLevel : spatialNLevel;
   const rounds = mode === 'numeric' ? numericRounds : spatialRounds;
-  const numericRoundsUnlocked = numericUnlocks?.rounds ?? [10];
+  const numericRoundsUnlocked = numericUnlocks?.roundsByN?.[String(numericNLevel)] ?? [5, 10];
   const numericMaxNUnlocked = numericUnlocks?.maxN ?? 12;
   const spatialGridsUnlocked = spatialUnlocks?.grids ?? [3, 4, 5];
   const spatialMaxNUnlocked = spatialUnlocks?.maxNByGrid?.[String(gridSize)] ?? 12;
@@ -84,6 +84,16 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
     if (isGuest) return;
     updateGameConfig('numeric', { nLevel: numericNLevel, rounds: numericRounds });
   }, [numericNLevel, numericRounds, updateGameConfig, isGuest]);
+
+  useEffect(() => {
+    if (isGuest) return;
+    if (mode !== 'numeric') return;
+    const allowed = numericUnlocks?.roundsByN?.[String(numericNLevel)] ?? [];
+    if (allowed.length === 0) return;
+    if (allowed.includes(numericRounds)) return;
+    const next = [...allowed].sort((a, b) => a - b)[0];
+    if (typeof next === 'number') setNumericRounds(next);
+  }, [isGuest, mode, numericNLevel, numericRounds, numericUnlocks]);
 
   useEffect(() => {
     if (isGuest) return;
@@ -320,7 +330,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
               <div className="flex items-center gap-4">
                 <label className="text-sm text-zen-500 w-28">{t('home.rounds')}</label>
                 <div className="flex gap-2">
-                  {[10, 15, 20].map((r) => {
+                  {[5, 10, 15, 20, 25, 30].map((r) => {
                     const unlocked = numericRoundsUnlocked.includes(r);
                     const active = numericRounds === r;
                     return (

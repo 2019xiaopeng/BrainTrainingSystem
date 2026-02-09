@@ -61,7 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           userProfile: {
             ...s.userProfile,
             totalXP: data.xp ?? s.userProfile.totalXP,
+            brainCoins: data.brainCoins ?? s.userProfile.brainCoins,
             energy: data.energy ?? s.userProfile.energy,
+            checkIn: data.checkIn ?? s.userProfile.checkIn,
           },
           cloudUnlocks: data.unlocks ?? s.cloudUnlocks,
         }));

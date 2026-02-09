@@ -8,7 +8,7 @@
     "profile": "个人档案",
     "streak": "🔥 {{days}} 天连续",
     "maxLevel": "最高等级",
-    "totalScore": "累计积分",
+    "totalScore": "累计得分",
     "streakDays": "连续天数",
     "gameMode": "游戏模式",
     "numeric": "数字心流",
@@ -114,6 +114,7 @@
     "title": "训练完成",
     "newRecord": "🏆 新纪录！",
     "newLevel": "⭐ 新难度解锁！",
+    "unlocksTitle": "解锁提示",
     "accuracy": "准确率",
     "points": "分",
     "difficulty": "难度",
@@ -124,6 +125,9 @@
     "duration": "用时: {{time}}秒 · 共 {{rounds}} 题",
     "playAgain": "再来一局",
     "backHome": "← 返回首页"
+  },
+  "unlock": {
+    "numeric": "解锁：{{n}}-Back（{{rounds}}题）"
   },
   "profile": {
     "title": "个人档案",

@@ -114,6 +114,7 @@
     "title": "Training Complete",
     "newRecord": "🏆 New Record!",
     "newLevel": "⭐ New Level Unlocked!",
+    "unlocksTitle": "Unlocks",
     "accuracy": "Accuracy",
     "points": "pts",
     "difficulty": "Difficulty",
@@ -124,6 +125,9 @@
     "duration": "Duration: {{time}}s · {{rounds}} rounds",
     "playAgain": "Play Again",
     "backHome": "← Back to Home"
+  },
+  "unlock": {
+    "numeric": "Unlocked: {{n}}-Back ({{rounds}} rounds)"
   },
   "profile": {
     "title": "Profile",

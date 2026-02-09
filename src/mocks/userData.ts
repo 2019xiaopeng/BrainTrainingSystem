@@ -236,7 +236,9 @@ export const MOCK_USER_PROFILE: UserProfile = {
     displayName: 'Guest',
     avatarUrl: null,
     linkedProviders: ['guest'],
-  },  completedMilestones: ['numeric_2back', 'spatial_3x3'],  brainPoints: 2450,
+  },
+  completedMilestones: ['numeric_2back', 'spatial_3x3'],
+  brainCoins: 2450,
   energy: {
     current: 3,
     max: ENERGY_MAX,

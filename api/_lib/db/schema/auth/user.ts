@@ -1,4 +1,4 @@
-import { boolean, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, date, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -14,11 +14,16 @@ export const user = pgTable("user", {
   // --- Game Business Fields ---
   xp: integer("xp").default(0).notNull(),
   brainLevel: integer("brain_level").default(1).notNull(),
+  brainCoins: integer("brain_coins").default(0).notNull(),
   
   // Energy System
   energyCurrent: integer("energy_current").default(5).notNull(),
   energyLastUpdated: timestamp("energy_last_updated").defaultNow(),
   unlimitedEnergyUntil: timestamp("unlimited_energy_until"),
+
+  // Check-in
+  checkInLastDate: date("check_in_last_date"),
+  checkInStreak: integer("check_in_streak").default(0).notNull(),
 
   // Stats & Progress
   brainStats: jsonb("brain_stats").default({}), // 存储六维雷达图数据
