@@ -359,7 +359,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       }
 
       const configSnapshot = {
-        ...(summary.config ?? {}),
+        ...config,
         metrics: {
           totalRounds: clampInt(summary.totalRounds ?? config.totalRounds ?? 0, 0),
           correctCount: clampInt(summary.correctCount ?? 0, 0),
