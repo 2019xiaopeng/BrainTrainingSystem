@@ -44,38 +44,46 @@ export function EnergyBar() {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    const mmss = `${String(minutes + hours * 60).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    return t('energy.recoverIn', { time: mmss });
+    const time =
+      hours > 0
+        ? `${hours}${t('time.h')}`
+        : minutes > 0
+          ? `${minutes}${t('time.m')}`
+          : `${Math.max(1, seconds)}${t('time.s')}`;
+    return t('energy.recoverIn', { time });
   }, [energy.current, energy.max, remainMs, t]);
 
   const energyPercent = (energy.current / energy.max) * 100;
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-1.5">
-        <Zap className="w-4 h-4 text-amber-500" />
-        <span className="text-sm font-bold text-zen-700">
-          {energy.current}/{energy.max}
-        </span>
-      </div>
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <Zap className="w-4 h-4 text-amber-500" />
+          <span className="text-sm font-bold text-zen-700">
+            {energy.current}/{energy.max}
+          </span>
+        </div>
 
-      {/* Mini energy bar */}
-      <div className="flex-1 h-2 bg-zen-100 rounded-full overflow-hidden min-w-[60px]">
-        <div
-          className="h-full rounded-full transition-all duration-500 ease-out"
-          style={{
-            width: `${energyPercent}%`,
-            background: energyPercent > 60
-              ? 'linear-gradient(90deg, #95a795, #627361)'
-              : energyPercent > 20
-              ? 'linear-gradient(90deg, #d4a574, #b8864a)'
-              : 'linear-gradient(90deg, #e87461, #c44d3c)',
-          }}
-        />
+        <div className="flex-1 min-w-[60px]">
+          <div className="h-2 bg-zen-100 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500 ease-out"
+              style={{
+                width: `${energyPercent}%`,
+                background: energyPercent > 60
+                  ? 'linear-gradient(90deg, #95a795, #627361)'
+                  : energyPercent > 20
+                  ? 'linear-gradient(90deg, #d4a574, #b8864a)'
+                  : 'linear-gradient(90deg, #e87461, #c44d3c)',
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       {remainText && (
-        <div className="text-xs text-zen-400 tabular-nums whitespace-nowrap">
+        <div className="text-[11px] text-zen-400 leading-none pl-[22px]">
           {remainText}
         </div>
       )}

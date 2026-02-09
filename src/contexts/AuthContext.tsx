@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { useSession } from '../lib/auth/client';
 import { useGameStore } from '../store/gameStore';
-import type { AuthProfile } from '../types/game';
+import type { AuthProfile, EnergyState } from '../types/game';
 
 type SessionUser = {
   id?: string;
@@ -22,6 +22,26 @@ const guestProfile: AuthProfile = {
   displayName: 'Guest',
   avatarUrl: null,
   linkedProviders: ['guest'],
+};
+
+const isEnergyState = (v: unknown): v is EnergyState => {
+  if (!v || typeof v !== 'object') return false;
+  const e = v as Record<string, unknown>;
+  return (
+    typeof e.current === 'number' &&
+    typeof e.max === 'number' &&
+    typeof e.lastUpdated === 'number' &&
+    typeof e.unlimitedUntil === 'number'
+  );
+};
+
+const mergeEnergyState = (local: EnergyState, remote: unknown): EnergyState => {
+  if (!isEnergyState(remote)) return local;
+  const r = remote;
+  if (r.unlimitedUntil > local.unlimitedUntil) return r;
+  if (r.lastUpdated > local.lastUpdated) return r;
+  if (r.lastUpdated === local.lastUpdated) return r.current < local.current ? r : local;
+  return r.current < local.current ? { ...local, current: r.current } : local;
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -64,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ...s.userProfile,
             totalXP: data.xp ?? s.userProfile.totalXP,
             brainCoins: data.brainCoins ?? s.userProfile.brainCoins,
-            energy: data.energy ?? s.userProfile.energy,
+            energy: mergeEnergyState(s.userProfile.energy, data.energy),
             checkIn: data.checkIn ?? s.userProfile.checkIn,
             ownedItems: Array.isArray(data.ownedItems) ? data.ownedItems : s.userProfile.ownedItems,
           },

@@ -50,6 +50,15 @@ const isEnergyState = (v: unknown): v is EnergyState => {
   );
 };
 
+const mergeEnergyState = (local: EnergyState, remote: unknown): EnergyState => {
+  if (!isEnergyState(remote)) return local;
+  const r = remote;
+  if (r.unlimitedUntil > local.unlimitedUntil) return r;
+  if (r.lastUpdated > local.lastUpdated) return r;
+  if (r.lastUpdated === local.lastUpdated) return r.current < local.current ? r : local;
+  return r.current < local.current ? { ...local, current: r.current } : local;
+};
+
 const isCheckInState = (v: unknown): v is CheckInState => {
   if (!v || typeof v !== 'object') return false;
   const c = v as Record<string, unknown>;
@@ -678,7 +687,7 @@ export const useGameStore = create<GameStore>()(
                     ...s.userProfile,
                     totalXP: data.xpAfter ?? s.userProfile.totalXP,
                     brainCoins: data.brainCoinsAfter ?? s.userProfile.brainCoins,
-                    energy: data.energy ?? s.userProfile.energy,
+                    energy: mergeEnergyState(s.userProfile.energy, (data as { energy?: unknown } | null)?.energy),
                   },
                   lastUnlocks: Array.isArray(data.newlyUnlocked) ? data.newlyUnlocked : s.lastUnlocks,
                   lastRewards: {

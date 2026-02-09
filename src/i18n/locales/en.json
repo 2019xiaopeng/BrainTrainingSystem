@@ -121,6 +121,7 @@
     "dailyPerfectBonus": "Daily Perfect +{{coins}} Coins",
     "newRecord": "🏆 New Record!",
     "newLevel": "⭐ New Level Unlocked!",
+    "newUnlock": "⭐ Unlocked!",
     "unlocksTitle": "Unlocks",
     "accuracy": "Accuracy",
     "points": "pts",
@@ -134,7 +135,15 @@
     "backHome": "← Back to Home"
   },
   "unlock": {
-    "numeric": "Unlocked: {{n}}-Back ({{rounds}} rounds)"
+    "numeric": "Unlocked: Numeric {{n}}-Back ({{rounds}} rounds)",
+    "spatialN": "Unlocked: Spatial {{grid}} to {{n}}-Back",
+    "spatialGrid": "Unlocked: Spatial {{grid}} grid",
+    "mouseDifficulty": "Unlocked: Mouse {{difficulty}}",
+    "mouseMice": "Unlocked: {{count}} mice",
+    "mouseRounds": "Unlocked: {{rounds}} rounds (Mouse)",
+    "houseSpeed": "Unlocked: House {{speed}}",
+    "houseEvents": "Unlocked: {{events}} events (House)",
+    "houseRounds": "Unlocked: {{rounds}} rounds (House)"
   },
   "profile": {
     "title": "Profile",
@@ -209,6 +218,11 @@
     "in": "",
     "recoverIn": "Next +1 in {{time}}",
     "insufficient": "Insufficient energy! Please wait or purchase Energy Potion."
+  },
+  "time": {
+    "h": "h",
+    "m": "m",
+    "s": "s"
   },
   "checkin": {
     "title": "Daily Check-in",
