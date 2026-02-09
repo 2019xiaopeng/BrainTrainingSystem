@@ -27,12 +27,14 @@ const guestProfile: AuthProfile = {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = useSession();
   const setAuthProfile = useGameStore((s) => s.setAuthProfile);
+  const setCloudUnlocks = useGameStore((s) => s.setCloudUnlocks);
 
   useEffect(() => {
     if (isPending) return;
 
     if (!session) {
       setAuthProfile(guestProfile);
+      setCloudUnlocks(null);
       return;
     }
 
@@ -49,7 +51,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       avatarUrl,
       linkedProviders: ['email'],
     });
-  }, [isPending, session, setAuthProfile]);
+
+    void (async () => {
+      try {
+        const resp = await fetch('/api/user/profile', { credentials: 'include' });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        useGameStore.setState((s) => ({
+          userProfile: {
+            ...s.userProfile,
+            totalXP: data.xp ?? s.userProfile.totalXP,
+            energy: data.energy ?? s.userProfile.energy,
+          },
+          cloudUnlocks: data.unlocks ?? s.cloudUnlocks,
+        }));
+      } catch {
+        return;
+      }
+    })();
+  }, [isPending, session, setAuthProfile, setCloudUnlocks]);
 
   return children;
 }

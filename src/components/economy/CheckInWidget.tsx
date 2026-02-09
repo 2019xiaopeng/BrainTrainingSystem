@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Check, Flame } from 'lucide-react';
+import { Gift, Flame } from 'lucide-react';
 
 /**
  * CheckInWidget — 每日签到组件

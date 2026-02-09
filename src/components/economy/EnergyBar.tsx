@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useEffect } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { getNextRecoveryMs } from '../../types/game';
 import { Zap } from 'lucide-react';
@@ -10,13 +9,9 @@ import { Zap } from 'lucide-react';
  * 利用 Zustand selector 实现精准更新，无需刷新整个页面
  */
 export function EnergyBar() {
-  const { t } = useTranslation();
-
   // Zustand selector: 只订阅 energy 字段，其他字段变化不会触发重渲染
   const energy = useGameStore((s) => s.userProfile.energy);
   const recalculateEnergy = useGameStore((s) => s.recalculateEnergy);
-
-  const [countdown, setCountdown] = useState('');
 
   // Recalculate energy on mount
   useEffect(() => {

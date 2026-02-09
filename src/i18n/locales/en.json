@@ -25,6 +25,7 @@
     "gridSize": "Grid Size:",
     "configError": "Config Error",
     "configErrorMsg": "N must be less than rounds! N={{n}}, rounds={{rounds}}",
+    "lockedConfigErrorMsg": "Some options are locked. Clear easier levels to unlock them.",
     "mouseCount": "🐭 Mice Count",
     "mouseGrid": "📐 Grid Size",
     "mouseDifficulty": "💪 Difficulty",

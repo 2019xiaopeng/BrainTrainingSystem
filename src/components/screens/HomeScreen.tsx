@@ -24,8 +24,14 @@ interface HomeScreenProps {
 export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProps) {
   const { t } = useTranslation();
   const { gameConfigs, updateGameConfig } = useGameStore();
+  const cloudUnlocks = useGameStore((s) => s.cloudUnlocks);
   const [mode, setMode] = useState<GameMode>(initialMode);
   const isGuest = (userProfile.auth?.status ?? 'guest') === 'guest';
+
+  const numericUnlocks = !isGuest && cloudUnlocks ? cloudUnlocks.numeric : null;
+  const spatialUnlocks = !isGuest && cloudUnlocks ? cloudUnlocks.spatial : null;
+  const mouseUnlocks = !isGuest && cloudUnlocks ? cloudUnlocks.mouse : null;
+  const houseUnlocks = !isGuest && cloudUnlocks ? cloudUnlocks.house : null;
 
   // Separate config state for numeric mode (use saved config or defaults)
   const [numericNLevel, setNumericNLevel] = useState(() => (isGuest ? GUEST_DEFAULTS.numeric.nLevel : gameConfigs.numeric.nLevel));
@@ -61,6 +67,17 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   // Determine current N-Back config based on mode
   const nLevel = mode === 'numeric' ? numericNLevel : spatialNLevel;
   const rounds = mode === 'numeric' ? numericRounds : spatialRounds;
+  const numericRoundsUnlocked = numericUnlocks?.rounds ?? [10];
+  const numericMaxNUnlocked = numericUnlocks?.maxN ?? 12;
+  const spatialGridsUnlocked = spatialUnlocks?.grids ?? [3, 4, 5];
+  const spatialMaxNUnlocked = spatialUnlocks?.maxNByGrid?.[String(gridSize)] ?? 12;
+  const mouseMaxMiceUnlocked = mouseUnlocks?.maxMice ?? 9;
+  const mouseGridsUnlocked = mouseUnlocks?.grids ?? MOUSE_GRID_PRESETS.map((p) => p.value);
+  const mouseDifficultiesUnlocked = mouseUnlocks?.difficulties ?? (Object.keys(MOUSE_DIFFICULTY_MAP) as MouseDifficultyLevel[]);
+  const mouseMaxRoundsUnlocked = mouseUnlocks?.maxRounds ?? 5;
+  const houseSpeedsUnlocked = houseUnlocks?.speeds ?? (['easy', 'normal', 'fast'] as HouseSpeed[]);
+  const houseMaxEventsUnlocked = houseUnlocks?.maxEvents ?? 15;
+  const houseMaxRoundsUnlocked = houseUnlocks?.maxRounds ?? 5;
   
   // Sync changes to localStorage
   useEffect(() => {
@@ -118,11 +135,24 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
 
   // Validate N-Back config
   const isNBackMode = mode === 'numeric' || mode === 'spatial';
-  const isConfigValid = isNBackMode ? nLevel < rounds : true;
-
-  // Mouse config validation: mice must fit in grid
   const maxMice = mouseGrid[0] * mouseGrid[1] - 1;
   const effectiveMouseCount = Math.min(mouseCount, maxMice);
+  const isUnlocked =
+    isGuest ? true :
+    mode === 'numeric'
+      ? nLevel <= numericMaxNUnlocked && numericRoundsUnlocked.includes(numericRounds)
+      : mode === 'spatial'
+        ? spatialGridsUnlocked.includes(gridSize) && spatialNLevel <= spatialMaxNUnlocked
+        : mode === 'mouse'
+          ? effectiveMouseCount <= Math.min(maxMice, mouseMaxMiceUnlocked) &&
+            mouseGridsUnlocked.some((g) => g[0] === mouseGrid[0] && g[1] === mouseGrid[1]) &&
+            mouseDifficultiesUnlocked.includes(mouseDifficulty) &&
+            mouseRounds <= Math.min(5, mouseMaxRoundsUnlocked)
+          : houseSpeedsUnlocked.includes(houseSpeed) &&
+            houseEvents <= Math.min(15, houseMaxEventsUnlocked) &&
+            houseRounds <= Math.min(5, houseMaxRoundsUnlocked);
+
+  const isConfigValid = (isNBackMode ? nLevel < rounds : true) && isUnlocked;
 
   const handleStart = () => {
     if (mode === 'mouse') {
@@ -272,12 +302,12 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                 <button
                   onClick={() => {
                     if (mode === 'numeric') {
-                      setNumericNLevel((n) => Math.min(Math.min(12, numericRounds - 1), n + 1));
+                      setNumericNLevel((n) => Math.min(Math.min(12, numericRounds - 1, numericMaxNUnlocked), n + 1));
                     } else {
-                      setSpatialNLevel((n) => Math.min(Math.min(12, spatialRounds - 1), n + 1));
+                      setSpatialNLevel((n) => Math.min(Math.min(12, spatialRounds - 1, spatialMaxNUnlocked), n + 1));
                     }
                   }}
-                  disabled={nLevel >= Math.min(12, rounds - 1)}
+                  disabled={nLevel >= Math.min(12, rounds - 1, mode === 'numeric' ? numericMaxNUnlocked : spatialMaxNUnlocked)}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
@@ -286,36 +316,52 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <label className="text-sm text-zen-500 w-28">{t('home.rounds')}</label>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    if (mode === 'numeric') {
-                      setNumericRounds((r) => Math.max(5, r - 5));
-                    } else {
-                      setSpatialRounds((r) => Math.max(5, r - 5));
-                    }
-                  }}
-                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all"
-                >
-                  −
-                </button>
-                <span className="text-2xl font-mono text-zen-700 w-12 text-center">{rounds}</span>
-                <button
-                  onClick={() => {
-                    if (mode === 'numeric') {
-                      setNumericRounds((r) => Math.min(30, r + 5));
-                    } else {
-                      setSpatialRounds((r) => Math.min(30, r + 5));
-                    }
-                  }}
-                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all"
-                >
-                  +
-                </button>
+            {mode === 'numeric' ? (
+              <div className="flex items-center gap-4">
+                <label className="text-sm text-zen-500 w-28">{t('home.rounds')}</label>
+                <div className="flex gap-2">
+                  {[10, 15, 20].map((r) => {
+                    const unlocked = numericRoundsUnlocked.includes(r);
+                    const active = numericRounds === r;
+                    return (
+                      <button
+                        key={r}
+                        onClick={() => unlocked && setNumericRounds(r)}
+                        disabled={!unlocked}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                          active
+                            ? 'bg-sage-500 text-white shadow-sm'
+                            : unlocked
+                              ? 'bg-zen-100 text-zen-600 hover:bg-zen-200'
+                              : 'bg-zen-100 text-zen-400 opacity-60 cursor-not-allowed'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center gap-4">
+                <label className="text-sm text-zen-500 w-28">{t('home.rounds')}</label>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSpatialRounds((r) => Math.max(5, r - 5))}
+                    className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all"
+                  >
+                    −
+                  </button>
+                  <span className="text-2xl font-mono text-zen-700 w-12 text-center">{spatialRounds}</span>
+                  <button
+                    onClick={() => setSpatialRounds((r) => Math.min(30, r + 5))}
+                    className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* 网格大小选择（仅空间模式） */}
             {mode === 'spatial' && (
@@ -325,11 +371,14 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                   {[3, 4, 5].map((size) => (
                     <button
                       key={size}
-                      onClick={() => setGridSize(size)}
+                      onClick={() => spatialGridsUnlocked.includes(size) && setGridSize(size)}
+                      disabled={!spatialGridsUnlocked.includes(size)}
                       className={`px-4 py-2 rounded-lg font-medium transition-all ${
                         gridSize === size
                           ? 'bg-teal-500 text-white shadow-sm'
-                          : 'bg-zen-100 text-zen-600 hover:bg-zen-200'
+                          : spatialGridsUnlocked.includes(size)
+                            ? 'bg-zen-100 text-zen-600 hover:bg-zen-200'
+                            : 'bg-zen-100 text-zen-400 opacity-60 cursor-not-allowed'
                       }`}
                     >
                       {size}×{size}
@@ -342,7 +391,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
             {!isConfigValid && (
               <div className="bg-red-50 rounded-lg p-3 text-xs text-red-700 border border-red-200">
                 <div className="font-medium mb-1">{t('home.configError')}</div>
-                <p>{t('home.configErrorMsg', { n: nLevel, rounds })}</p>
+                <p>{nLevel >= rounds ? t('home.configErrorMsg', { n: nLevel, rounds }) : t('home.lockedConfigErrorMsg')}</p>
               </div>
             )}
           </>
@@ -365,8 +414,8 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                 </button>
                 <span className="text-2xl font-mono text-zen-700 w-12 text-center">{effectiveMouseCount}</span>
                 <button
-                  onClick={() => setMouseCount((n) => Math.min(Math.min(9, maxMice), n + 1))}
-                  disabled={mouseCount >= maxMice || mouseCount >= 9}
+                  onClick={() => setMouseCount((n) => Math.min(Math.min(9, maxMice, mouseMaxMiceUnlocked), n + 1))}
+                  disabled={mouseCount >= Math.min(maxMice, mouseMaxMiceUnlocked) || mouseCount >= 9}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
@@ -379,24 +428,30 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
             <div className="space-y-2">
               <label className="text-sm text-zen-500 font-medium">{t('home.mouseGrid')}</label>
               <div className="flex gap-2">
-                {MOUSE_GRID_PRESETS.map(({ label, value }) => (
-                  <button
-                    key={label}
-                    onClick={() => {
-                      setMouseGrid(value);
-                      // Auto-clamp mouse count if grid is too small
-                      const newMax = value[0] * value[1] - 1;
-                      if (mouseCount > newMax) setMouseCount(Math.min(7, newMax));
-                    }}
-                    className={`flex-1 py-2.5 rounded-lg font-medium transition-all text-sm ${
-                      mouseGrid[0] === value[0] && mouseGrid[1] === value[1]
-                        ? 'bg-amber-500 text-white shadow-sm'
-                        : 'bg-zen-100 text-zen-600 hover:bg-amber-100'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+                {MOUSE_GRID_PRESETS.map(({ label, value }) => {
+                  const unlocked = mouseGridsUnlocked.some((g) => g[0] === value[0] && g[1] === value[1]);
+                  return (
+                    <button
+                      key={label}
+                      onClick={() => {
+                        if (!unlocked) return;
+                        setMouseGrid(value);
+                        const newMax = value[0] * value[1] - 1;
+                        if (mouseCount > newMax) setMouseCount(Math.min(7, newMax));
+                      }}
+                      disabled={!unlocked}
+                      className={`flex-1 py-2.5 rounded-lg font-medium transition-all text-sm ${
+                        mouseGrid[0] === value[0] && mouseGrid[1] === value[1]
+                          ? 'bg-amber-500 text-white shadow-sm'
+                          : unlocked
+                            ? 'bg-zen-100 text-zen-600 hover:bg-amber-100'
+                            : 'bg-zen-100 text-zen-400 opacity-60 cursor-not-allowed'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -405,21 +460,27 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
               <label className="text-sm text-zen-500 font-medium">{t('home.mouseDifficulty')}</label>
               <div className="grid grid-cols-4 gap-2">
                 {(Object.entries(MOUSE_DIFFICULTY_MAP) as [MouseDifficultyLevel, { label: string; pushes: number }][]).map(
-                  ([key, { label }]) => (
-                    <button
-                      key={key}
-                      onClick={() => setMouseDifficulty(key)}
-                      className={`py-3 rounded-lg font-medium transition-all ${
-                        mouseDifficulty === key
-                          ? key === 'hell'
-                            ? 'bg-red-500 text-white shadow-sm'
-                            : 'bg-amber-500 text-white shadow-sm'
-                          : 'bg-zen-100 text-zen-600 hover:bg-amber-100'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ),
+                  ([key, { label }]) => {
+                    const unlocked = mouseDifficultiesUnlocked.includes(key);
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => unlocked && setMouseDifficulty(key)}
+                        disabled={!unlocked}
+                        className={`py-3 rounded-lg font-medium transition-all ${
+                          mouseDifficulty === key
+                            ? key === 'hell'
+                              ? 'bg-red-500 text-white shadow-sm'
+                              : 'bg-amber-500 text-white shadow-sm'
+                            : unlocked
+                              ? 'bg-zen-100 text-zen-600 hover:bg-amber-100'
+                              : 'bg-zen-100 text-zen-400 opacity-60 cursor-not-allowed'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  },
                 )}
               </div>
             </div>
@@ -438,8 +499,8 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                 </button>
                 <span className="text-2xl font-mono text-zen-700 w-12 text-center">{mouseRounds}</span>
                 <button
-                  onClick={() => setMouseRounds((r) => Math.min(5, r + 1))}
-                  disabled={mouseRounds >= 5}
+                  onClick={() => setMouseRounds((r) => Math.min(Math.min(5, mouseMaxRoundsUnlocked), r + 1))}
+                  disabled={mouseRounds >= Math.min(5, mouseMaxRoundsUnlocked)}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
@@ -491,8 +552,8 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                 </button>
                 <span className="text-2xl font-mono text-zen-700 w-12 text-center">{houseEvents}</span>
                 <button
-                  onClick={() => setHouseEvents((n) => Math.min(15, n + 1))}
-                  disabled={houseEvents >= 15}
+                  onClick={() => setHouseEvents((n) => Math.min(Math.min(15, houseMaxEventsUnlocked), n + 1))}
+                  disabled={houseEvents >= Math.min(15, houseMaxEventsUnlocked)}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
@@ -508,11 +569,14 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                 {(['easy', 'normal', 'fast'] as const).map((speed) => (
                   <button
                     key={speed}
-                    onClick={() => setHouseSpeed(speed)}
+                    onClick={() => houseSpeedsUnlocked.includes(speed) && setHouseSpeed(speed)}
+                    disabled={!houseSpeedsUnlocked.includes(speed)}
                     className={`flex-1 py-2.5 rounded-lg font-medium transition-all text-sm ${
                       houseSpeed === speed
                         ? 'bg-purple-500 text-white shadow-sm'
-                        : 'bg-zen-100 text-zen-600 hover:bg-purple-100'
+                        : houseSpeedsUnlocked.includes(speed)
+                          ? 'bg-zen-100 text-zen-600 hover:bg-purple-100'
+                          : 'bg-zen-100 text-zen-400 opacity-60 cursor-not-allowed'
                     }`}
                   >
                     {t(`speed.${speed}`)}
@@ -535,8 +599,8 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                 </button>
                 <span className="text-2xl font-mono text-zen-700 w-12 text-center">{houseRounds}</span>
                 <button
-                  onClick={() => setHouseRounds((n) => Math.min(5, n + 1))}
-                  disabled={houseRounds >= 5}
+                  onClick={() => setHouseRounds((n) => Math.min(Math.min(5, houseMaxRoundsUnlocked), n + 1))}
+                  disabled={houseRounds >= Math.min(5, houseMaxRoundsUnlocked)}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >

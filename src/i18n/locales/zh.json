@@ -25,6 +25,7 @@
     "gridSize": "网格大小:",
     "configError": "配置错误",
     "configErrorMsg": "N 值必须小于题目数量！当前 N={{n}}，题目={{rounds}}",
+    "lockedConfigErrorMsg": "部分参数尚未解锁，请先完成更低难度的训练解锁。",
     "mouseCount": "🐭 老鼠个数",
     "mouseGrid": "📐 网格大小",
     "mouseDifficulty": "💪 难度等级",

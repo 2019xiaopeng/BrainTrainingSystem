@@ -183,6 +183,13 @@ export interface UserProfile {
   ownedItems: string[];
 }
 
+export type GameUnlocks = {
+  numeric: { maxN: number; rounds: number[] };
+  spatial: { grids: number[]; maxNByGrid: Record<string, number> };
+  mouse: { maxMice: number; grids: [number, number][]; difficulties: MouseDifficultyLevel[]; maxRounds: number };
+  house: { speeds: HouseSpeed[]; maxEvents: number; maxRounds: number };
+};
+
 // ------------------------------------------------------------
 // Energy System
 // ------------------------------------------------------------
