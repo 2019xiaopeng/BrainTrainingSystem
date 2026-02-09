@@ -1,6 +1,6 @@
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db } from "../_lib/db/index.js";
-import { dailyActivity, user, userUnlocks } from "../_lib/db/schema/index.js";
+import { dailyActivity, gameSessions, user, userUnlocks } from "../_lib/db/schema/index.js";
 import { requireSessionUser } from "../_lib/session.js";
 import type { RequestLike, ResponseLike } from "../_lib/http.js";
 import { isRecord } from "../_lib/http.js";
@@ -30,6 +30,7 @@ const defaultUnlocks = () => ({
 type Unlocks = ReturnType<typeof defaultUnlocks>;
 
 const clampInt = (n: unknown, fallback = 0) => (Number.isFinite(Number(n)) ? Math.trunc(Number(n)) : fallback);
+const clampFloat = (n: unknown, fallback = 0) => (Number.isFinite(Number(n)) ? Number(n) : fallback);
 
 const normalizeNumericUnlocks = (raw: Record<string, unknown>): Unlocks["numeric"] => {
   const maxN = Math.max(1, Math.min(12, clampInt(raw.maxN, 1)));
@@ -60,6 +61,65 @@ const normalizeNumericUnlocks = (raw: Record<string, unknown>): Unlocks["numeric
   return defaultUnlocks().numeric;
 };
 
+type BrainStats = {
+  memory: number;
+  focus: number;
+  math: number;
+  observation: number;
+  loadCapacity: number;
+  reaction: number;
+};
+
+const normalizeBrainStats = (raw: unknown): BrainStats => {
+  if (!isRecord(raw)) {
+    return { memory: 0, focus: 0, math: 0, observation: 0, loadCapacity: 0, reaction: 0 };
+  }
+  const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
+  return {
+    memory: clamp(clampFloat(raw.memory, 0)),
+    focus: clamp(clampFloat(raw.focus, 0)),
+    math: clamp(clampFloat(raw.math, 0)),
+    observation: clamp(clampFloat(raw.observation, 0)),
+    loadCapacity: clamp(clampFloat(raw.loadCapacity, 0)),
+    reaction: clamp(clampFloat(raw.reaction, 0)),
+  };
+};
+
+const computeBrainStats = (
+  current: BrainStats,
+  summary: { mode: string; nLevel: number; accuracy: number; avgReactionTimeMs: number },
+  lastSessions: Array<{ accuracy: number }>
+): BrainStats => {
+  const recent20 = lastSessions.slice(-20);
+  const avgAccuracy =
+    recent20.length > 0 ? recent20.reduce((sum, s) => sum + s.accuracy, 0) / recent20.length : summary.accuracy;
+
+  const mode = summary.mode;
+  const n = summary.nLevel;
+  const acc = summary.accuracy;
+  const avgRT = summary.avgReactionTimeMs || 2000;
+
+  const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
+
+  const memoryDelta = mode === "numeric" || mode === "spatial" || mode === "mouse" ? n * 8 * (acc / 100) : 0;
+  const memory = clamp(Math.max(current.memory, memoryDelta));
+
+  const focus = clamp(avgAccuracy);
+
+  const math = mode === "numeric" ? clamp(Math.max(current.math, acc * 0.8 + n * 4)) : current.math;
+
+  const observation =
+    mode === "spatial" || mode === "mouse" ? clamp(Math.max(current.observation, acc * 0.7 + n * 5)) : current.observation;
+
+  const loadCapacity =
+    mode === "house" || n >= 3 ? clamp(Math.max(current.loadCapacity, acc * 0.75 + n * 3)) : current.loadCapacity;
+
+  const reactionScore = clamp(((5000 - avgRT) / 3000) * 100);
+  const reaction = current.reaction > 0 ? clamp(current.reaction * 0.7 + reactionScore * 0.3) : reactionScore;
+
+  return { memory, focus, math, observation, loadCapacity, reaction };
+};
+
 export default async function handler(req: RequestLike, res: ResponseLike) {
   if (req.method !== "GET") {
     res.status(405).json({ error: "method_not_allowed" });
@@ -85,6 +145,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       unlimitedEnergyUntil: user.unlimitedEnergyUntil,
       checkInLastDate: user.checkInLastDate,
       checkInStreak: user.checkInStreak,
+      brainStats: user.brainStats,
     })
     .from(user)
     .where(eq(user.id, sessionUser.id))
@@ -159,11 +220,112 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     .from(dailyActivity)
     .where(and(eq(dailyActivity.userId, sessionUser.id), gte(dailyActivity.date, startDateKey), lte(dailyActivity.date, endDateKey)));
 
+  const scoreAggRows = await db
+    .select({
+      totalScore: sql<number>`coalesce(sum(${gameSessions.score}), 0)`.mapWith(Number),
+      maxNLevel: sql<number>`coalesce(max(${gameSessions.nLevel}), 0)`.mapWith(Number),
+    })
+    .from(gameSessions)
+    .where(and(eq(gameSessions.userId, sessionUser.id), inArray(gameSessions.gameMode, ["numeric", "spatial"])));
+
+  const totalScore = scoreAggRows[0]?.totalScore ?? 0;
+  const maxNLevelFromSessions = scoreAggRows[0]?.maxNLevel ?? 0;
+  const maxNLevelFromUnlocks = Math.max(
+    clampInt(unlocks.numeric.maxN, 1),
+    Math.max(0, ...Object.values(unlocks.spatial.maxNByGrid ?? {}).map((v) => clampInt(v, 0)))
+  );
+
+  const maxNLevel = Math.max(maxNLevelFromSessions, maxNLevelFromUnlocks);
+
+  const byDate = new Map<string, { totalXp: number; sessionsCount: number }>();
+  for (const row of activityRows) {
+    const key = String(row.date);
+    byDate.set(key, { totalXp: row.totalXp ?? 0, sessionsCount: row.sessionsCount ?? 0 });
+  }
+
+  const dateKeyToday = new Date().toISOString().slice(0, 10);
+  const hasToday = (byDate.get(dateKeyToday)?.sessionsCount ?? 0) > 0;
+  const calcStreak = () => {
+    let streak = 0;
+    let d = new Date(dateKeyToday);
+    while (true) {
+      const key = d.toISOString().slice(0, 10);
+      const count = byDate.get(key)?.sessionsCount ?? 0;
+      if (count <= 0) break;
+      streak += 1;
+      d.setUTCDate(d.getUTCDate() - 1);
+      if (streak >= 365) break;
+    }
+    return streak;
+  };
+  const daysStreak = hasToday ? calcStreak() : 0;
+
+  const recentRows = await db
+    .select({
+      createdAt: gameSessions.createdAt,
+      gameMode: gameSessions.gameMode,
+      nLevel: gameSessions.nLevel,
+      score: gameSessions.score,
+      accuracy: gameSessions.accuracy,
+      avgReactionTime: gameSessions.avgReactionTime,
+      configSnapshot: gameSessions.configSnapshot,
+    })
+    .from(gameSessions)
+    .where(eq(gameSessions.userId, sessionUser.id))
+    .orderBy(desc(gameSessions.createdAt))
+    .limit(50);
+
+  const sessionHistory = recentRows
+    .slice()
+    .reverse()
+    .map((row) => {
+      const snapshot = row.configSnapshot as unknown;
+      const metrics = isRecord(snapshot) && isRecord(snapshot.metrics) ? snapshot.metrics : null;
+      const totalRounds = metrics ? clampInt(metrics.totalRounds, 0) : 0;
+      return {
+        timestamp: row.createdAt ? row.createdAt.getTime() : Date.now(),
+        nLevel: clampInt(row.nLevel ?? 0, 0),
+        accuracy: clampInt(row.accuracy ?? 0, 0),
+        score: clampInt(row.score ?? 0, 0),
+        totalRounds,
+        mode: String(row.gameMode ?? "numeric"),
+        ...(row.avgReactionTime ? { avgReactionTimeMs: clampInt(row.avgReactionTime, 0) } : {}),
+      };
+    });
+
+  let brainStats = normalizeBrainStats(u.brainStats);
+  const recentForStats = sessionHistory.slice(-20);
+  if (recentForStats.length > 0) {
+    const rolling: Array<{ accuracy: number }> = [];
+    brainStats = { memory: 0, focus: 0, math: 0, observation: 0, loadCapacity: 0, reaction: 0 };
+    for (const s of recentForStats) {
+      rolling.push({ accuracy: s.accuracy });
+      brainStats = computeBrainStats(
+        brainStats,
+        {
+          mode: s.mode,
+          nLevel: s.nLevel,
+          accuracy: s.accuracy,
+          avgReactionTimeMs: s.avgReactionTimeMs ?? 2000,
+        },
+        rolling
+      );
+    }
+  }
+
+  if (isRecord(u.brainStats) === false || Object.keys(u.brainStats as object).length === 0) {
+    await db.update(user).set({ brainStats }).where(eq(user.id, sessionUser.id));
+  }
+
   res.status(200).json({
     xp: u.xp ?? 0,
     brainLevel: u.brainLevel ?? 1,
     brainCoins: u.brainCoins ?? 0,
     ownedItems: Array.isArray(u.ownedItems) ? u.ownedItems : [],
+    totalScore,
+    maxNLevel,
+    daysStreak,
+    brainStats,
     energy: {
       current: isUnlimited ? ENERGY_MAX : recovered.current,
       max: ENERGY_MAX,
@@ -180,5 +342,6 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       totalXp: row.totalXp ?? 0,
       sessionsCount: row.sessionsCount ?? 0,
     })),
+    sessionHistory,
   });
 }

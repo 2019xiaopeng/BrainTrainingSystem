@@ -82,7 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         useGameStore.setState((s) => ({
           userProfile: {
             ...s.userProfile,
+            totalScore: data.totalScore ?? s.userProfile.totalScore,
             totalXP: data.xp ?? s.userProfile.totalXP,
+            maxNLevel: data.maxNLevel ?? s.userProfile.maxNLevel,
+            daysStreak: data.daysStreak ?? s.userProfile.daysStreak,
+            brainStats: data.brainStats ?? s.userProfile.brainStats,
             brainCoins: data.brainCoins ?? s.userProfile.brainCoins,
             energy: mergeEnergyState(s.userProfile.energy, data.energy),
             checkIn: data.checkIn ?? s.userProfile.checkIn,
@@ -90,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           },
           cloudUnlocks: data.unlocks ?? s.cloudUnlocks,
           cloudDailyActivity: Array.isArray(data.dailyActivity) ? data.dailyActivity : s.cloudDailyActivity,
+          sessionHistory: Array.isArray(data.sessionHistory) ? data.sessionHistory : s.sessionHistory,
         }));
       } catch {
         return;

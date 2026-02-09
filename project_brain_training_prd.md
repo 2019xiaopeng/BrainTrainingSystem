@@ -364,6 +364,41 @@
     - `payload`: JSONB (Offline session data)
     - `status`: Enum ('pending', 'processed', 'failed')
 
+### 7.4 当前仓库已实现的数据库结构（以 Drizzle Schema 为准）
+> 说明：本节用于“对齐现状”。上面的 7.3 是设计草案；实际落库表与字段以仓库内 Drizzle schema + migrations 为准。
+
+#### 7.4.1 Auth 相关表（已实现）
+- **`public.user`**（用户主表，含游戏字段）
+  - 身份字段：`id/name/username/display_username/email/emailVerified/image/role/gender`
+  - 游戏字段：`xp/brain_level/brain_coins`
+  - 体力字段：`energy_current/energy_last_updated/unlimited_energy_until`
+  - 签到字段：`check_in_last_date/check_in_streak`
+  - 进度字段：`brain_stats (jsonb)/tutorial_status (jsonb)`
+  - 商城资产：`owned_items (jsonb)/inventory (jsonb)`
+  - 其他：`wechat_unionid/stripe_customer_id/createdAt/updatedAt`
+- **`public.session`**：登录会话（token + expiresAt + userId + ip/userAgent 等）
+- **`public.account`**：账号绑定（providerId/accountId + token 等）
+- **`public.verification`**：邮箱验证/一次性验证记录
+
+#### 7.4.2 游戏数据表（已实现）
+- **`public.game_sessions`**（每局训练历史，后端结算接口会写入）
+  - `id/user_id/game_mode/n_level/score/accuracy/config_snapshot(avg params + metrics)/avg_reaction_time/created_at`
+- **`public.user_unlocks`**（解锁树，复合主键 user_id + game_id）
+  - `unlocked_params (jsonb)/completed_level_ids (int[])/updated_at`
+- **`public.daily_activity`**（热力图聚合）
+  - `user_id/date/total_xp/sessions_count/updated_at`
+
+#### 7.4.3 商城/订单（当前实现状态）
+- **数据库侧**：目前没有 `products` / `orders` / `payments` 等表结构（尚未落库）。
+- **前端侧**：商品目录目前为前端常量（`STORE_PRODUCTS`），用户资产通过 `user.owned_items`（以及预留的 `inventory`）存储。
+- **缺口**：若要实现“可扩展商品体系 + 支付订单”，需要补齐：`products` / `orders` / `order_items` / `payments` 等表，以及购买/发货/回滚的后端接口。
+
+#### 7.4.4 与前端显示字段的对齐说明（重要）
+- **当前后端 `/api/user/profile` 能稳定返回/恢复的数据**：`xp/brainLevel/brainCoins/energy/checkIn/unlocks/dailyActivity/ownedItems`，以及（新增）`totalScore/maxNLevel/daysStreak/brainStats/sessionHistory`。
+- **容易“刷新后看似丢失”的数据来源**：
+  - 若仅依赖前端 localStorage（如 `totalScore/maxNLevel/daysStreak/brainStats/sessionHistory`），在 redeploy/清缓存/不同设备登录时会出现不一致。
+  - 解决方向：将这些统计统一由后端基于 `game_sessions/user_unlocks/daily_activity` 计算并随 profile 下发（或落库到 `user.brain_stats` 等字段）。
+
 ## 8. 新手引导设计 (Onboarding)
 **核心理念**: "Show, Don't Tell"。通过交互式引导让用户理解 N-Back 机制。
 
