@@ -12,17 +12,68 @@ type SessionUser = {
   unlimitedEnergyUntil: Date | null;
 };
 
+type SubtleLike = {
+  importKey: (
+    format: "raw",
+    keyData: Uint8Array,
+    algorithm: { name: "HMAC"; hash: "SHA-256" },
+    extractable: false,
+    keyUsages: Array<"verify">
+  ) => Promise<unknown>;
+  verify: (
+    algorithm: { name: "HMAC" },
+    key: unknown,
+    signature: Uint8Array,
+    data: Uint8Array
+  ) => Promise<boolean>;
+};
+
+const getSubtle = (): SubtleLike => {
+  const subtle = (globalThis as unknown as { crypto?: { subtle?: unknown } }).crypto?.subtle;
+  if (!subtle) throw new Error("missing_webcrypto");
+  return subtle as SubtleLike;
+};
+
+const getCryptoKey = async (secret: string | ArrayBuffer | Uint8Array) => {
+  const secretBuf =
+    typeof secret === "string"
+      ? new TextEncoder().encode(secret)
+      : secret instanceof Uint8Array
+        ? secret
+        : new Uint8Array(secret);
+  return await getSubtle().importKey("raw", secretBuf, { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
+};
+
+const verifySignature = async (base64Signature: string, value: string, secret: string) => {
+  try {
+    const signatureBinStr = atob(base64Signature);
+    const signature = new Uint8Array(signatureBinStr.length);
+    for (let i = 0, len = signatureBinStr.length; i < len; i++) signature[i] = signatureBinStr.charCodeAt(i);
+    const key = await getCryptoKey(secret);
+    return await getSubtle().verify({ name: "HMAC" }, key, signature, new TextEncoder().encode(value));
+  } catch {
+    return false;
+  }
+};
+
 const parseCookies = (cookieHeader: string): Map<string, string> => {
   const cookieMap = new Map<string, string>();
   const parts = cookieHeader.split(/;\s*/g);
   for (const part of parts) {
     const [name, value] = part.split(/=(.*)/s);
-    if (name) cookieMap.set(name, value ?? "");
+    if (name) {
+      const raw = value ?? "";
+      try {
+        cookieMap.set(name, decodeURIComponent(raw));
+      } catch {
+        cookieMap.set(name, raw);
+      }
+    }
   }
   return cookieMap;
 };
 
-export const getSessionTokenFromRequest = (req: RequestLike): string | null => {
+const getSignedCookieFromRequest = (req: RequestLike, name: string): string | null => {
   const cookieHeader =
     (typeof req.headers?.get === "function" ? req.headers.get("cookie") : null) ??
     (typeof req.headers?.cookie === "string" ? req.headers.cookie : null) ??
@@ -30,14 +81,30 @@ export const getSessionTokenFromRequest = (req: RequestLike): string | null => {
     null;
   if (!cookieHeader || typeof cookieHeader !== "string") return null;
 
-  const cookieName = "better-auth.session_token";
-  const secureCookieName = `__Secure-${cookieName}`;
+  const secureCookieName = `__Secure-${name}`;
   const parsed = parseCookies(cookieHeader);
-  return parsed.get(cookieName) ?? parsed.get(secureCookieName) ?? null;
+  return parsed.get(name) ?? parsed.get(secureCookieName) ?? null;
+};
+
+const getVerifiedSessionTokenFromRequest = async (req: RequestLike): Promise<string | null> => {
+  const secret = process.env.BETTER_AUTH_SECRET;
+  if (!secret) return null;
+
+  const cookieName = "better-auth.session_token";
+  const raw = getSignedCookieFromRequest(req, cookieName);
+  if (!raw) return null;
+
+  const signatureStartPos = raw.lastIndexOf(".");
+  if (signatureStartPos < 1) return null;
+  const signedValue = raw.substring(0, signatureStartPos);
+  const signature = raw.substring(signatureStartPos + 1);
+  if (signature.length !== 44 || !signature.endsWith("=")) return null;
+  const ok = await verifySignature(signature, signedValue, secret);
+  return ok ? signedValue : null;
 };
 
 export const requireSessionUser = async (req: RequestLike): Promise<SessionUser> => {
-  const token = getSessionTokenFromRequest(req);
+  const token = await getVerifiedSessionTokenFromRequest(req);
   if (!token) throw new Error("unauthorized");
 
   const now = new Date();

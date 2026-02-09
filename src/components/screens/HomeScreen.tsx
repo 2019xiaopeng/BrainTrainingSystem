@@ -23,7 +23,7 @@ interface HomeScreenProps {
  */
 export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProps) {
   const { t } = useTranslation();
-  const { gameConfigs, updateGameConfig } = useGameStore();
+  const { gameConfigs } = useGameStore();
   const cloudUnlocks = useGameStore((s) => s.cloudUnlocks);
   const [mode, setMode] = useState<GameMode>(initialMode);
   const isGuest = (userProfile.auth?.status ?? 'guest') === 'guest';
@@ -83,37 +83,6 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   const houseMaxEventsUnlocked = houseUnlocks?.maxEvents ?? 15;
   const houseMaxRoundsUnlocked = houseUnlocks?.maxRounds ?? 5;
   
-  // Sync changes to localStorage
-  useEffect(() => {
-    if (isGuest) return;
-    updateGameConfig('numeric', { nLevel: numericNLevel, rounds: numericRounds });
-  }, [numericNLevel, numericRounds, updateGameConfig, isGuest]);
-
-  useEffect(() => {
-    if (isGuest) return;
-    if (mode !== 'numeric') return;
-    const allowed = numericUnlocks?.roundsByN?.[String(numericNLevel)] ?? [];
-    if (allowed.length === 0) return;
-    if (allowed.includes(numericRounds)) return;
-    const next = [...allowed].sort((a, b) => a - b)[0];
-    if (typeof next === 'number') setNumericRounds(next);
-  }, [isGuest, mode, numericNLevel, numericRounds, numericUnlocks]);
-
-  useEffect(() => {
-    if (isGuest) return;
-    updateGameConfig('spatial', { nLevel: spatialNLevel, rounds: spatialRounds, gridSize });
-  }, [spatialNLevel, spatialRounds, gridSize, updateGameConfig, isGuest]);
-
-  useEffect(() => {
-    if (isGuest) return;
-    updateGameConfig('mouse', { count: mouseCount, grid: mouseGrid, difficulty: mouseDifficulty, rounds: mouseRounds });
-  }, [mouseCount, mouseGrid, mouseDifficulty, mouseRounds, updateGameConfig, isGuest]);
-
-  useEffect(() => {
-    if (isGuest) return;
-    updateGameConfig('house', { initialPeople: houseInitial, eventCount: houseEvents, speed: houseSpeed, rounds: houseRounds });
-  }, [houseInitial, houseEvents, houseSpeed, houseRounds, updateGameConfig, isGuest]);
-
   useEffect(() => {
     if (!isGuest) {
       setNumericNLevel(gameConfigs.numeric.nLevel);
