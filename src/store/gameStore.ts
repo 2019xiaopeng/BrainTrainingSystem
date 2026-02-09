@@ -87,7 +87,7 @@ interface GameStore {
   consumeEnergy: () => boolean;
   addEnergy: (amount: number) => void;
   performCheckIn: () => Promise<{ xpGained: number; coinsGained: number } | null>;
-  purchaseProduct: (productId: string) => boolean;
+  purchaseProduct: (productId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   addBrainCoins: (amount: number) => void;
 }
 
@@ -541,6 +541,7 @@ export const useGameStore = create<GameStore>()(
                     brainCoins: p.brainCoins ?? s.userProfile.brainCoins,
                     energy: p.energy ?? s.userProfile.energy,
                     checkIn: p.checkIn ?? s.userProfile.checkIn,
+                    ownedItems: Array.isArray(p.ownedItems) ? p.ownedItems : s.userProfile.ownedItems,
                   },
                   cloudUnlocks: p.unlocks ?? s.cloudUnlocks,
                   cloudDailyActivity: Array.isArray(p.dailyActivity) ? p.dailyActivity : s.cloudDailyActivity,
@@ -688,55 +689,39 @@ export const useGameStore = create<GameStore>()(
         }
       },
 
-      purchaseProduct: (productId) => {
+      purchaseProduct: async (productId) => {
         const state = get();
-        if (state.userProfile.auth?.status === 'guest') return false;
+        if (state.userProfile.auth?.status === 'guest') return { ok: false, error: 'unauthorized' };
         const product = STORE_PRODUCTS.find((p) => p.id === productId);
-        if (!product) return false;
-        if (state.userProfile.brainCoins < product.price) return false;
+        if (!product) return { ok: false, error: 'invalid_product' };
 
-        // Check if permanent item already owned
-        if (product.type === 'permanent' && state.userProfile.ownedItems.includes(productId)) {
-          return false;
+        try {
+          const resp = await fetch('/api/store/buy', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ productId }),
+          });
+
+          if (!resp.ok) {
+            const data = await resp.json().catch(() => null);
+            return { ok: false, error: String(data?.error ?? 'server_error') };
+          }
+
+          const data = await resp.json();
+          set((s) => ({
+            userProfile: {
+              ...s.userProfile,
+              brainCoins: typeof data?.brainCoins === 'number' ? data.brainCoins : s.userProfile.brainCoins,
+              energy: data?.energy ? { ...s.userProfile.energy, ...data.energy } : s.userProfile.energy,
+              ownedItems: Array.isArray(data?.ownedItems) ? data.ownedItems : s.userProfile.ownedItems,
+            },
+          }));
+
+          return { ok: true };
+        } catch {
+          return { ok: false, error: 'network_error' };
         }
-
-        let newProfile = {
-          ...state.userProfile,
-          brainCoins: state.userProfile.brainCoins - product.price,
-        };
-
-        // Apply product effect
-        switch (product.effect.type) {
-          case 'energy':
-            newProfile = {
-              ...newProfile,
-              energy: {
-                ...newProfile.energy,
-                current: Math.min(newProfile.energy.max, newProfile.energy.current + product.effect.amount),
-              },
-            };
-            break;
-          case 'streak_saver':
-            // Restore streak if broken (set lastPlayedDate to yesterday)
-            {
-              const yesterday = new Date();
-              yesterday.setDate(yesterday.getDate() - 1);
-              newProfile = {
-                ...newProfile,
-                lastPlayedDate: yesterday.toISOString(),
-              };
-            }
-            break;
-          case 'premium_report':
-            newProfile = {
-              ...newProfile,
-              ownedItems: [...newProfile.ownedItems, productId],
-            };
-            break;
-        }
-
-        set({ userProfile: newProfile });
-        return true;
       },
 
       addBrainCoins: (amount) =>

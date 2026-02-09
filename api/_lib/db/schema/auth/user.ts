@@ -29,6 +29,10 @@ export const user = pgTable("user", {
   brainStats: jsonb("brain_stats").default({}), // 存储六维雷达图数据
   tutorialStatus: jsonb("tutorial_status").default({}), // 记录已完成的新手引导
 
+  // Store
+  ownedItems: jsonb("owned_items").default([]).notNull(),
+  inventory: jsonb("inventory").default({}).notNull(),
+
   // External Auth
   wechatUnionId: text("wechat_unionid").unique(),
   stripeCustomerId: text("stripe_customer_id"),
@@ -40,4 +44,3 @@ export const user = pgTable("user", {
 }).enableRLS();
 
 export type UserType = typeof user.$inferSelect;
-

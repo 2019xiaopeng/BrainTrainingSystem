@@ -79,6 +79,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       xp: user.xp,
       brainLevel: user.brainLevel,
       brainCoins: user.brainCoins,
+      ownedItems: user.ownedItems,
       energyCurrent: user.energyCurrent,
       energyLastUpdated: user.energyLastUpdated,
       unlimitedEnergyUntil: user.unlimitedEnergyUntil,
@@ -162,6 +163,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     xp: u.xp ?? 0,
     brainLevel: u.brainLevel ?? 1,
     brainCoins: u.brainCoins ?? 0,
+    ownedItems: Array.isArray(u.ownedItems) ? u.ownedItems : [],
     energy: {
       current: isUnlimited ? ENERGY_MAX : recovered.current,
       max: ENERGY_MAX,

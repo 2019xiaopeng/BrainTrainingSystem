@@ -38,6 +38,9 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   const yesterday = new Date(todayKey);
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayKey = yesterday.toISOString().slice(0, 10);
+  const dayBeforeYesterday = new Date(todayKey);
+  dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 2);
+  const dayBeforeYesterdayKey = dayBeforeYesterday.toISOString().slice(0, 10);
 
   const result = await db.transaction(async (tx) => {
     const rows = await tx
@@ -47,6 +50,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         brainCoins: user.brainCoins,
         checkInLastDate: user.checkInLastDate,
         checkInStreak: user.checkInStreak,
+        inventory: user.inventory,
       })
       .from(user)
       .where(eq(user.id, sessionUser.id))
@@ -68,7 +72,10 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     }
 
     const prevStreak = row.checkInStreak ?? 0;
-    const newStreak = last === yesterdayKey ? prevStreak + 1 : 1;
+    const inventoryRaw = row.inventory && typeof row.inventory === "object" ? (row.inventory as Record<string, unknown>) : {};
+    const streakSaverCount = Number(inventoryRaw["streak_saver"] ?? 0) || 0;
+    const canUseStreakSaver = last === dayBeforeYesterdayKey && streakSaverCount > 0;
+    const newStreak = last === yesterdayKey || canUseStreakSaver ? prevStreak + 1 : 1;
     const reward = getReward(newStreak);
 
     const xpBefore = row.xp ?? 0;
@@ -76,6 +83,9 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     const xpAfter = xpBefore + reward.xp;
     const brainCoinsAfter = coinsBefore + reward.coins;
     const brainLevelAfter = computeBrainLevel(xpAfter);
+    const nextInventory = canUseStreakSaver
+      ? { ...inventoryRaw, streak_saver: Math.max(0, streakSaverCount - 1) }
+      : inventoryRaw;
 
     await tx
       .update(user)
@@ -85,6 +95,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         brainCoins: brainCoinsAfter,
         checkInLastDate: todayKey,
         checkInStreak: newStreak,
+        inventory: nextInventory,
       })
       .where(eq(user.id, sessionUser.id));
 
@@ -105,4 +116,3 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
   res.status(200).json(result);
 }
-

@@ -3,6 +3,7 @@ import express from "express";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "../api/_lib/auth";
 import gameSessionHandler from "../api/game/session";
+import storeBuyHandler from "../api/store/buy";
 import userProfileHandler from "../api/user/profile";
 
 const app = express();
@@ -17,6 +18,9 @@ app.post("/api/game/session", (req, res) => {
 });
 app.get("/api/user/profile", (req, res) => {
   void userProfileHandler(req, res);
+});
+app.post("/api/store/buy", (req, res) => {
+  void storeBuyHandler(req, res);
 });
 
 app.get("/health", (_req, res) => {

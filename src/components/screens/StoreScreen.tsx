@@ -22,23 +22,24 @@ export function StoreScreen() {
   const [feedback, setFeedback] = useState<{ success: boolean; message: string } | null>(null);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
 
-  const handlePurchase = (product: StoreProduct) => {
+  const handlePurchase = async (product: StoreProduct) => {
     if (isGuest) return;
     setPurchasingId(product.id);
 
-    // Simulate brief purchase animation
-    setTimeout(() => {
-      const success = purchaseProduct(product.id);
-      if (success) {
-        setFeedback({ success: true, message: t('store.purchaseSuccess') });
-      } else if (brainCoins < product.price) {
-        setFeedback({ success: false, message: t('store.notEnoughPoints') });
-      } else {
-        setFeedback({ success: false, message: t('store.alreadyOwned') });
-      }
-      setPurchasingId(null);
-      setTimeout(() => setFeedback(null), 2500);
-    }, 400);
+    await new Promise((r) => setTimeout(r, 250));
+
+    const result = await purchaseProduct(product.id);
+    if (result.ok) {
+      setFeedback({ success: true, message: t('store.purchaseSuccess') });
+    } else if (result.error === 'insufficient_coins') {
+      setFeedback({ success: false, message: t('store.notEnoughPoints') });
+    } else if (result.error === 'already_owned') {
+      setFeedback({ success: false, message: t('store.alreadyOwned') });
+    } else {
+      setFeedback({ success: false, message: t('store.alreadyOwned') });
+    }
+    setPurchasingId(null);
+    setTimeout(() => setFeedback(null), 2500);
   };
 
   const getEffectIcon = (product: StoreProduct) => {
