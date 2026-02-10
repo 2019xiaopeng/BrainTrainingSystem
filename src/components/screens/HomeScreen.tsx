@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
 import type { UserProfile, GameMode, MouseDifficultyLevel, MouseGridPreset, HouseSpeed } from '../../types/game';
-import { MOUSE_GRID_PRESETS, MOUSE_DIFFICULTY_MAP, buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
+import { getBrainRank, MOUSE_GRID_PRESETS, MOUSE_DIFFICULTY_MAP, buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
 import type { MouseGameConfig, HouseGameConfig } from '../../types/game';
 
 const GUEST_DEFAULTS = {
@@ -28,6 +28,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   const optimisticUnlocks = useGameStore((s) => s.optimisticUnlocks);
   const [mode, setMode] = useState<GameMode>(initialMode);
   const isGuest = (userProfile.auth?.status ?? 'guest') === 'guest';
+  const brainLevel = getBrainRank(userProfile.totalXP ?? 0, userProfile.completedMilestones || []).level;
 
   const effectiveUnlocks = !isGuest ? (cloudUnlocks ?? optimisticUnlocks) : null;
   const numericUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.numeric : null;
@@ -161,7 +162,14 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
       {/* Profile Summary Card */}
       <div className="bg-gradient-to-br from-sage-400 to-sage-500 rounded-2xl p-6 shadow-lg text-white">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium">{t('home.profile')}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-medium">{t('home.profile')}</h2>
+            {!isGuest && (
+              <div className="px-2 py-0.5 rounded-full bg-white/20 text-xs font-bold tracking-wide whitespace-nowrap">
+                LV{brainLevel}
+              </div>
+            )}
+          </div>
           {!isGuest && userProfile.checkIn.consecutiveDays > 0 && (
             <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
               {t('home.streak', { days: userProfile.checkIn.consecutiveDays })}

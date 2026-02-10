@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { SessionSummary, SessionHistoryEntry, UserProfile } from '../../types/game';
 
 interface ResultScreenProps {
@@ -10,10 +12,13 @@ interface ResultScreenProps {
     xpEarned: number;
     unlockBonusCoins: number;
     dailyPerfectBonus: number;
+    dailyFirstWinBonus: number;
     brainCoinsEarned: number;
     brainCoinsAfter: number;
     xpAfter: number;
+    brainLevelBefore: number;
     brainLevelAfter: number;
+    levelUp: boolean;
     energyConsumed: number;
     energyRefunded: number;
   } | null;
@@ -26,6 +31,7 @@ interface ResultScreenProps {
  */
 export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, rewards, onPlayAgain, onBackHome }: ResultScreenProps) {
   const { t } = useTranslation();
+  const [showLevelUp, setShowLevelUp] = useState(false);
 
   // Check for new achievements
   const isNewHighScore = summary.score && sessionHistory.length > 1 && 
@@ -54,12 +60,55 @@ export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, 
   };
 
   const totalCoinsGained = rewards
-    ? (rewards.brainCoinsEarned ?? 0) + (rewards.unlockBonusCoins ?? 0) + (rewards.dailyPerfectBonus ?? 0)
+    ? (rewards.brainCoinsEarned ?? 0) +
+      (rewards.unlockBonusCoins ?? 0) +
+      (rewards.dailyPerfectBonus ?? 0) +
+      (rewards.dailyFirstWinBonus ?? 0)
     : 0;
+
+  useEffect(() => {
+    if (!rewards?.levelUp) return;
+    setShowLevelUp(true);
+  }, [rewards?.levelUp]);
 
   return (
     <div className="space-y-6 pt-8">
       <h1 className="text-3xl font-light text-zen-700 text-center animate-fade-in">{t('result.title')}</h1>
+
+      <AnimatePresence>
+        {showLevelUp && rewards?.levelUp && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowLevelUp(false)}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-2xl bg-gradient-to-br from-indigo-500 to-rose-500 text-white shadow-2xl p-5"
+              initial={{ y: 16, scale: 0.98, opacity: 0 }}
+              animate={{ y: 0, scale: 1, opacity: 1 }}
+              exit={{ y: 10, scale: 0.98, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-sm font-medium opacity-90">{t('result.levelUpTitle')}</div>
+              <div className="mt-1 text-3xl font-bold tracking-wide">
+                LV{rewards.brainLevelAfter}
+              </div>
+              <div className="mt-2 text-sm opacity-90">
+                {t('result.levelUpDesc', { before: rewards.brainLevelBefore, after: rewards.brainLevelAfter })}
+              </div>
+              <button
+                className="mt-4 w-full rounded-xl bg-white/15 hover:bg-white/20 active:bg-white/25 px-4 py-2 text-sm font-medium transition-colors"
+                onClick={() => setShowLevelUp(false)}
+              >
+                {t('common.gotIt')}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Achievement Badges */}
       {isNewHighScore && (
@@ -105,6 +154,11 @@ export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, 
           {rewards.dailyPerfectBonus > 0 && (
             <div className="mt-3 text-xs text-sage-700 bg-sage-50 border border-sage-200/50 rounded-lg px-3 py-2">
               {t('result.dailyPerfectBonus', { coins: rewards.dailyPerfectBonus })}
+            </div>
+          )}
+          {rewards.dailyFirstWinBonus > 0 && (
+            <div className="mt-2 text-xs text-sage-700 bg-sage-50 border border-sage-200/50 rounded-lg px-3 py-2">
+              {t('result.dailyFirstWinBonus', { coins: rewards.dailyFirstWinBonus })}
             </div>
           )}
         </div>

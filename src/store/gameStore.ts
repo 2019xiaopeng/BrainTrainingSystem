@@ -5,7 +5,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AppView, NBackConfig, SessionSummary, UserProfile, SessionHistoryEntry, GameConfigs, GameMode, BrainStats, AuthProfile, EnergyState, CheckInState, GameUnlocks, DailyActivityEntry, MouseDifficultyLevel, HouseSpeed } from '../types/game';
-import { DEFAULT_CONFIG, ENERGY_MAX, calculateRecoveredEnergy, getCheckInReward, STORE_PRODUCTS } from '../types/game';
+import { DEFAULT_CONFIG, ENERGY_MAX, calculateRecoveredEnergy, getBrainRank, getCheckInReward, STORE_PRODUCTS } from '../types/game';
 
 const ENERGY_STORAGE_KEY_GUEST = 'brain-flow-energy:guest';
 const ENERGY_STORAGE_KEY_USER_PREFIX = 'brain-flow-energy:user:';
@@ -93,10 +93,13 @@ interface GameStore {
     xpEarned: number;
     unlockBonusCoins: number;
     dailyPerfectBonus: number;
+    dailyFirstWinBonus: number;
     brainCoinsEarned: number;
     brainCoinsAfter: number;
     xpAfter: number;
+    brainLevelBefore: number;
     brainLevelAfter: number;
+    levelUp: boolean;
     energyConsumed: number;
     energyRefunded: number;
   } | null;
@@ -694,10 +697,13 @@ export const useGameStore = create<GameStore>()(
                     xpEarned: Number(data.xpEarned ?? 0) || 0,
                     unlockBonusCoins: Number(data.unlockBonusCoins ?? 0) || 0,
                     dailyPerfectBonus: Number(data.dailyPerfectBonus ?? 0) || 0,
+                    dailyFirstWinBonus: Number(data.dailyFirstWinBonus ?? 0) || 0,
                     brainCoinsEarned: Number(data.brainCoinsEarned ?? 0) || 0,
                     brainCoinsAfter: Number(data.brainCoinsAfter ?? s.userProfile.brainCoins) || s.userProfile.brainCoins,
                     xpAfter: Number(data.xpAfter ?? s.userProfile.totalXP) || s.userProfile.totalXP,
+                    brainLevelBefore: Number(data.brainLevelBefore ?? 1) || 1,
                     brainLevelAfter: Number(data.brainLevelAfter ?? 1) || 1,
+                    levelUp: Boolean(data.levelUp),
                     energyConsumed: Number(data.energyConsumed ?? 0) || 0,
                     energyRefunded: Number(data.energyRefunded ?? 0) || 0,
                   },
@@ -856,8 +862,17 @@ export const useGameStore = create<GameStore>()(
 
         const brainCoinsEarnedLocal = Math.max(0, Math.round(score * 0.1));
         const dailyPerfectBonusLocal = 0;
+        const dailyFirstWinBonusLocal = 0;
         const brainCoinsAfterLocal =
-          (state.userProfile.brainCoins ?? 0) + brainCoinsEarnedLocal + unlockBonusCoinsLocal + dailyPerfectBonusLocal;
+          (state.userProfile.brainCoins ?? 0) +
+          brainCoinsEarnedLocal +
+          unlockBonusCoinsLocal +
+          dailyPerfectBonusLocal +
+          dailyFirstWinBonusLocal;
+
+        const brainLevelBeforeLocal = getBrainRank(state.userProfile.totalXP ?? 0, milestones).level;
+        const brainLevelAfterLocal = getBrainRank((state.userProfile.totalXP ?? 0) + xpEarnedLocal, milestones).level;
+        const levelUpLocal = brainLevelAfterLocal > brainLevelBeforeLocal;
 
         const now = Date.now();
         const energyUnlimited = state.userProfile.energy.unlimitedUntil > now;
@@ -871,10 +886,13 @@ export const useGameStore = create<GameStore>()(
             xpEarned: xpEarnedLocal,
             unlockBonusCoins: unlockBonusCoinsLocal,
             dailyPerfectBonus: dailyPerfectBonusLocal,
+            dailyFirstWinBonus: dailyFirstWinBonusLocal,
             brainCoinsEarned: brainCoinsEarnedLocal,
             brainCoinsAfter: brainCoinsAfterLocal,
             xpAfter: (state.userProfile.totalXP ?? 0) + xpEarnedLocal,
-            brainLevelAfter: 1,
+            brainLevelBefore: brainLevelBeforeLocal,
+            brainLevelAfter: brainLevelAfterLocal,
+            levelUp: levelUpLocal,
             energyConsumed: energyConsumedLocal,
             energyRefunded: energyRefundedLocal,
           },

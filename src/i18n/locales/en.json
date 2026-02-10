@@ -119,6 +119,9 @@
     "brainCoins": "Coins",
     "energy": "Energy",
     "dailyPerfectBonus": "Daily Perfect +{{coins}} Coins",
+    "dailyFirstWinBonus": "First win today +{{coins}} Coins",
+    "levelUpTitle": "Level Up!",
+    "levelUpDesc": "LV{{before}} → LV{{after}}",
     "newRecord": "🏆 New Record!",
     "newLevel": "⭐ New Level Unlocked!",
     "newUnlock": "⭐ Unlocked!",
@@ -133,6 +136,9 @@
     "duration": "Duration: {{time}}s · {{rounds}} rounds",
     "playAgain": "Play Again",
     "backHome": "← Back to Home"
+  },
+  "common": {
+    "gotIt": "Got it"
   },
   "unlock": {
     "numeric": "Unlocked: Numeric {{n}}-Back ({{rounds}} rounds)",
@@ -200,6 +206,7 @@
   "nav": {
     "home": "Home",
     "train": "Train",
+    "rank": "Rank",
     "profile": "Profile",
     "settings": "Settings",
     "store": "Store",

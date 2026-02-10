@@ -7,6 +7,7 @@ import { isRecord } from "../_lib/http.js";
 
 const ENERGY_MAX = 5;
 const ENERGY_RECOVERY_INTERVAL_MS = 4 * 60 * 60 * 1000;
+const DAILY_FIRST_WIN_BONUS_COINS = 20;
 
 const recoverEnergy = (current: number, lastUpdated: Date | null) => {
   const now = Date.now();
@@ -419,6 +420,16 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         }
       }
 
+      let dailyFirstWinBonus = 0;
+      const priorSessionToday = await tx
+        .select({ id: gameSessions.id })
+        .from(gameSessions)
+        .where(and(eq(gameSessions.userId, sessionUser.id), gte(gameSessions.createdAt, startOfDay)))
+        .limit(1);
+      if (priorSessionToday.length === 0) {
+        dailyFirstWinBonus = DAILY_FIRST_WIN_BONUS_COINS;
+      }
+
       const configSnapshot = {
         ...config,
         metrics: {
@@ -454,7 +465,9 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
       const xpBefore = clampInt(u.xp ?? 0, 0);
       const xpAfter = xpBefore + xpEarned;
+      const brainLevelBefore = clampInt(u.brainLevel ?? 1, 1);
       const brainLevelAfter = computeBrainLevel(xpAfter);
+      const levelUp = brainLevelAfter > brainLevelBefore;
 
       const energyAfterConsume = isUnlimited ? ENERGY_MAX : Math.max(0, energyBeforeConsume - 1);
       const energyAfterRefund =
@@ -464,7 +477,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
       const brainCoinsBefore = clampInt(u.brainCoins ?? 0, 0);
       const unlockBonusCoins = unlockUpdate.newlyUnlocked.length * 100;
-      const brainCoinsAfter = brainCoinsBefore + brainCoinsEarned + unlockBonusCoins + dailyPerfectBonus;
+      const brainCoinsAfter = brainCoinsBefore + brainCoinsEarned + unlockBonusCoins + dailyPerfectBonus + dailyFirstWinBonus;
 
       await tx
         .update(user)
@@ -524,10 +537,13 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       return {
         xpEarned,
         xpAfter,
+        brainLevelBefore,
         brainLevelAfter,
+        levelUp,
         brainCoinsEarned,
         unlockBonusCoins,
         dailyPerfectBonus,
+        dailyFirstWinBonus,
         energyConsumed: isUnlimited ? 0 : 1,
         energyRefunded: !isUnlimited && unlockUpdate.newlyUnlocked.length > 0 ? 1 : 0,
         brainCoinsAfter,

@@ -8,6 +8,7 @@ import { SignUpPage } from './components/pages/SignUpPage';
 import { ProfileScreen } from './components/screens/ProfileScreen';
 import { StoreScreen } from './components/screens/StoreScreen';
 import { InstructionScreen } from './components/screens/InstructionScreen';
+import { RankScreen } from './components/screens/RankScreen';
 
 // ================================================================
 // Brain Flow - 脑力心流 (Phase 4: Router-based Architecture)
@@ -29,6 +30,8 @@ function App() {
           <Route path="/signup" element={<SignUpPage />} />
           {/* 个人档案 */}
           <Route path="/profile" element={<ProfileScreen />} />
+          {/* 排行榜/历史（移动端承载右栏内容） */}
+          <Route path="/rank" element={<RankScreen />} />
           {/* 商城 */}
           <Route path="/store" element={<StoreScreen />} />
           {/* 帮助说明 */}

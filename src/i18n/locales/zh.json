@@ -119,6 +119,9 @@
     "brainCoins": "脑力币",
     "energy": "体力",
     "dailyPerfectBonus": "每日完美 +{{coins}} 脑力币",
+    "dailyFirstWinBonus": "每日首胜 +{{coins}} 脑力币",
+    "levelUpTitle": "段位提升！",
+    "levelUpDesc": "LV{{before}} → LV{{after}}",
     "newRecord": "🏆 新纪录！",
     "newLevel": "⭐ 新难度解锁！",
     "newUnlock": "⭐ 解锁成功！",
@@ -133,6 +136,9 @@
     "duration": "用时: {{time}}秒 · 共 {{rounds}} 题",
     "playAgain": "再来一局",
     "backHome": "← 返回首页"
+  },
+  "common": {
+    "gotIt": "知道了"
   },
   "unlock": {
     "numeric": "解锁：数字心流 {{n}}-Back（{{rounds}}题）",
@@ -200,6 +206,7 @@
   "nav": {
     "home": "首页",
     "train": "训练",
+    "rank": "排行",
     "profile": "档案",
     "settings": "设置",
     "store": "商城",

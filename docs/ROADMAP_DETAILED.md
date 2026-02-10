@@ -75,11 +75,11 @@
 ### 8.1 经验与等级 (XP & Rank)
 - [x] **后端计算**:
     - 已在 `POST /api/game/session` 实现 PRD 3.3 的 XP 公式与等级阈值，并返回 `xpEarned/xpAfter/brainLevelAfter`。
-- [ ] **升级事件**:
-    - 结算响应增加 `levelUp: true/false`（或返回 `brainLevelBefore` 供前端自行判断）。
-- [ ] **前端反馈**:
-    - 制作精美的“升级弹窗”动画。
-    - 个人主页展示 LV 徽章。
+- [x] **升级事件**:
+    - 结算响应已增加 `brainLevelBefore/brainLevelAfter/levelUp`。
+- [x] **前端反馈**:
+    - 结果页已实现“升级弹窗”动效。
+    - 首页已展示 LV 徽章（基于 Rank 计算）。
 
 ### 8.2 体力系统 (Energy System)
 - [x] **后端逻辑 (Lazy Calc)**:
@@ -114,8 +114,8 @@
 ### 9.2 每日任务与签到 (Daily Tasks)
 - [x] **签到系统**:
     - 已实现 `POST /api/user/checkin`，并在 `users` 记录 `check_in_last_date/check_in_streak`（当前未使用 `daily_checkins` 表）。
-- [ ] **每日首胜**:
-    - 逻辑：判断 `game_sessions` 今日是否有记录，并发放首胜奖励。
+- [x] **每日首胜**:
+    - 已在 `POST /api/game/session` 判断当日是否已有 `game_sessions` 记录，并发放首胜奖励（返回 `dailyFirstWinBonus`）。
 - [x] **每日完美 (Daily Perfect)**:
     - 已实现：每日首次 `accuracy == 100%` 额外奖励。
 
@@ -125,9 +125,9 @@
 **目标**: 随时随地都能玩，体验像原生 App。
 
 ### 10.1 响应式布局终极优化
-- [ ] **布局重构**:
-    - 彻底解决“右侧栏消失”问题：Mobile 端底部增加 TabBar (Home, Rank, Profile)。
-    - 游戏区域 (`GameStage`) 强制保持 16:9 或 4:3，防止键盘遮挡。
+- [x] **布局重构**:
+    - Mobile 端底部导航增加 Rank 入口（承载右侧栏的 History/Leaderboard）。
+    - 训练页面增加 StageFrame，按模式强制约束 16:9 或 4:3 区域宽度上限。
 - [ ] **PWA 配置**:
     - 完善 `manifest.json`。
     - 添加离线 Service Worker (缓存静态资源)。
