@@ -185,9 +185,9 @@ export interface UserProfile {
 
 export type GameUnlocks = {
   numeric: { maxN: number; roundsByN: Record<string, number[]> };
-  spatial: { grids: number[]; maxNByGrid: Record<string, number> };
+  spatial: { grids: number[]; maxNByGrid: Record<string, number>; roundsByN: Record<string, number[]> };
   mouse: { maxMice: number; grids: [number, number][]; difficulties: MouseDifficultyLevel[]; maxRounds: number };
-  house: { speeds: HouseSpeed[]; maxEvents: number; maxRounds: number };
+  house: { speeds: HouseSpeed[]; maxInitialPeople: number; maxEvents: number; maxRounds: number };
 };
 
 // ------------------------------------------------------------
@@ -626,9 +626,9 @@ export interface HouseRoundResult {
 
 /** Speed preset → delay range [min, max] ms */
 export const HOUSE_SPEED_MAP: Record<HouseSpeed, { label: string; delayRange: [number, number] }> = {
-  easy:   { label: '慢速', delayRange: [1200, 2000] },
-  normal: { label: '正常', delayRange: [800, 1500] },
-  fast:   { label: '快速', delayRange: [400, 900] },
+  easy:   { label: '慢速', delayRange: [960, 1600] },
+  normal: { label: '正常', delayRange: [640, 1200] },
+  fast:   { label: '快速', delayRange: [320, 720] },
 };
 
 /** Build a HouseGameConfig from user selections */
@@ -638,9 +638,14 @@ export function buildHouseGameConfig(
   speed: HouseSpeed,
   totalRounds: number,
 ): HouseGameConfig {
+  const clampToStep = (value: number, min: number, max: number, step: number) => {
+    const clamped = Math.max(min, Math.min(value, max));
+    return min + Math.floor((clamped - min) / step) * step;
+  };
+
   return {
     initialPeople: Math.max(3, Math.min(initialPeople, 7)),
-    eventCount: Math.max(5, Math.min(eventCount, 15)),
+    eventCount: clampToStep(eventCount, 6, 24, 3),
     delayRange: HOUSE_SPEED_MAP[speed].delayRange,
     totalRounds: Math.max(3, Math.min(totalRounds, 5)),
   };

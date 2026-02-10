@@ -40,6 +40,8 @@ export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, 
   const formatUnlock = (id: string) => {
     const m = id.match(/^numeric_n_(\d+)_r_(\d+)$/);
     if (m) return t('unlock.numeric', { n: Number(m[1]), rounds: Number(m[2]) });
+    const sr = id.match(/^spatial_n_(\d+)_r_(\d+)$/);
+    if (sr) return t('unlock.spatialRounds', { n: Number(sr[1]), rounds: Number(sr[2]) });
     const s1 = id.match(/^spatial_(\d+)x(\d+)_n_(\d+)$/);
     if (s1) return t('unlock.spatialN', { grid: `${s1[1]}×${s1[2]}`, n: Number(s1[3]) });
     const s2 = id.match(/^spatial_grid_(\d+)$/);
@@ -56,6 +58,8 @@ export function ResultScreen({ summary, sessionHistory, userProfile, unlockIds, 
     if (he) return t('unlock.houseEvents', { events: Number(he[1]) });
     const hr = id.match(/^house_rounds_(\d+)$/);
     if (hr) return t('unlock.houseRounds', { rounds: Number(hr[1]) });
+    const hi = id.match(/^house_initial_(\d+)$/);
+    if (hi) return t('unlock.houseInitial', { count: Number(hi[1]) });
     return id;
   };
 

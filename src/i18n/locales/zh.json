@@ -142,6 +142,7 @@
   },
   "unlock": {
     "numeric": "解锁：数字心流 {{n}}-Back（{{rounds}}题）",
+    "spatialRounds": "解锁：空间心流 {{n}}-Back（{{rounds}}题）",
     "spatialN": "解锁：空间心流 {{grid}} 升级到 {{n}}-Back",
     "spatialGrid": "解锁：空间心流 {{grid}} 网格",
     "mouseDifficulty": "解锁：魔鬼老鼠 {{difficulty}}",
@@ -149,7 +150,8 @@
     "mouseRounds": "解锁：魔鬼老鼠 {{rounds}} 轮挑战",
     "houseSpeed": "解锁：人来人往 {{speed}}",
     "houseEvents": "解锁：人来人往 {{events}} 次事件",
-    "houseRounds": "解锁：人来人往 {{rounds}} 轮挑战"
+    "houseRounds": "解锁：人来人往 {{rounds}} 轮挑战",
+    "houseInitial": "解锁：人来人往 初始人数 {{count}}"
   },
   "profile": {
     "title": "个人档案",

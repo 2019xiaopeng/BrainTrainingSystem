@@ -23,9 +23,9 @@ const recoverEnergy = (current: number, lastUpdated: Date | null) => {
 
 const defaultUnlocks = () => ({
   numeric: { maxN: 1, roundsByN: { "1": [5, 10] } as Record<string, number[]> },
-  spatial: { grids: [3], maxNByGrid: { "3": 1 } },
+  spatial: { grids: [3], maxNByGrid: { "3": 1 }, roundsByN: { "1": [5, 10] as number[] } as Record<string, number[]> },
   mouse: { maxMice: 3, grids: [[4, 3]], difficulties: ["easy"], maxRounds: 3 },
-  house: { speeds: ["easy"], maxEvents: 5, maxRounds: 3 },
+  house: { speeds: ["easy"], maxInitialPeople: 3, maxEvents: 6, maxRounds: 3 },
 });
 type Unlocks = ReturnType<typeof defaultUnlocks>;
 
@@ -59,6 +59,35 @@ const normalizeNumericUnlocks = (raw: Record<string, unknown>): Unlocks["numeric
   }
 
   return defaultUnlocks().numeric;
+};
+
+const normalizeSpatialUnlocks = (raw: Record<string, unknown>): Unlocks["spatial"] => {
+  const grids = Array.isArray(raw.grids) ? (raw.grids as unknown[]).map((g) => clampInt(g)).filter((g) => g > 0) : [3];
+  const maxNByGridRaw = isRecord(raw.maxNByGrid) ? raw.maxNByGrid : { "3": 1 };
+  const maxNByGrid: Record<string, number> = Object.fromEntries(
+    Object.entries(maxNByGridRaw).map(([k, v]) => [k, Math.max(1, Math.min(12, clampInt(v, 1)))])
+  );
+
+  const roundsByN: Record<string, number[]> = {};
+  const inputRoundsByN = isRecord(raw.roundsByN) ? raw.roundsByN : { "1": [5, 10] };
+  for (const [k, v] of Object.entries(inputRoundsByN)) {
+    roundsByN[k] = Array.isArray(v) ? (v as unknown[]).map((x) => clampInt(x)).filter((x) => x > 0) : [];
+  }
+  if (!roundsByN["1"] || roundsByN["1"].length === 0) roundsByN["1"] = [5, 10];
+
+  const uniqGrids = grids.length > 0 ? Array.from(new Set(grids)).sort((a, b) => a - b) : [3];
+  return { grids: uniqGrids, maxNByGrid, roundsByN };
+};
+
+const normalizeHouseUnlocks = (raw: Record<string, unknown>): Unlocks["house"] => {
+  const speedsRaw = Array.isArray(raw.speeds) ? (raw.speeds as unknown[]).map((s) => String(s)) : ["easy"];
+  const speeds = Array.from(new Set(speedsRaw));
+  return {
+    speeds: (speeds.length > 0 ? speeds : ["easy"]) as string[],
+    maxInitialPeople: Math.max(3, Math.min(7, clampInt(raw.maxInitialPeople, 3))),
+    maxEvents: Math.max(6, Math.min(24, clampInt(raw.maxEvents, 6))),
+    maxRounds: Math.max(3, Math.min(5, clampInt(raw.maxRounds, 3))),
+  } as Unlocks["house"];
 };
 
 type BrainStats = {
@@ -182,9 +211,9 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   const unlocks: Unlocks = defaultUnlocks();
   for (const row of existingUnlockRows) {
     if (row.gameId === "numeric" && isRecord(row.unlockedParams)) unlocks.numeric = normalizeNumericUnlocks(row.unlockedParams);
-    if (row.gameId === "spatial" && isRecord(row.unlockedParams)) unlocks.spatial = row.unlockedParams as Unlocks["spatial"];
+    if (row.gameId === "spatial" && isRecord(row.unlockedParams)) unlocks.spatial = normalizeSpatialUnlocks(row.unlockedParams);
     if (row.gameId === "mouse" && isRecord(row.unlockedParams)) unlocks.mouse = row.unlockedParams as Unlocks["mouse"];
-    if (row.gameId === "house" && isRecord(row.unlockedParams)) unlocks.house = row.unlockedParams as Unlocks["house"];
+    if (row.gameId === "house" && isRecord(row.unlockedParams)) unlocks.house = normalizeHouseUnlocks(row.unlockedParams);
   }
 
   const wanted = ["numeric", "spatial", "mouse", "house"] as const;

@@ -9,8 +9,13 @@ const GUEST_DEFAULTS = {
   numeric: { nLevel: 1, rounds: 10 },
   spatial: { nLevel: 1, rounds: 10, gridSize: 3 },
   mouse: { count: 3, grid: [4, 3] as MouseGridPreset, difficulty: 'easy' as MouseDifficultyLevel, rounds: 3 },
-  house: { initialPeople: 3, eventCount: 5, speed: 'easy' as HouseSpeed, rounds: 3 },
+  house: { initialPeople: 3, eventCount: 6, speed: 'easy' as HouseSpeed, rounds: 3 },
 } as const;
+
+const clampToStep = (value: number, min: number, max: number, step: number) => {
+  const clamped = Math.max(min, Math.min(value, max));
+  return min + Math.floor((clamped - min) / step) * step;
+};
 
 interface HomeScreenProps {
   initialMode: GameMode;
@@ -58,7 +63,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
     isGuest ? GUEST_DEFAULTS.house.initialPeople : Math.max(3, Math.min(gameConfigs.house?.initialPeople ?? 3, 7))
   );
   const [houseEvents, setHouseEvents] = useState(() =>
-    isGuest ? GUEST_DEFAULTS.house.eventCount : Math.max(5, Math.min(gameConfigs.house?.eventCount ?? 5, 15))
+    isGuest ? GUEST_DEFAULTS.house.eventCount : clampToStep(gameConfigs.house?.eventCount ?? 6, 6, 24, 3)
   );
   const [houseSpeed, setHouseSpeed] = useState<HouseSpeed>(() =>
     isGuest ? GUEST_DEFAULTS.house.speed : ((gameConfigs.house?.speed as HouseSpeed) ?? 'easy')
@@ -78,12 +83,18 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   const canIncrementNumericRounds = numericRoundIndex >= 0 && numericRoundIndex < numericAllowedRounds.length - 1;
   const spatialGridsUnlocked = spatialUnlocks?.grids ?? [3, 4, 5];
   const spatialMaxNUnlocked = spatialUnlocks?.maxNByGrid?.[String(gridSize)] ?? 12;
+  const spatialRoundsUnlocked = spatialUnlocks?.roundsByN?.[String(spatialNLevel)] ?? (spatialNLevel === 1 ? [5, 10] : [10]);
+  const spatialAllowedRounds = [...spatialRoundsUnlocked].sort((a, b) => a - b);
+  const spatialRoundIndex = spatialAllowedRounds.indexOf(spatialRounds);
+  const canDecrementSpatialRounds = spatialRoundIndex > 0;
+  const canIncrementSpatialRounds = spatialRoundIndex >= 0 && spatialRoundIndex < spatialAllowedRounds.length - 1;
   const mouseMaxMiceUnlocked = mouseUnlocks?.maxMice ?? 9;
   const mouseGridsUnlocked = mouseUnlocks?.grids ?? MOUSE_GRID_PRESETS.map((p) => p.value);
   const mouseDifficultiesUnlocked = mouseUnlocks?.difficulties ?? (Object.keys(MOUSE_DIFFICULTY_MAP) as MouseDifficultyLevel[]);
   const mouseMaxRoundsUnlocked = mouseUnlocks?.maxRounds ?? 5;
   const houseSpeedsUnlocked = houseUnlocks?.speeds ?? (['easy', 'normal', 'fast'] as HouseSpeed[]);
-  const houseMaxEventsUnlocked = houseUnlocks?.maxEvents ?? 15;
+  const houseMaxInitialUnlocked = houseUnlocks?.maxInitialPeople ?? 7;
+  const houseMaxEventsUnlocked = houseUnlocks?.maxEvents ?? 24;
   const houseMaxRoundsUnlocked = houseUnlocks?.maxRounds ?? 5;
   
   useEffect(() => {
@@ -98,7 +109,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
       setMouseDifficulty(gameConfigs.mouse.difficulty);
       setMouseRounds(gameConfigs.mouse.rounds);
       setHouseInitial(Math.max(3, Math.min(gameConfigs.house?.initialPeople ?? 3, 7)));
-      setHouseEvents(Math.max(5, Math.min(gameConfigs.house?.eventCount ?? 5, 15)));
+      setHouseEvents(clampToStep(gameConfigs.house?.eventCount ?? 6, 6, 24, 3));
       setHouseSpeed((gameConfigs.house?.speed as HouseSpeed) ?? 'easy');
       setHouseRounds(Math.max(3, Math.min(gameConfigs.house?.rounds ?? 3, 5)));
       return;
@@ -119,6 +130,21 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
     setHouseRounds(GUEST_DEFAULTS.house.rounds);
   }, [isGuest, gameConfigs]);
 
+  useEffect(() => {
+    if (isGuest) return;
+    if (mode === 'spatial' && spatialAllowedRounds.length > 0 && !spatialAllowedRounds.includes(spatialRounds)) {
+      const fallback =
+        [...spatialAllowedRounds].filter((r) => r <= spatialRounds).pop() ?? spatialAllowedRounds[0];
+      setSpatialRounds(fallback);
+    }
+    if (mode === 'house') {
+      if (houseInitial > Math.min(7, houseMaxInitialUnlocked)) setHouseInitial(Math.min(7, houseMaxInitialUnlocked));
+      const maxEvents = Math.min(24, houseMaxEventsUnlocked);
+      const normalizedEvents = clampToStep(houseEvents, 6, maxEvents, 3);
+      if (normalizedEvents !== houseEvents) setHouseEvents(normalizedEvents);
+    }
+  }, [isGuest, mode, spatialAllowedRounds, spatialRounds, houseEvents, houseInitial, houseMaxEventsUnlocked, houseMaxInitialUnlocked]);
+
   // Validate N-Back config
   const isNBackMode = mode === 'numeric' || mode === 'spatial';
   const maxMice = mouseGrid[0] * mouseGrid[1] - 1;
@@ -128,14 +154,15 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
     mode === 'numeric'
       ? nLevel <= numericMaxNUnlocked && numericRoundsUnlocked.includes(numericRounds)
       : mode === 'spatial'
-        ? spatialGridsUnlocked.includes(gridSize) && spatialNLevel <= spatialMaxNUnlocked
+        ? spatialGridsUnlocked.includes(gridSize) && spatialNLevel <= spatialMaxNUnlocked && spatialRoundsUnlocked.includes(spatialRounds)
         : mode === 'mouse'
           ? effectiveMouseCount <= Math.min(maxMice, mouseMaxMiceUnlocked) &&
             mouseGridsUnlocked.some((g) => g[0] === mouseGrid[0] && g[1] === mouseGrid[1]) &&
             mouseDifficultiesUnlocked.includes(mouseDifficulty) &&
             mouseRounds <= Math.min(5, mouseMaxRoundsUnlocked)
           : houseSpeedsUnlocked.includes(houseSpeed) &&
-            houseEvents <= Math.min(15, houseMaxEventsUnlocked) &&
+            houseInitial <= Math.min(7, houseMaxInitialUnlocked) &&
+            houseEvents <= Math.min(24, houseMaxEventsUnlocked) &&
             houseRounds <= Math.min(5, houseMaxRoundsUnlocked);
 
   const isConfigValid = (isNBackMode ? nLevel < rounds : true) && isUnlocked;
@@ -170,11 +197,6 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
               </div>
             )}
           </div>
-          {!isGuest && userProfile.checkIn.consecutiveDays > 0 && (
-            <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-              {t('home.streak', { days: userProfile.checkIn.consecutiveDays })}
-            </div>
-          )}
         </div>
         
         <div className="grid grid-cols-3 gap-4">
@@ -341,15 +363,23 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                 <label className="text-sm text-zen-500 w-28">{t('home.rounds')}</label>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setSpatialRounds((r) => Math.max(5, r - 5))}
-                    className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all"
+                    onClick={() => {
+                      if (canDecrementSpatialRounds) setSpatialRounds(spatialAllowedRounds[spatialRoundIndex - 1]);
+                    }}
+                    disabled={!canDecrementSpatialRounds}
+                    className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                   >
                     −
                   </button>
                   <span className="text-2xl font-mono text-zen-700 w-12 text-center">{spatialRounds}</span>
                   <button
-                    onClick={() => setSpatialRounds((r) => Math.min(30, r + 5))}
-                    className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all"
+                    onClick={() => {
+                      if (canIncrementSpatialRounds) setSpatialRounds(spatialAllowedRounds[spatialRoundIndex + 1]);
+                    }}
+                    disabled={!canIncrementSpatialRounds}
+                    className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                   >
                     +
                   </button>
@@ -522,8 +552,8 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                 </button>
                 <span className="text-2xl font-mono text-zen-700 w-12 text-center">{houseInitial}</span>
                 <button
-                  onClick={() => setHouseInitial((n) => Math.min(7, n + 1))}
-                  disabled={houseInitial >= 7}
+                  onClick={() => setHouseInitial((n) => Math.min(Math.min(7, houseMaxInitialUnlocked), n + 1))}
+                  disabled={houseInitial >= Math.min(7, houseMaxInitialUnlocked)}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
@@ -537,8 +567,8 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
               <label className="text-sm text-zen-500 font-medium w-28">{t('home.houseEvents')}</label>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setHouseEvents((n) => Math.max(5, n - 1))}
-                  disabled={houseEvents <= 5}
+                  onClick={() => setHouseEvents((n) => Math.max(6, n - 3))}
+                  disabled={houseEvents <= 6}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
@@ -546,8 +576,8 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                 </button>
                 <span className="text-2xl font-mono text-zen-700 w-12 text-center">{houseEvents}</span>
                 <button
-                  onClick={() => setHouseEvents((n) => Math.min(Math.min(15, houseMaxEventsUnlocked), n + 1))}
-                  disabled={houseEvents >= Math.min(15, houseMaxEventsUnlocked)}
+                  onClick={() => setHouseEvents((n) => Math.min(Math.min(24, houseMaxEventsUnlocked), n + 3))}
+                  disabled={houseEvents >= Math.min(24, houseMaxEventsUnlocked)}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >

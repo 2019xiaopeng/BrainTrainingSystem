@@ -142,6 +142,7 @@
   },
   "unlock": {
     "numeric": "Unlocked: Numeric {{n}}-Back ({{rounds}} rounds)",
+    "spatialRounds": "Unlocked: Spatial {{n}}-Back ({{rounds}} rounds)",
     "spatialN": "Unlocked: Spatial {{grid}} to {{n}}-Back",
     "spatialGrid": "Unlocked: Spatial {{grid}} grid",
     "mouseDifficulty": "Unlocked: Mouse {{difficulty}}",
@@ -149,7 +150,8 @@
     "mouseRounds": "Unlocked: {{rounds}} rounds (Mouse)",
     "houseSpeed": "Unlocked: House {{speed}}",
     "houseEvents": "Unlocked: {{events}} events (House)",
-    "houseRounds": "Unlocked: {{rounds}} rounds (House)"
+    "houseRounds": "Unlocked: {{rounds}} rounds (House)",
+    "houseInitial": "Unlocked: Initial {{count}} (House)"
   },
   "profile": {
     "title": "Profile",

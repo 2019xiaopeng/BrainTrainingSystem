@@ -156,11 +156,17 @@ const calculateXpEarned = (summary: SessionSummary): number => {
   return Math.round(20 * (nCoeff + modeCoeff) * (Math.max(0, Math.min(100, accuracy)) / 100));
 };
 
+const calculateBrainCoinsEarned = (score: number) => {
+  const COINS_PER_SCORE = 0.05;
+  const MAX_COINS_PER_SESSION = 20;
+  return Math.max(0, Math.min(MAX_COINS_PER_SESSION, Math.round(score * COINS_PER_SCORE)));
+};
+
 const defaultUnlocks = (): GameUnlocks => ({
   numeric: { maxN: 1, roundsByN: { "1": [5, 10] } },
-  spatial: { grids: [3], maxNByGrid: { "3": 1 } },
+  spatial: { grids: [3], maxNByGrid: { "3": 1 }, roundsByN: { "1": [5, 10] } },
   mouse: { maxMice: 3, grids: [[4, 3]], difficulties: ["easy"], maxRounds: 3 },
-  house: { speeds: ["easy"], maxEvents: 5, maxRounds: 3 },
+  house: { speeds: ["easy"], maxInitialPeople: 3, maxEvents: 6, maxRounds: 3 },
 });
 
 const clampInt = (n: unknown, fallback = 0) => (Number.isFinite(Number(n)) ? Math.trunc(Number(n)) : fallback);
@@ -177,6 +183,38 @@ const normalizeNumericUnlocks = (raw: GameUnlocks["numeric"]): GameUnlocks["nume
   return { maxN, roundsByN };
 };
 
+const normalizeSpatialUnlocks = (raw: GameUnlocks["spatial"]): GameUnlocks["spatial"] => {
+  const grids = Array.isArray(raw?.grids)
+    ? (raw.grids as unknown[]).map((g) => clampInt(g)).filter((g) => g > 0)
+    : [3];
+  const maxNByGridRaw = raw?.maxNByGrid && typeof raw.maxNByGrid === "object" ? raw.maxNByGrid : { "3": 1 };
+  const maxNByGrid: Record<string, number> = Object.fromEntries(
+    Object.entries(maxNByGridRaw).map(([k, v]) => [k, Math.max(1, Math.min(12, clampInt(v, 1)))])
+  );
+
+  const roundsByN: Record<string, number[]> = {};
+  const inputRoundsByN =
+    raw?.roundsByN && typeof raw.roundsByN === "object" ? raw.roundsByN : { "1": [5, 10] };
+  for (const [k, v] of Object.entries(inputRoundsByN)) {
+    roundsByN[k] = Array.isArray(v) ? (v as unknown[]).map((x) => clampInt(x)).filter((x) => x > 0) : [];
+  }
+  if (!roundsByN["1"] || roundsByN["1"].length === 0) roundsByN["1"] = [5, 10];
+
+  const uniqGrids = grids.length > 0 ? Array.from(new Set(grids)).sort((a, b) => a - b) : [3];
+  return { grids: uniqGrids, maxNByGrid, roundsByN };
+};
+
+const normalizeHouseUnlocks = (raw: GameUnlocks["house"]): GameUnlocks["house"] => {
+  const speedsRaw = Array.isArray(raw?.speeds) ? raw.speeds : ["easy"];
+  const speeds = Array.from(new Set(speedsRaw.map((s) => String(s)))) as HouseSpeed[];
+  return {
+    speeds: speeds.length > 0 ? speeds : (["easy"] as HouseSpeed[]),
+    maxInitialPeople: Math.max(3, Math.min(7, clampInt((raw as { maxInitialPeople?: unknown } | undefined)?.maxInitialPeople, 3))),
+    maxEvents: Math.max(6, Math.min(24, clampInt(raw?.maxEvents, 6))),
+    maxRounds: Math.max(3, Math.min(5, clampInt(raw?.maxRounds, 3))),
+  };
+};
+
 const updateUnlocksAfterSession = (current: GameUnlocks, summary: SessionSummary, modeDetails: Record<string, unknown>) => {
   const mode = String(summary.config?.mode ?? "");
   const acc = clampFloat(summary.accuracy, 0);
@@ -185,9 +223,9 @@ const updateUnlocksAfterSession = (current: GameUnlocks, summary: SessionSummary
   const newlyUnlocked: string[] = [];
   const next: GameUnlocks = {
     numeric: normalizeNumericUnlocks(current.numeric),
-    spatial: { ...current.spatial },
+    spatial: normalizeSpatialUnlocks(current.spatial),
     mouse: { ...current.mouse },
-    house: { ...current.house },
+    house: normalizeHouseUnlocks(current.house),
   };
 
   if (mode === "numeric") {
@@ -217,10 +255,12 @@ const updateUnlocksAfterSession = (current: GameUnlocks, summary: SessionSummary
   if (mode === "spatial") {
     const gridSize = clampInt((summary.config as unknown as Record<string, unknown>)?.gridSize ?? 3, 3);
     const n = clampInt(summary.config?.nLevel, 1);
+    const rounds = clampInt(summary.totalRounds ?? summary.config?.totalRounds ?? 10, 10);
 
     const grids: number[] = Array.isArray(next.spatial.grids) ? next.spatial.grids : [3];
     const maxNByGrid: Record<string, number> =
       next.spatial.maxNByGrid && typeof next.spatial.maxNByGrid === "object" ? { ...next.spatial.maxNByGrid } : { "3": 1 };
+    const roundsByN = { ...(next.spatial.roundsByN ?? { "1": [5, 10] }) };
 
     const caps: Record<string, number> = { "3": 5, "4": 12, "5": 12 };
     const prevCap = clampInt(maxNByGrid[String(gridSize)] ?? 1, 1);
@@ -229,7 +269,18 @@ const updateUnlocksAfterSession = (current: GameUnlocks, summary: SessionSummary
       maxNByGrid[String(gridSize)] = Math.min(gridCap, n + 1);
       next.spatial.maxNByGrid = maxNByGrid;
       newlyUnlocked.push(`spatial_${gridSize}x${gridSize}_n_${maxNByGrid[String(gridSize)]}`);
+      const newKey = String(maxNByGrid[String(gridSize)]);
+      if (!roundsByN[newKey]) roundsByN[newKey] = [10];
     }
+
+    const key = String(n);
+    const currentRoundsList = roundsByN[key] ?? (n === 1 ? [5, 10] : [10]);
+    const nextRounds = rounds + 5;
+    if (nextRounds <= 30 && nextRounds % 5 === 0 && !currentRoundsList.includes(nextRounds)) {
+      roundsByN[key] = [...currentRoundsList, nextRounds].sort((a, b) => a - b);
+      newlyUnlocked.push(`spatial_n_${n}_r_${nextRounds}`);
+    }
+    next.spatial.roundsByN = roundsByN;
 
     if (gridSize === 3 && n >= 3 && !grids.includes(4)) {
       next.spatial.grids = [...grids, 4].sort((a, b) => a - b);
@@ -284,19 +335,26 @@ const updateUnlocksAfterSession = (current: GameUnlocks, summary: SessionSummary
     const speedRaw = String(details?.speed ?? "easy");
     const speed: HouseSpeed =
       speedRaw === "easy" || speedRaw === "normal" || speedRaw === "fast" ? speedRaw : "easy";
-    const eventCount = clampInt(details?.eventCount, 5);
+    const eventCount = clampInt(details?.eventCount, 6);
+    const initialPeople = clampInt(details?.initialPeople, 3);
 
     const speeds: HouseSpeed[] = Array.isArray(next.house.speeds) ? next.house.speeds : ["easy"];
-    const maxEvents = clampInt(next.house.maxEvents, 5);
+    const maxInitialPeople = clampInt((next.house as unknown as { maxInitialPeople?: unknown }).maxInitialPeople, 3);
+    const maxEvents = clampInt(next.house.maxEvents, 6);
     const maxRounds = clampInt(next.house.maxRounds, 3);
 
     const speedOrder: HouseSpeed[] = ["easy", "normal", "fast"];
     const currentIdx = speedOrder.indexOf(speed);
     const maxSpeedIdx = Math.max(...speeds.map((s) => speedOrder.indexOf(s)).filter((i) => i >= 0));
 
-    if (eventCount >= maxEvents && maxEvents < 20) {
-      next.house.maxEvents = Math.min(20, maxEvents + 5);
+    if (eventCount >= maxEvents && maxEvents < 24) {
+      next.house.maxEvents = Math.min(24, maxEvents + 3);
       newlyUnlocked.push(`house_events_${next.house.maxEvents}`);
+    }
+
+    if (initialPeople >= maxInitialPeople && maxInitialPeople < 7) {
+      next.house.maxInitialPeople = Math.min(7, maxInitialPeople + 1);
+      newlyUnlocked.push(`house_initial_${next.house.maxInitialPeople}`);
     }
 
     if (currentIdx >= 0 && currentIdx >= maxSpeedIdx && currentIdx < speedOrder.length - 1) {
@@ -433,7 +491,7 @@ export const useGameStore = create<GameStore>()(
         numeric: { nLevel: 1, rounds: 10 },
         spatial: { nLevel: 1, rounds: 10, gridSize: 3 },
         mouse: { count: 3, grid: [4, 3], difficulty: 'easy', rounds: 3 },
-        house: { initialPeople: 3, eventCount: 5, speed: 'easy', rounds: 3 },
+        house: { initialPeople: 3, eventCount: 6, speed: 'easy', rounds: 3 },
       },
       cloudUnlocks: null,
       optimisticUnlocks: null,
@@ -858,9 +916,9 @@ export const useGameStore = create<GameStore>()(
         const xpEarnedLocal = calculateXpEarned(enrichedSummary);
         const unlockBase = state.optimisticUnlocks ?? state.cloudUnlocks ?? defaultUnlocks();
         const unlockUpdateLocal = updateUnlocksAfterSession(unlockBase, enrichedSummary, modeDetails);
-        const unlockBonusCoinsLocal = unlockUpdateLocal.newlyUnlocked.length * 100;
+        const unlockBonusCoinsLocal = unlockUpdateLocal.newlyUnlocked.length * 50;
 
-        const brainCoinsEarnedLocal = Math.max(0, Math.round(score * 0.1));
+        const brainCoinsEarnedLocal = calculateBrainCoinsEarned(score);
         const dailyPerfectBonusLocal = 0;
         const dailyFirstWinBonusLocal = 0;
         const brainCoinsAfterLocal =

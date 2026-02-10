@@ -7,7 +7,11 @@ import { isRecord } from "../_lib/http.js";
 
 const ENERGY_MAX = 5;
 const ENERGY_RECOVERY_INTERVAL_MS = 4 * 60 * 60 * 1000;
-const DAILY_FIRST_WIN_BONUS_COINS = 20;
+const DAILY_FIRST_WIN_BONUS_COINS = 15;
+const DAILY_PERFECT_BONUS_COINS = 30;
+const UNLOCK_BONUS_COINS_PER_UNLOCK = 50;
+const COINS_PER_SCORE = 0.05;
+const MAX_COINS_PER_SESSION = 20;
 
 const recoverEnergy = (current: number, lastUpdated: Date | null) => {
   const now = Date.now();
@@ -46,9 +50,9 @@ const computeBrainLevel = (xp: number) => {
 
 const defaultUnlocks = () => ({
   numeric: { maxN: 1, roundsByN: { "1": [5, 10] as number[] } as Record<string, number[]> },
-  spatial: { grids: [3] as number[], maxNByGrid: { "3": 1 } as Record<string, number> },
+  spatial: { grids: [3] as number[], maxNByGrid: { "3": 1 } as Record<string, number>, roundsByN: { "1": [5, 10] as number[] } as Record<string, number[]> },
   mouse: { maxMice: 3, grids: [[4, 3]] as [number, number][], difficulties: ["easy"] as string[], maxRounds: 3 },
-  house: { speeds: ["easy"] as string[], maxEvents: 5, maxRounds: 3 },
+  house: { speeds: ["easy"] as string[], maxInitialPeople: 3, maxEvents: 6, maxRounds: 3 },
 });
 
 const normalizeNumericUnlocks = (raw: Record<string, unknown>): Unlocks["numeric"] => {
@@ -80,6 +84,35 @@ const normalizeNumericUnlocks = (raw: Record<string, unknown>): Unlocks["numeric
   return defaultUnlocks().numeric;
 };
 
+const normalizeSpatialUnlocks = (raw: Record<string, unknown>): Unlocks["spatial"] => {
+  const grids = Array.isArray(raw.grids) ? (raw.grids as unknown[]).map((g) => clampInt(g)).filter((g) => g > 0) : [3];
+  const maxNByGridRaw = isRecord(raw.maxNByGrid) ? raw.maxNByGrid : { "3": 1 };
+  const maxNByGrid: Record<string, number> = Object.fromEntries(
+    Object.entries(maxNByGridRaw).map(([k, v]) => [k, Math.max(1, Math.min(12, clampInt(v, 1)))])
+  );
+
+  const roundsByN: Record<string, number[]> = {};
+  const inputRoundsByN = isRecord(raw.roundsByN) ? raw.roundsByN : { "1": [5, 10] };
+  for (const [k, v] of Object.entries(inputRoundsByN)) {
+    roundsByN[k] = Array.isArray(v) ? (v as unknown[]).map((x) => clampInt(x)).filter((x) => x > 0) : [];
+  }
+  if (!roundsByN["1"] || roundsByN["1"].length === 0) roundsByN["1"] = [5, 10];
+
+  const uniqGrids = grids.length > 0 ? Array.from(new Set(grids)).sort((a, b) => a - b) : [3];
+  return { grids: uniqGrids, maxNByGrid, roundsByN };
+};
+
+const normalizeHouseUnlocks = (raw: Record<string, unknown>): Unlocks["house"] => {
+  const speedsRaw = Array.isArray(raw.speeds) ? (raw.speeds as unknown[]).map((s) => String(s)) : ["easy"];
+  const speeds = Array.from(new Set(speedsRaw));
+  return {
+    speeds: (speeds.length > 0 ? speeds : ["easy"]) as string[],
+    maxInitialPeople: Math.max(3, Math.min(7, clampInt(raw.maxInitialPeople, 3))),
+    maxEvents: Math.max(6, Math.min(24, clampInt(raw.maxEvents, 6))),
+    maxRounds: Math.max(3, Math.min(5, clampInt(raw.maxRounds, 3))),
+  } as Unlocks["house"];
+};
+
 const parseBody = (req: RequestLike): unknown => {
   if (req.body && typeof req.body === "object") return req.body;
   if (typeof req.body === "string") {
@@ -93,9 +126,9 @@ const parseBody = (req: RequestLike): unknown => {
 };
 
 type NumericUnlocks = { maxN: number; roundsByN: Record<string, number[]> };
-type SpatialUnlocks = { grids: number[]; maxNByGrid: Record<string, number> };
+type SpatialUnlocks = { grids: number[]; maxNByGrid: Record<string, number>; roundsByN: Record<string, number[]> };
 type MouseUnlocks = { maxMice: number; grids: [number, number][]; difficulties: string[]; maxRounds: number };
-type HouseUnlocks = { speeds: string[]; maxEvents: number; maxRounds: number };
+type HouseUnlocks = { speeds: string[]; maxInitialPeople: number; maxEvents: number; maxRounds: number };
 type Unlocks = ReturnType<typeof defaultUnlocks>;
 
 const isUnlockedNumeric = (unlocks: NumericUnlocks, cfg: Record<string, unknown>) => {
@@ -113,10 +146,16 @@ const isUnlockedNumeric = (unlocks: NumericUnlocks, cfg: Record<string, unknown>
 const isUnlockedSpatial = (unlocks: SpatialUnlocks, cfg: Record<string, unknown>) => {
   const grids: number[] = Array.isArray(unlocks?.grids) ? unlocks.grids.map((g) => clampInt(g)) : [3];
   const maxNByGrid: Record<string, number> = unlocks?.maxNByGrid && typeof unlocks.maxNByGrid === "object" ? unlocks.maxNByGrid : { "3": 1 };
+  const roundsByN = unlocks?.roundsByN && typeof unlocks.roundsByN === "object" ? unlocks.roundsByN : {};
   const gridSize = clampInt((cfg.gridSize ?? 3) as unknown, 3);
   const nLevel = clampInt(cfg.nLevel, 1);
+  const rounds = clampInt(cfg.totalRounds, 10);
   const cap = clampInt(maxNByGrid[String(gridSize)] ?? 1, 1);
-  return grids.includes(gridSize) && nLevel <= cap;
+  const roundsAllowedRaw = (roundsByN as Record<string, unknown>)[String(nLevel)];
+  const roundsAllowed: number[] = Array.isArray(roundsAllowedRaw)
+    ? (roundsAllowedRaw as unknown[]).map((r) => clampInt(r)).filter((r) => r > 0)
+    : [];
+  return grids.includes(gridSize) && nLevel <= cap && roundsAllowed.includes(rounds);
 };
 
 const isUnlockedMouse = (unlocks: MouseUnlocks, details: Record<string, unknown> | null) => {
@@ -141,14 +180,16 @@ const isUnlockedMouse = (unlocks: MouseUnlocks, details: Record<string, unknown>
 
 const isUnlockedHouse = (unlocks: HouseUnlocks, details: Record<string, unknown> | null) => {
   const speeds: string[] = Array.isArray(unlocks?.speeds) ? unlocks.speeds : ["easy"];
-  const maxEvents = clampInt(unlocks?.maxEvents, 5);
+  const maxInitialPeople = clampInt(unlocks?.maxInitialPeople, 3);
+  const maxEvents = clampInt(unlocks?.maxEvents, 6);
   const maxRounds = clampInt(unlocks?.maxRounds, 3);
 
   const speed = String(details?.speed ?? "easy");
-  const eventCount = clampInt(details?.eventCount, 5);
+  const initialPeople = clampInt(details?.initialPeople, 3);
+  const eventCount = clampInt(details?.eventCount, 6);
   const rounds = clampInt(details?.rounds, 3);
 
-  return speeds.includes(speed) && eventCount <= maxEvents && rounds <= maxRounds;
+  return speeds.includes(speed) && initialPeople <= maxInitialPeople && eventCount <= maxEvents && rounds <= maxRounds;
 };
 
 const updateUnlocksAfterSession = (
@@ -198,12 +239,21 @@ const updateUnlocksAfterSession = (
   if (mode === "spatial") {
     const gridSize = clampInt((cfg.gridSize ?? 3) as unknown, 3);
     const n = clampInt(cfg.nLevel, 1);
+    const rounds = clampInt(cfg.totalRounds, 10);
 
     const grids: number[] = Array.isArray(next.grids) ? (next.grids as unknown[]).map((g) => clampInt(g)) : [3];
     const maxNByGridRaw = isRecord(next.maxNByGrid) ? next.maxNByGrid : { "3": 1 };
     const maxNByGrid: Record<string, number> = Object.fromEntries(
       Object.entries(maxNByGridRaw).map(([k, v]) => [k, clampInt(v, 1)])
     );
+    const roundsByNRaw = isRecord(next.roundsByN) ? next.roundsByN : { "1": [5, 10] };
+    const roundsByN: Record<string, number[]> = Object.fromEntries(
+      Object.entries(roundsByNRaw).map(([k, v]) => [
+        k,
+        Array.isArray(v) ? (v as unknown[]).map((x) => clampInt(x)).filter((x) => x > 0) : [],
+      ])
+    );
+    if (!roundsByN["1"] || roundsByN["1"].length === 0) roundsByN["1"] = [5, 10];
 
     const caps: Record<string, number> = { "3": 5, "4": 12, "5": 12 };
     const prevCap = clampInt(maxNByGrid[String(gridSize)] ?? 1, 1);
@@ -212,7 +262,18 @@ const updateUnlocksAfterSession = (
       maxNByGrid[String(gridSize)] = Math.min(gridCap, n + 1);
       next.maxNByGrid = maxNByGrid;
       newlyUnlocked.push(`spatial_${gridSize}x${gridSize}_n_${maxNByGrid[String(gridSize)]}`);
+      const newKey = String(maxNByGrid[String(gridSize)]);
+      if (!roundsByN[newKey]) roundsByN[newKey] = [10];
     }
+
+    const key = String(n);
+    const currentRoundsList = roundsByN[key] ?? (n === 1 ? [5, 10] : [10]);
+    const nextRounds = rounds + 5;
+    if (nextRounds <= 30 && nextRounds % 5 === 0 && !currentRoundsList.includes(nextRounds)) {
+      roundsByN[key] = [...currentRoundsList, nextRounds].sort((a, b) => a - b);
+      newlyUnlocked.push(`spatial_n_${n}_r_${nextRounds}`);
+    }
+    next.roundsByN = roundsByN;
 
     if (gridSize === 3 && n >= 3 && !grids.includes(4)) {
       next.grids = [...grids, 4].sort((a, b) => a - b);
@@ -261,19 +322,26 @@ const updateUnlocksAfterSession = (
 
   if (mode === "house") {
     const speed = String(details?.speed ?? "easy");
-    const eventCount = clampInt(details?.eventCount, 5);
+    const eventCount = clampInt(details?.eventCount, 6);
+    const initialPeople = clampInt(details?.initialPeople, 3);
 
     const speeds: string[] = Array.isArray(next.speeds) ? next.speeds : ["easy"];
-    const maxEvents = clampInt(next.maxEvents, 5);
+    const maxInitialPeople = clampInt(next.maxInitialPeople, 3);
+    const maxEvents = clampInt(next.maxEvents, 6);
     const maxRounds = clampInt(next.maxRounds, 3);
 
     const speedOrder = ["easy", "normal", "fast"];
     const currentIdx = speedOrder.indexOf(speed);
     const maxSpeedIdx = Math.max(...speeds.map((s: string) => speedOrder.indexOf(s)).filter((i: number) => i >= 0));
 
-    if (eventCount >= maxEvents && maxEvents < 20) {
-      next.maxEvents = Math.min(20, maxEvents + 5);
+    if (eventCount >= maxEvents && maxEvents < 24) {
+      next.maxEvents = Math.min(24, maxEvents + 3);
       newlyUnlocked.push(`house_events_${next.maxEvents}`);
+    }
+
+    if (initialPeople >= maxInitialPeople && maxInitialPeople < 7) {
+      next.maxInitialPeople = Math.min(7, maxInitialPeople + 1);
+      newlyUnlocked.push(`house_initial_${next.maxInitialPeople}`);
     }
 
     if (currentIdx >= 0 && currentIdx >= maxSpeedIdx && currentIdx < speedOrder.length - 1) {
@@ -335,7 +403,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
   const score = clampInt(summary.score, computeScore(accuracy, nLevel, Math.max(1, totalRounds)));
   const xpEarned = computeXp(accuracy, Math.max(1, nLevel), Math.max(1, totalRounds));
-  const brainCoinsEarned = Math.max(0, Math.round(score * 0.1));
+  const brainCoinsEarned = Math.max(0, Math.min(MAX_COINS_PER_SESSION, Math.round(score * COINS_PER_SCORE)));
 
   const now = new Date();
   const dateKey = now.toISOString().slice(0, 10);
@@ -381,9 +449,9 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       const unlocks: Unlocks = defaultUnlocks();
       for (const row of unlockRows) {
         if (row.gameId === "numeric" && isRecord(row.unlockedParams)) unlocks.numeric = normalizeNumericUnlocks(row.unlockedParams);
-        if (row.gameId === "spatial" && isRecord(row.unlockedParams)) unlocks.spatial = row.unlockedParams as Unlocks["spatial"];
+        if (row.gameId === "spatial" && isRecord(row.unlockedParams)) unlocks.spatial = normalizeSpatialUnlocks(row.unlockedParams);
         if (row.gameId === "mouse" && isRecord(row.unlockedParams)) unlocks.mouse = row.unlockedParams as Unlocks["mouse"];
-        if (row.gameId === "house" && isRecord(row.unlockedParams)) unlocks.house = row.unlockedParams as Unlocks["house"];
+        if (row.gameId === "house" && isRecord(row.unlockedParams)) unlocks.house = normalizeHouseUnlocks(row.unlockedParams);
       }
 
       const details =
@@ -416,7 +484,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
           .where(and(eq(gameSessions.userId, sessionUser.id), gte(gameSessions.createdAt, startOfDay), eq(gameSessions.accuracy, 100)))
           .limit(1);
         if (priorPerfect.length === 0) {
-          dailyPerfectBonus = 50;
+          dailyPerfectBonus = DAILY_PERFECT_BONUS_COINS;
         }
       }
 
@@ -476,7 +544,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
           : energyAfterConsume;
 
       const brainCoinsBefore = clampInt(u.brainCoins ?? 0, 0);
-      const unlockBonusCoins = unlockUpdate.newlyUnlocked.length * 100;
+      const unlockBonusCoins = unlockUpdate.newlyUnlocked.length * UNLOCK_BONUS_COINS_PER_UNLOCK;
       const brainCoinsAfter = brainCoinsBefore + brainCoinsEarned + unlockBonusCoins + dailyPerfectBonus + dailyFirstWinBonus;
 
       await tx
