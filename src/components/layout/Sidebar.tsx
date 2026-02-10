@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Brain, User, ShoppingBag, HelpCircle } from 'lucide-react';
+import { Home, User, ShoppingBag, HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
 import { BrainRankCard } from '../profile/BrainRankCard';
@@ -36,7 +36,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="pt-4 pb-1 text-center">
         <h1 className="text-xl font-light tracking-wider text-zen-700">
-          <Brain className="inline-block w-5 h-5 mr-1 -mt-0.5" />
+          <img src="/pic/title.png" alt="" className="inline-block w-5 h-5 mr-1 -mt-0.5" />
           {t('app.title')}
         </h1>
         <p className="text-xs text-zen-400 mt-0.5">{t('app.subtitle')}</p>

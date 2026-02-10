@@ -172,6 +172,12 @@ const defaultUnlocks = (): GameUnlocks => ({
 const clampInt = (n: unknown, fallback = 0) => (Number.isFinite(Number(n)) ? Math.trunc(Number(n)) : fallback);
 const clampFloat = (n: unknown, fallback = 0) => (Number.isFinite(Number(n)) ? Number(n) : fallback);
 
+const requiredMinRoundsForN = (n: number) => {
+  const candidates = [5, 10, 15, 20, 25, 30];
+  const target = n + 1;
+  return candidates.find((r) => r >= target) ?? 30;
+};
+
 const normalizeNumericUnlocks = (raw: GameUnlocks["numeric"]): GameUnlocks["numeric"] => {
   const maxN = Math.max(1, Math.min(12, clampInt(raw?.maxN, 1)));
   const roundsByN: Record<string, number[]> = {};
@@ -180,6 +186,13 @@ const normalizeNumericUnlocks = (raw: GameUnlocks["numeric"]): GameUnlocks["nume
     roundsByN[k] = Array.isArray(v) ? (v as unknown[]).map((x) => clampInt(x)).filter((x) => x > 0) : [];
   }
   if (!roundsByN["1"] || roundsByN["1"].length === 0) roundsByN["1"] = [5, 10];
+  for (let n = 1; n <= maxN; n += 1) {
+    const key = String(n);
+    const required = requiredMinRoundsForN(n);
+    const current = roundsByN[key] ?? [];
+    const next = Array.from(new Set([...current, required])).sort((a, b) => a - b);
+    roundsByN[key] = next.length > 0 ? next : [required];
+  }
   return { maxN, roundsByN };
 };
 
@@ -199,6 +212,19 @@ const normalizeSpatialUnlocks = (raw: GameUnlocks["spatial"]): GameUnlocks["spat
     roundsByN[k] = Array.isArray(v) ? (v as unknown[]).map((x) => clampInt(x)).filter((x) => x > 0) : [];
   }
   if (!roundsByN["1"] || roundsByN["1"].length === 0) roundsByN["1"] = [5, 10];
+  const maxNFromRounds = Math.max(
+    1,
+    ...Object.keys(roundsByN)
+      .map((k) => clampInt(k, 1))
+      .filter((x) => x > 0)
+  );
+  for (let n = 1; n <= maxNFromRounds; n += 1) {
+    const key = String(n);
+    const required = requiredMinRoundsForN(n);
+    const current = roundsByN[key] ?? [];
+    const next = Array.from(new Set([...current, required])).sort((a, b) => a - b);
+    roundsByN[key] = next.length > 0 ? next : [required];
+  }
 
   const uniqGrids = grids.length > 0 ? Array.from(new Set(grids)).sort((a, b) => a - b) : [3];
   return { grids: uniqGrids, maxNByGrid, roundsByN };
@@ -245,10 +271,15 @@ const updateUnlocksAfterSession = (current: GameUnlocks, summary: SessionSummary
     if (rounds === 10 && n === next.numeric.maxN && next.numeric.maxN < 12) {
       const nextN = next.numeric.maxN + 1;
       const nextKey = String(nextN);
-      if (!roundsByN[nextKey]) roundsByN[nextKey] = [10];
+      if (!roundsByN[nextKey]) {
+        const required = requiredMinRoundsForN(nextN);
+        roundsByN[nextKey] = required === 5 ? [5, 10] : [required];
+      }
       next.numeric.roundsByN = roundsByN;
       next.numeric.maxN = nextN;
-      newlyUnlocked.push(`numeric_n_${nextN}_r_10`);
+      const unlockedRounds = roundsByN[nextKey] ?? [];
+      const first = unlockedRounds[0] ?? requiredMinRoundsForN(nextN);
+      newlyUnlocked.push(`numeric_n_${nextN}_r_${first}`);
     }
   }
 
@@ -270,7 +301,10 @@ const updateUnlocksAfterSession = (current: GameUnlocks, summary: SessionSummary
       next.spatial.maxNByGrid = maxNByGrid;
       newlyUnlocked.push(`spatial_${gridSize}x${gridSize}_n_${maxNByGrid[String(gridSize)]}`);
       const newKey = String(maxNByGrid[String(gridSize)]);
-      if (!roundsByN[newKey]) roundsByN[newKey] = [10];
+      if (!roundsByN[newKey]) {
+        const required = requiredMinRoundsForN(clampInt(newKey, 1));
+        roundsByN[newKey] = required === 5 ? [5, 10] : [required];
+      }
     }
 
     const key = String(n);

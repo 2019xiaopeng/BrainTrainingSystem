@@ -17,6 +17,12 @@ const clampToStep = (value: number, min: number, max: number, step: number) => {
   return min + Math.floor((clamped - min) / step) * step;
 };
 
+const requiredMinRoundsForN = (n: number) => {
+  const candidates = [5, 10, 15, 20, 25, 30];
+  const target = n + 1;
+  return candidates.find((r) => r >= target) ?? 30;
+};
+
 interface HomeScreenProps {
   initialMode: GameMode;
   userProfile: UserProfile;
@@ -75,16 +81,20 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   // Determine current N-Back config based on mode
   const nLevel = mode === 'numeric' ? numericNLevel : spatialNLevel;
   const rounds = mode === 'numeric' ? numericRounds : spatialRounds;
-  const numericRoundsUnlocked = numericUnlocks?.roundsByN?.[String(numericNLevel)] ?? [5, 10];
+  const numericMinRounds = requiredMinRoundsForN(numericNLevel);
+  const numericRoundsUnlockedRaw = numericUnlocks?.roundsByN?.[String(numericNLevel)] ?? [5, 10];
+  const numericRoundsUnlocked = Array.from(new Set([...numericRoundsUnlockedRaw, numericMinRounds]));
   const numericMaxNUnlocked = numericUnlocks?.maxN ?? 12;
-  const numericAllowedRounds = [...numericRoundsUnlocked].sort((a, b) => a - b);
+  const numericAllowedRounds = numericRoundsUnlocked.filter((r) => r >= numericMinRounds).sort((a, b) => a - b);
   const numericRoundIndex = numericAllowedRounds.indexOf(numericRounds);
   const canDecrementNumericRounds = numericRoundIndex > 0;
   const canIncrementNumericRounds = numericRoundIndex >= 0 && numericRoundIndex < numericAllowedRounds.length - 1;
   const spatialGridsUnlocked = spatialUnlocks?.grids ?? [3, 4, 5];
   const spatialMaxNUnlocked = spatialUnlocks?.maxNByGrid?.[String(gridSize)] ?? 12;
-  const spatialRoundsUnlocked = spatialUnlocks?.roundsByN?.[String(spatialNLevel)] ?? (spatialNLevel === 1 ? [5, 10] : [10]);
-  const spatialAllowedRounds = [...spatialRoundsUnlocked].sort((a, b) => a - b);
+  const spatialMinRounds = requiredMinRoundsForN(spatialNLevel);
+  const spatialRoundsUnlockedRaw = spatialUnlocks?.roundsByN?.[String(spatialNLevel)] ?? (spatialNLevel === 1 ? [5, 10] : [10]);
+  const spatialRoundsUnlocked = Array.from(new Set([...spatialRoundsUnlockedRaw, spatialMinRounds]));
+  const spatialAllowedRounds = spatialRoundsUnlocked.filter((r) => r >= spatialMinRounds).sort((a, b) => a - b);
   const spatialRoundIndex = spatialAllowedRounds.indexOf(spatialRounds);
   const canDecrementSpatialRounds = spatialRoundIndex > 0;
   const canIncrementSpatialRounds = spatialRoundIndex >= 0 && spatialRoundIndex < spatialAllowedRounds.length - 1;
@@ -92,9 +102,9 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   const mouseGridsUnlocked = mouseUnlocks?.grids ?? MOUSE_GRID_PRESETS.map((p) => p.value);
   const mouseDifficultiesUnlocked = mouseUnlocks?.difficulties ?? (Object.keys(MOUSE_DIFFICULTY_MAP) as MouseDifficultyLevel[]);
   const mouseMaxRoundsUnlocked = mouseUnlocks?.maxRounds ?? 5;
-  const houseSpeedsUnlocked = houseUnlocks?.speeds ?? (['easy', 'normal', 'fast'] as HouseSpeed[]);
-  const houseMaxInitialUnlocked = houseUnlocks?.maxInitialPeople ?? 7;
-  const houseMaxEventsUnlocked = houseUnlocks?.maxEvents ?? 24;
+  const houseSpeedsUnlocked = houseUnlocks?.speeds ?? (['easy'] as HouseSpeed[]);
+  const houseMaxInitialUnlocked = houseUnlocks?.maxInitialPeople ?? 3;
+  const houseMaxEventsUnlocked = houseUnlocks?.maxEvents ?? 6;
   const houseMaxRoundsUnlocked = houseUnlocks?.maxRounds ?? 5;
   
   useEffect(() => {
@@ -137,13 +147,18 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
         [...spatialAllowedRounds].filter((r) => r <= spatialRounds).pop() ?? spatialAllowedRounds[0];
       setSpatialRounds(fallback);
     }
+    if (mode === 'numeric' && numericAllowedRounds.length > 0 && !numericAllowedRounds.includes(numericRounds)) {
+      const fallback =
+        [...numericAllowedRounds].filter((r) => r <= numericRounds).pop() ?? numericAllowedRounds[0];
+      setNumericRounds(fallback);
+    }
     if (mode === 'house') {
       if (houseInitial > Math.min(7, houseMaxInitialUnlocked)) setHouseInitial(Math.min(7, houseMaxInitialUnlocked));
       const maxEvents = Math.min(24, houseMaxEventsUnlocked);
       const normalizedEvents = clampToStep(houseEvents, 6, maxEvents, 3);
       if (normalizedEvents !== houseEvents) setHouseEvents(normalizedEvents);
     }
-  }, [isGuest, mode, spatialAllowedRounds, spatialRounds, houseEvents, houseInitial, houseMaxEventsUnlocked, houseMaxInitialUnlocked]);
+  }, [isGuest, mode, spatialAllowedRounds, spatialRounds, numericAllowedRounds, numericRounds, houseEvents, houseInitial, houseMaxEventsUnlocked, houseMaxInitialUnlocked]);
 
   // Validate N-Back config
   const isNBackMode = mode === 'numeric' || mode === 'spatial';
@@ -152,9 +167,9 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   const isUnlocked =
     isGuest ? true :
     mode === 'numeric'
-      ? nLevel <= numericMaxNUnlocked && numericRoundsUnlocked.includes(numericRounds)
+      ? nLevel <= numericMaxNUnlocked && numericAllowedRounds.includes(numericRounds)
       : mode === 'spatial'
-        ? spatialGridsUnlocked.includes(gridSize) && spatialNLevel <= spatialMaxNUnlocked && spatialRoundsUnlocked.includes(spatialRounds)
+        ? spatialGridsUnlocked.includes(gridSize) && spatialNLevel <= spatialMaxNUnlocked && spatialAllowedRounds.includes(spatialRounds)
         : mode === 'mouse'
           ? effectiveMouseCount <= Math.min(maxMice, mouseMaxMiceUnlocked) &&
             mouseGridsUnlocked.some((g) => g[0] === mouseGrid[0] && g[1] === mouseGrid[1]) &&
@@ -317,12 +332,12 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
                 <button
                   onClick={() => {
                     if (mode === 'numeric') {
-                      setNumericNLevel((n) => Math.min(Math.min(12, numericRounds - 1, numericMaxNUnlocked), n + 1));
+                      setNumericNLevel((n) => Math.min(Math.min(12, numericMaxNUnlocked), n + 1));
                     } else {
-                      setSpatialNLevel((n) => Math.min(Math.min(12, spatialRounds - 1, spatialMaxNUnlocked), n + 1));
+                      setSpatialNLevel((n) => Math.min(Math.min(12, spatialMaxNUnlocked), n + 1));
                     }
                   }}
-                  disabled={nLevel >= Math.min(12, rounds - 1, mode === 'numeric' ? numericMaxNUnlocked : spatialMaxNUnlocked)}
+                  disabled={nLevel >= Math.min(12, mode === 'numeric' ? numericMaxNUnlocked : spatialMaxNUnlocked)}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
