@@ -162,9 +162,9 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
       <div className="bg-gradient-to-br from-sage-400 to-sage-500 rounded-2xl p-6 shadow-lg text-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-medium">{t('home.profile')}</h2>
-          {!isGuest && userProfile.daysStreak > 0 && (
+          {!isGuest && userProfile.checkIn.consecutiveDays > 0 && (
             <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-              {t('home.streak', { days: userProfile.daysStreak })}
+              {t('home.streak', { days: userProfile.checkIn.consecutiveDays })}
             </div>
           )}
         </div>
@@ -179,7 +179,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
             <div className="text-xs text-white/80 mt-1">{t('home.totalScore')}</div>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-            <div className="text-2xl font-mono font-bold">{isGuest ? 0 : userProfile.daysStreak}</div>
+            <div className="text-2xl font-mono font-bold">{isGuest ? 0 : userProfile.checkIn.consecutiveDays}</div>
             <div className="text-xs text-white/80 mt-1">{t('home.streakDays')}</div>
           </div>
         </div>

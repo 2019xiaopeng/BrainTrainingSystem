@@ -29,13 +29,13 @@ export function CheckInWidget() {
 
   return (
     <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2 min-w-0">
           <Gift className="w-4 h-4 text-sage-600" />
-          <span className="text-sm font-medium text-zen-600">{t('checkin.title')}</span>
+          <span className="text-sm font-medium text-zen-600 truncate">{t('checkin.title')}</span>
         </div>
         {checkIn.consecutiveDays > 0 && (
-          <div className="flex items-center gap-1 text-xs text-orange-500">
+          <div className="flex items-center gap-1 text-[11px] text-orange-500 whitespace-nowrap shrink-0">
             <Flame className="w-3 h-3" />
             <span>{t('checkin.streak', { days: checkIn.consecutiveDays })}</span>
           </div>

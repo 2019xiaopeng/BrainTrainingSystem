@@ -137,7 +137,7 @@ export function ProfileScreen() {
             <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-zen-200/50">
               <Flame className="w-5 h-5 mx-auto mb-1.5 text-orange-500" />
               <div className="text-xl font-mono font-bold text-zen-700">
-                {userProfile.daysStreak}
+                {userProfile.checkIn.consecutiveDays}
               </div>
               <div className="text-xs text-zen-400 mt-0.5">{t('home.streakDays')}</div>
             </div>

@@ -226,8 +226,8 @@
   },
   "checkin": {
     "title": "Daily Check-in",
-    "streak": "\ud83d\udd25 {{days}} day streak",
-    "done": "\u2705 Checked in today",
+    "streak": "{{days}} day streak",
+    "done": "Checked in today",
     "claim": "Claim Reward",
     "points": "Brain Points"
   },

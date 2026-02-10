@@ -165,7 +165,7 @@ export function StoreScreen() {
 
               {/* Tag for product type */}
               <div
-                className={`absolute top-2 right-2 text-xs px-1.5 py-0.5 rounded ${
+                className={`absolute top-1.5 right-1.5 text-[10px] leading-none px-1.5 py-1 rounded-md max-w-[92px] truncate whitespace-nowrap ${
                   product.type === 'permanent'
                     ? 'bg-purple-50 text-purple-500 border border-purple-200/50'
                     : 'bg-zen-50 text-zen-400 border border-zen-200/30'

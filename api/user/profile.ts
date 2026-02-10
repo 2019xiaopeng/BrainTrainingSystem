@@ -236,29 +236,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   );
 
   const maxNLevel = Math.max(maxNLevelFromSessions, maxNLevelFromUnlocks);
-
-  const byDate = new Map<string, { totalXp: number; sessionsCount: number }>();
-  for (const row of activityRows) {
-    const key = String(row.date);
-    byDate.set(key, { totalXp: row.totalXp ?? 0, sessionsCount: row.sessionsCount ?? 0 });
-  }
-
-  const dateKeyToday = new Date().toISOString().slice(0, 10);
-  const hasToday = (byDate.get(dateKeyToday)?.sessionsCount ?? 0) > 0;
-  const calcStreak = () => {
-    let streak = 0;
-    let d = new Date(dateKeyToday);
-    while (true) {
-      const key = d.toISOString().slice(0, 10);
-      const count = byDate.get(key)?.sessionsCount ?? 0;
-      if (count <= 0) break;
-      streak += 1;
-      d.setUTCDate(d.getUTCDate() - 1);
-      if (streak >= 365) break;
-    }
-    return streak;
-  };
-  const daysStreak = hasToday ? calcStreak() : 0;
+  const daysStreak = u.checkInStreak ?? 0;
 
   const recentRows = await db
     .select({

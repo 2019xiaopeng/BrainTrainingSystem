@@ -999,29 +999,71 @@ export const useGameStore = create<GameStore>()(
           }
         }
 
-        try {
-          const resp = await fetch('/api/user/checkin', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            credentials: 'include',
-          });
-          if (!resp.ok) return null;
-          const data = await resp.json();
-          if (data?.alreadyCheckedIn) return null;
-          set((s) => ({
-            userProfile: {
-              ...s.userProfile,
-              totalXP: data.xpAfter ?? s.userProfile.totalXP,
-              brainCoins: data.brainCoinsAfter ?? s.userProfile.brainCoins,
-              checkIn: data.checkIn ?? s.userProfile.checkIn,
-            },
-          }));
+        const reward = getCheckInReward(newConsecutive);
+        const prev = {
+          totalXP: state.userProfile.totalXP,
+          brainCoins: state.userProfile.brainCoins,
+          checkIn: state.userProfile.checkIn,
+          daysStreak: state.userProfile.daysStreak,
+        };
 
-          const reward = data.reward ?? getCheckInReward(newConsecutive);
-          return { xpGained: reward.xp ?? 0, coinsGained: reward.coins ?? 0 };
-        } catch {
-          return null;
-        }
+        set((s) => ({
+          userProfile: {
+            ...s.userProfile,
+            totalXP: s.userProfile.totalXP + (reward.xp ?? 0),
+            brainCoins: s.userProfile.brainCoins + (reward.coins ?? 0),
+            checkIn: {
+              lastCheckInDate: today,
+              consecutiveDays: newConsecutive,
+            },
+            daysStreak: newConsecutive,
+          },
+        }));
+
+        void (async () => {
+          try {
+            const resp = await fetch('/api/user/checkin', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              credentials: 'include',
+            });
+            if (!resp.ok) {
+              set((s) => ({
+                userProfile: {
+                  ...s.userProfile,
+                  totalXP: prev.totalXP,
+                  brainCoins: prev.brainCoins,
+                  checkIn: prev.checkIn,
+                  daysStreak: prev.daysStreak,
+                },
+              }));
+              return;
+            }
+            const data = await resp.json();
+            if (data?.alreadyCheckedIn) return;
+            set((s) => ({
+              userProfile: {
+                ...s.userProfile,
+                totalXP: data.xpAfter ?? s.userProfile.totalXP,
+                brainCoins: data.brainCoinsAfter ?? s.userProfile.brainCoins,
+                checkIn: data.checkIn ?? s.userProfile.checkIn,
+                daysStreak: data.checkIn?.consecutiveDays ?? s.userProfile.daysStreak,
+              },
+            }));
+          } catch {
+            set((s) => ({
+              userProfile: {
+                ...s.userProfile,
+                totalXP: prev.totalXP,
+                brainCoins: prev.brainCoins,
+                checkIn: prev.checkIn,
+                daysStreak: prev.daysStreak,
+              },
+            }));
+          }
+        })();
+
+        return { xpGained: reward.xp ?? 0, coinsGained: reward.coins ?? 0 };
       },
 
       purchaseProduct: async (productId) => {
