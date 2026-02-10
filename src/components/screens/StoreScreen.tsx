@@ -15,30 +15,31 @@ export function StoreScreen() {
   const { t } = useTranslation();
   const authStatus = useGameStore((s) => s.userProfile.auth?.status ?? 'guest');
   const isGuest = authStatus === 'guest';
-  const brainPoints = useGameStore((s) => s.userProfile.brainPoints);
+  const brainCoins = useGameStore((s) => s.userProfile.brainCoins ?? 0);
   const ownedItems = useGameStore((s) => s.userProfile.ownedItems);
   const purchaseProduct = useGameStore((s) => s.purchaseProduct);
 
   const [feedback, setFeedback] = useState<{ success: boolean; message: string } | null>(null);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
 
-  const handlePurchase = (product: StoreProduct) => {
+  const handlePurchase = async (product: StoreProduct) => {
     if (isGuest) return;
     setPurchasingId(product.id);
 
-    // Simulate brief purchase animation
-    setTimeout(() => {
-      const success = purchaseProduct(product.id);
-      if (success) {
-        setFeedback({ success: true, message: t('store.purchaseSuccess') });
-      } else if (brainPoints < product.price) {
-        setFeedback({ success: false, message: t('store.notEnoughPoints') });
-      } else {
-        setFeedback({ success: false, message: t('store.alreadyOwned') });
-      }
-      setPurchasingId(null);
-      setTimeout(() => setFeedback(null), 2500);
-    }, 400);
+    await new Promise((r) => setTimeout(r, 250));
+
+    const result = await purchaseProduct(product.id);
+    if (result.ok) {
+      setFeedback({ success: true, message: t('store.purchaseSuccess') });
+    } else if (result.error === 'insufficient_coins') {
+      setFeedback({ success: false, message: t('store.notEnoughPoints') });
+    } else if (result.error === 'already_owned') {
+      setFeedback({ success: false, message: t('store.alreadyOwned') });
+    } else {
+      setFeedback({ success: false, message: t('store.alreadyOwned') });
+    }
+    setPurchasingId(null);
+    setTimeout(() => setFeedback(null), 2500);
   };
 
   const getEffectIcon = (product: StoreProduct) => {
@@ -62,7 +63,7 @@ export function StoreScreen() {
         </div>
         <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-amber-100 px-4 py-2 rounded-xl border border-amber-200/50">
           <Coins className="w-4 h-4 text-amber-600" />
-          <span className="font-mono font-bold text-amber-700">{(isGuest ? 0 : brainPoints).toLocaleString()}</span>
+          <span className="font-mono font-bold text-amber-700">{(isGuest ? 0 : brainCoins).toLocaleString()}</span>
           <span className="text-xs text-amber-500">{t('store.points')}</span>
         </div>
       </div>
@@ -111,7 +112,7 @@ export function StoreScreen() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {STORE_PRODUCTS.map((product) => {
           const isOwned = !isGuest && product.type === 'permanent' && ownedItems.includes(product.id);
-          const canAfford = !isGuest && brainPoints >= product.price;
+          const canAfford = !isGuest && brainCoins >= product.price;
           const isPurchasing = purchasingId === product.id;
 
           return (
@@ -164,7 +165,7 @@ export function StoreScreen() {
 
               {/* Tag for product type */}
               <div
-                className={`absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded ${
+                className={`absolute top-1.5 right-1.5 text-[10px] leading-none px-1.5 py-1 rounded-md max-w-[92px] truncate whitespace-nowrap ${
                   product.type === 'permanent'
                     ? 'bg-purple-50 text-purple-500 border border-purple-200/50'
                     : 'bg-zen-50 text-zen-400 border border-zen-200/30'
@@ -178,7 +179,7 @@ export function StoreScreen() {
       </div>
 
       {/* Hint */}
-      <p className="text-[10px] text-zen-400 text-center">
+      <p className="text-xs text-zen-400 text-center">
         {t('store.earnHint')}
       </p>
     </div>

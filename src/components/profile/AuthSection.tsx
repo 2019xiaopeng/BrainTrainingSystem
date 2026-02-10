@@ -94,7 +94,7 @@ export function AuthSection({ auth }: AuthSectionProps) {
               注册
             </Link>
           </div>
-          <p className="text-[10px] text-zen-400 mt-3 text-center">
+          <p className="text-xs text-zen-400 mt-3 text-center">
             {t('profile.auth.guestWarning')}
           </p>
         </>

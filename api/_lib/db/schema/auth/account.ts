@@ -1,5 +1,5 @@
 import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
-import { user } from "..";
+import { user } from "../index.js";
 
 export const account = pgTable("account", {
   id: text("id").primaryKey(),
@@ -20,4 +20,3 @@ export const account = pgTable("account", {
     .defaultNow()
     .$onUpdate(() => new Date()),
 }).enableRLS();
-

@@ -42,7 +42,7 @@ export const MOCK_BRAIN_STATS: BrainStats = {
   math: 65,
   observation: 58,
   loadCapacity: 70,
-  speed: 62,
+  reaction: 62,
 };
 
 /**

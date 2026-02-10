@@ -77,8 +77,9 @@
         - 1-Back(10) > 90% -> 解锁 1-Back(15) & 2-Back(10)。
         - 此后每级逻辑相同：N-Back(10) 通关解锁 N+1(10) 和 N(15)。
 - **空间心流 (Spatial Flow)**
-    - **维度**: N-Back (1-12) x 网格 (3x3/4x4/5x5)。
+    - **维度**: N-Back (1-12) x 题量 (5/10/15/20/25/30) x 网格 (3x3/4x4/5x5)。
     - **解锁规则**:
+        - **题量**: 与数字心流一致：默认 10，最小 5；当某一 N 的当前题量通关（准确率 ≥ 90%）时，解锁该 N 的下一级题量（+5）。
         - **3x3**: N=1 -> N=2 -> ... -> N=5 (上限)。
         - **4x4**: 当 3x3 @ N=3 通关 -> 解锁 4x4 @ N=1。
         - **5x5**: 当 4x4 @ N=4 通关 -> 解锁 5x5 @ N=1。
@@ -95,16 +96,17 @@
 - **人来人往 (House Flow)**
     - **核心机制**: 动态计数 (Running Counter)。
     - **维度**:
-        - **速度**: Easy(1.5s/人) -> Normal(1.0s/人) -> Fast(0.5s/人)。
-        - **事件数**: 5次 -> 10次 -> 15次 -> 20次进出事件。
+        - **速度**: Easy(1.2s~1.6s/事件) -> Normal(0.64s~1.2s/事件) -> Fast(0.32s~0.72s/事件)。
+        - **初始人数**: 3 -> 7。
+        - **事件数**: 6次起步，按 3 为步进（6/9/12/...）。
         - **复杂度**: 
             - Lv1: 单门 (只进不出)。
             - Lv2: 单门 (有进有出)。
             - Lv3: 双门 (左进右出，需同时关注)。
             - Lv4: 干扰 (有人走到门口折返)。
     - **解锁路径**:
-        - **入门**: 速度Easy + 5事件 + 单门。
-        - **晋升**: 准确率 > 90% 解锁下一级事件数 (5->10)。
+        - **入门**: 速度Easy + 初始3人 + 6事件。
+        - **晋升**: 准确率 > 90% 解锁下一级事件数（+3）与更高初始人数（+1，按需逐步开放）。
         - **质变**: 通关 Normal 速度所有事件数 -> 解锁双门模式。
 
 ### 3.3 经济与经验数值配置 (Economy & XP Config)
@@ -129,23 +131,25 @@
     - **LV6**: 50,000 (约 4.5 个月)
     - **LV7**: 80,000 (约 6 个月 - 毕业)
 
-- **打卡奖励**:
-    - 普通签到: +50 积分。
-    - 3日连胜: +100 积分。
-    - 7日连胜: +300 积分 + 1瓶体力药水。
-- **首胜奖励**:
-    - 关卡首通 (First Clear): +200 积分 + 返还体力。
-    - 每日完美 (Perfect): +100 积分。
-- **消耗**:
-    - 补签卡: 500 积分。
-    - 体力药水: 200 积分。
+- **签到奖励 (Daily Check-in)**:
+    - 每日签到: +50 XP，+10 Brain Coins。
+    - 连续 3 天: 当天签到 +20 Brain Coins（随 streak 结算）。
+    - 连续 7 天: 当天签到 +60 Brain Coins（随 streak 结算）。
+- **训练结算奖励 (Session Rewards)**:
+    - **基础金币**: `BrainCoins = Min(20, Round(score * 0.05))`（降低单局产出，避免通胀）。
+    - **解锁奖励 (First Clear Bonus)**: 当本局触发 `newlyUnlocked` 时，每条解锁 +50 Brain Coins，且返还本局消耗的 1 点体力。
+    - **每日首胜 (Daily First Win)**: 每日首次完成任意有效训练，额外 +15 Brain Coins。
+    - **每日完美 (Daily Perfect)**: 每日首次 `accuracy == 100%` 额外 +30 Brain Coins。
+- **商城主要定价 (Brain Coins)**:
+    - 体力药水: +1 体力 (100) / +5 体力 (450)。
+    - 补签卡: 500。
 
 ### 3.4 积分与体力经济 (Economy System)
 - **体力 (Energy) 架构设计**: 
     - **存储**: `users` 表中的 `energy_current` (Int) 和 `energy_last_updated` (Timestamp)。
     - **消耗机制 (Client-Optimistic)**: 
         - 前端: 扣除本地体力，允许立即开始游戏。
-        - 后端: 游戏结算接口 (`POST /session`) 校验体力。如果作弊（体力不足强行提交），则拒绝记录该次成绩。
+        - 后端: 游戏结算接口 (`POST /api/game/session`) 校验体力。如果作弊（体力不足强行提交），则拒绝记录该次成绩。
     - **恢复机制 (Lazy Calculation)**:
         - **不使用 Cron Job** (太重)。
         - **计算逻辑**: 每次用户请求用户信息或开始游戏时，Edge Function 触发计算：
@@ -154,7 +158,7 @@
         - 这样可确保用户长时间离线后回归，体力能瞬间回满。
     - **无限体力**: `users.unlimited_energy_until` (Timestamp)。若当前时间在此之前，不扣减体力。
 
-- **积分 (Brain Points)**: 
+- **Brain Coins (积分)**: 
     - **获取**: 
         - 每日打卡（完成至少一局有效训练）。
         - 达成成就（如首次通关 N-Back 3）。
@@ -173,9 +177,9 @@
     - **纵向突破 (Intensity)**: 当 10题模式达到 90% 准确率时，同时解锁下一级 N 值的 10题模式（如 1-Back 10题 -> 2-Back 10题）。
 - **首通奖励 (First Clear Bonus)**:
     - 首次成功解锁新关卡时，**返还本次消耗的 1 点体力**（相当于免费挑战）。
-    - 额外奖励大量积分。
+    - 额外奖励 Brain Coins（每条解锁 +100 Brain Coins）。
 - **每日首胜 (Daily Perfect)**:
-    - 每日首次获得 100% 准确率（任意难度），奖励额外积分。
+    - 每日首次获得 100% 准确率（任意难度），奖励额外 +50 Brain Coins。
 
 ### 3.6 虚拟商城 (Brain Store)
 - **入口**: 顶部导航栏显眼位置。
@@ -206,18 +210,16 @@
 - **数据链路**:
     1.  **Game Session (游戏结算)**: 
         - 前端提交 `game_sessions` 记录 (含 `score`, `n_level`, `timestamp`)。
-    2.  **XP Calculation (Edge Function)**:
-        - 触发器监听 `INSERT game_sessions`。
-        - 根据公式计算本次 XP。
-        - 更新 `users.xp` (累加) 和 `users.brain_level` (判断阈值)。
+    2.  **XP Calculation (Session API)**:
+        - 由结算接口计算本次 XP 并更新 `users.xp` / `users.brain_level`。
     3.  **Daily Activity (Heatmap Aggregation)**:
-        - **表结构**: `public.user_daily_activity`
-            - `user_id`: UUID
+        - **表结构**: `public.daily_activity`
+            - `user_id`: Text/UUID
             - `date`: Date (YYYY-MM-DD)
             - `total_xp`: Integer
             - `sessions_count`: Integer
-        - **逻辑**: Edge Function 自动 Upsert 这张表。
-        - **热力图渲染**: 前端直接查询这张表，根据 `sessions_count` 渲染颜色深浅 (0=灰色, 1-2=浅绿, 3-5=中绿, 6+=深绿)。
+        - **逻辑**: 结算接口对该表原子 Upsert。
+        - **热力图渲染**: 前端通过 Profile 接口读取聚合记录，根据 `sessions_count` 渲染颜色深浅 (0=灰色, 1-2=浅绿, 3-5=中绿, 6+=深绿)。
 
 ### 4. 排行榜与社交 (Leaderboards)
 **核心逻辑**: 分 N 值赛道，比拼平均速度。
@@ -364,6 +366,41 @@
     - `user_id`: UUID
     - `payload`: JSONB (Offline session data)
     - `status`: Enum ('pending', 'processed', 'failed')
+
+### 7.4 当前仓库已实现的数据库结构（以 Drizzle Schema 为准）
+> 说明：本节用于“对齐现状”。上面的 7.3 是设计草案；实际落库表与字段以仓库内 Drizzle schema + migrations 为准。
+
+#### 7.4.1 Auth 相关表（已实现）
+- **`public.user`**（用户主表，含游戏字段）
+  - 身份字段：`id/name/username/display_username/email/emailVerified/image/role/gender`
+  - 游戏字段：`xp/brain_level/brain_coins`
+  - 体力字段：`energy_current/energy_last_updated/unlimited_energy_until`
+  - 签到字段：`check_in_last_date/check_in_streak`
+  - 进度字段：`brain_stats (jsonb)/tutorial_status (jsonb)`
+  - 商城资产：`owned_items (jsonb)/inventory (jsonb)`
+  - 其他：`wechat_unionid/stripe_customer_id/createdAt/updatedAt`
+- **`public.session`**：登录会话（token + expiresAt + userId + ip/userAgent 等）
+- **`public.account`**：账号绑定（providerId/accountId + token 等）
+- **`public.verification`**：邮箱验证/一次性验证记录
+
+#### 7.4.2 游戏数据表（已实现）
+- **`public.game_sessions`**（每局训练历史，后端结算接口会写入）
+  - `id/user_id/game_mode/n_level/score/accuracy/config_snapshot(avg params + metrics)/avg_reaction_time/created_at`
+- **`public.user_unlocks`**（解锁树，复合主键 user_id + game_id）
+  - `unlocked_params (jsonb)/completed_level_ids (int[])/updated_at`
+- **`public.daily_activity`**（热力图聚合）
+  - `user_id/date/total_xp/sessions_count/updated_at`
+
+#### 7.4.3 商城/订单（当前实现状态）
+- **数据库侧**：目前没有 `products` / `orders` / `payments` 等表结构（尚未落库）。
+- **前端侧**：商品目录目前为前端常量（`STORE_PRODUCTS`），用户资产通过 `user.owned_items`（以及预留的 `inventory`）存储。
+- **缺口**：若要实现“可扩展商品体系 + 支付订单”，需要补齐：`products` / `orders` / `order_items` / `payments` 等表，以及购买/发货/回滚的后端接口。
+
+#### 7.4.4 与前端显示字段的对齐说明（重要）
+- **当前后端 `/api/user/profile` 能稳定返回/恢复的数据**：`xp/brainLevel/brainCoins/energy/checkIn/unlocks/dailyActivity/ownedItems`，以及（新增）`totalScore/maxNLevel/daysStreak/brainStats/sessionHistory`。
+- **容易“刷新后看似丢失”的数据来源**：
+  - 若仅依赖前端 localStorage（如 `totalScore/maxNLevel/daysStreak/brainStats/sessionHistory`），在 redeploy/清缓存/不同设备登录时会出现不一致。
+  - 解决方向：将这些统计统一由后端基于 `game_sessions/user_unlocks/daily_activity` 计算并随 profile 下发（或落库到 `user.brain_stats` 等字段）。
 
 ## 8. 新手引导设计 (Onboarding)
 **核心理念**: "Show, Don't Tell"。通过交互式引导让用户理解 N-Back 机制。

@@ -37,9 +37,23 @@ export function BrainRankCard({ totalXP, completedMilestones = [], compact = fal
 
   // Check if user has enough XP for next rank but lacks milestones
   const hasEnoughXP = nextRank ? totalXP >= nextRank.xpRequired : false;
-  const lacksMilestones = hasEnoughXP && nextRank?.milestones 
+  
+  // Logic to determine which milestones are missing
+  // If OR logic, show all as options but indicate "One of"
+  const missingMilestones = nextRank?.milestones 
     ? nextRank.milestones.filter(m => !completedMilestones.includes(m)) 
     : [];
+    
+  // If logic is OR, we only need to show missing if NONE are completed
+  const isOrLogic = nextRank?.milestoneLogic === 'OR';
+  const hasAnyMilestone = isOrLogic 
+    ? nextRank?.milestones?.some(m => completedMilestones.includes(m))
+    : false;
+  
+  // If has enough XP, but missing milestones
+  // For OR logic: if hasAnyMilestone is false, we need to show options
+  // For AND logic: if missingMilestones.length > 0, we show them
+  const showMilestoneReq = hasEnoughXP && nextRank && (isOrLogic ? !hasAnyMilestone : missingMilestones.length > 0);
 
   // XP progress to next level
   const xpInCurrentLevel = totalXP - currentRank.xpRequired;
@@ -83,10 +97,13 @@ export function BrainRankCard({ totalXP, completedMilestones = [], compact = fal
 
         {/* Next level preview */}
         {nextRank && (
-          <div className="flex items-center gap-1 mt-2 text-[10px] opacity-70">
-            {lacksMilestones.length > 0 ? (
-              <div className="flex flex-col gap-0.5">
-                <span>🎯 {lacksMilestones.map(m => t(`instruction.rank.milestone.${m}`)).join(', ')}</span>
+          <div className="flex items-center gap-1 mt-2 text-xs opacity-70">
+            {showMilestoneReq ? (
+              <div className="flex flex-col gap-0.5 w-full">
+                <span className="font-medium">{isOrLogic ? t('profile.oneOf') : t('profile.required')}:</span>
+                {missingMilestones.map(m => (
+                  <span key={m}>- {t(`instruction.rank.milestone.${m}`)}</span>
+                ))}
               </div>
             ) : (
               <>
@@ -141,12 +158,15 @@ export function BrainRankCard({ totalXP, completedMilestones = [], compact = fal
           </div>
           <div className="text-xs opacity-70 mt-1">
             {nextRank ? (
-              lacksMilestones.length > 0 ? (
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-white/90">{t('profile.milestoneRequired')}:</span>
-                  {lacksMilestones.map(m => (
-                    <span key={m} className="text-white/80 text-[10px]">
-                      🎯 {t(`instruction.rank.milestone.${m}`)}
+              showMilestoneReq ? (
+                <div className="flex flex-col gap-0.5 mt-2 p-2 bg-white/10 rounded-lg">
+                  <span className="text-white/90 font-bold mb-1">
+                    {isOrLogic ? t('profile.milestoneOneOf') : t('profile.milestoneRequired')}:
+                  </span>
+                  {missingMilestones.map(m => (
+                    <span key={m} className="text-white/80 text-xs flex items-center gap-1">
+                      <span className="w-1 h-1 bg-white/50 rounded-full" />
+                      {t(`instruction.rank.milestone.${m}`)}
                     </span>
                   ))}
                 </div>

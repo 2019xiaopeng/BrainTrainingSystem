@@ -25,6 +25,7 @@
     "gridSize": "Grid Size:",
     "configError": "Config Error",
     "configErrorMsg": "N must be less than rounds! N={{n}}, rounds={{rounds}}",
+    "lockedConfigErrorMsg": "Some options are locked. Clear easier levels to unlock them.",
     "mouseCount": "🐭 Mice Count",
     "mouseGrid": "📐 Grid Size",
     "mouseDifficulty": "💪 Difficulty",
@@ -111,8 +112,20 @@
   },
   "result": {
     "title": "Training Complete",
+    "syncing": "Syncing to cloud...",
+    "syncFailed": "Cloud sync failed",
+    "rewardsTitle": "Rewards",
+    "xp": "XP",
+    "brainCoins": "Coins",
+    "energy": "Energy",
+    "dailyPerfectBonus": "Daily Perfect +{{coins}} Coins",
+    "dailyFirstWinBonus": "First win today +{{coins}} Coins",
+    "levelUpTitle": "Level Up!",
+    "levelUpDesc": "LV{{before}} → LV{{after}}",
     "newRecord": "🏆 New Record!",
     "newLevel": "⭐ New Level Unlocked!",
+    "newUnlock": "⭐ Unlocked!",
+    "unlocksTitle": "Unlocks",
     "accuracy": "Accuracy",
     "points": "pts",
     "difficulty": "Difficulty",
@@ -123,6 +136,22 @@
     "duration": "Duration: {{time}}s · {{rounds}} rounds",
     "playAgain": "Play Again",
     "backHome": "← Back to Home"
+  },
+  "common": {
+    "gotIt": "Got it"
+  },
+  "unlock": {
+    "numeric": "Unlocked: Numeric {{n}}-Back ({{rounds}} rounds)",
+    "spatialRounds": "Unlocked: Spatial {{n}}-Back ({{rounds}} rounds)",
+    "spatialN": "Unlocked: Spatial {{grid}} to {{n}}-Back",
+    "spatialGrid": "Unlocked: Spatial {{grid}} grid",
+    "mouseDifficulty": "Unlocked: Mouse {{difficulty}}",
+    "mouseMice": "Unlocked: {{count}} mice",
+    "mouseRounds": "Unlocked: {{rounds}} rounds (Mouse)",
+    "houseSpeed": "Unlocked: House {{speed}}",
+    "houseEvents": "Unlocked: {{events}} events (House)",
+    "houseRounds": "Unlocked: {{rounds}} rounds (House)",
+    "houseInitial": "Unlocked: Initial {{count}} (House)"
   },
   "profile": {
     "title": "Profile",
@@ -139,9 +168,12 @@
     "brainPoints": "Brain Points",
     "mockDataHint": "Demo data · Your real stats will appear after training",
     "nextRank": "Next: {{rank}}",
-    "xpToNext": "{{xp}} XP to next level",
-    "maxRank": "Max rank achieved 🏆",
-    "milestoneRequired": "Required",
+    "xpToNext": "{{xp}} XP to next rank",
+    "maxRank": "Maximum Rank Reached",
+    "milestoneRequired": "Required Milestones",
+    "milestoneOneOf": "Complete One of These",
+    "required": "Required",
+    "oneOf": "One of",
     "radar": {
       "memory": "Memory",
       "focus": "Focus",
@@ -176,6 +208,7 @@
   "nav": {
     "home": "Home",
     "train": "Train",
+    "rank": "Rank",
     "profile": "Profile",
     "settings": "Settings",
     "store": "Store",
@@ -192,12 +225,18 @@
   },
   "energy": {
     "in": "",
+    "recoverIn": "Next +1 in {{time}}",
     "insufficient": "Insufficient energy! Please wait or purchase Energy Potion."
+  },
+  "time": {
+    "h": "h",
+    "m": "m",
+    "s": "s"
   },
   "checkin": {
     "title": "Daily Check-in",
-    "streak": "\ud83d\udd25 {{days}} day streak",
-    "done": "\u2705 Checked in today",
+    "streak": "{{days}} day streak",
+    "done": "Checked in today",
     "claim": "Claim Reward",
     "points": "Brain Points"
   },
@@ -246,14 +285,24 @@
       "xpRequired": "Requires {{xp}} XP",
       "formula": "💡 XP = 20 × (N coefficient + mode coefficient) × accuracy%",
       "milestone": {
-        "numeric_2back": "Numeric 2-Back",
-        "numeric_3back": "Numeric 3-Back",
-        "numeric_5back": "Numeric 5-Back",
-        "numeric_7back": "Numeric 7-Back",
+        "numeric_2back": "Numeric 2-Back > 90%",
+        "numeric_3back": "Numeric 3-Back > 85%",
+        "numeric_5back": "Numeric 5-Back > 80%",
+        "numeric_7back": "Numeric 7-Back > 90%",
         "numeric_9back": "Numeric 9-Back",
         "numeric_11back": "Numeric 11-Back",
         "spatial_3x3": "Spatial 3x3",
-        "spatial_4x4": "Spatial 4x4"
+        "spatial_4x4": "Spatial 4x4",
+        "spatial_3x3_2back": "Spatial 3x3(2-Back) > 90%",
+        "spatial_4x4_2back": "Spatial 4x4(2-Back) > 85%",
+        "spatial_5x5": "Spatial 5x5",
+        "spatial_5x5_3back": "Spatial 5x5(3-Back) > 80%",
+        "mouse_4mice": "Mouse (4-Mice) > 90%",
+        "mouse_7mice": "Mouse (7-Mice) > 85%",
+        "mouse_9mice": "Mouse (9-Mice)",
+        "house_normal_10": "House (Normal, 10 Events) > 90%",
+        "house_fast_15": "House (Fast, 15 Events) > 85%",
+        "house_double": "House (Double Door)"
       }
     },
     "radar": {
@@ -279,8 +328,8 @@
         "name": "Load Capacity",
         "desc": "Combined performance in House Flow and high-level N-Back"
       },
-      "speed": {
-        "name": "Speed",
+      "reaction": {
+        "name": "Reaction",
         "desc": "Based on average reaction time (faster = higher)"
       }
     },

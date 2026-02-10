@@ -56,6 +56,14 @@ export function HomePage() {
         });
       }
 
+      if (mode === 'numeric') {
+        updateGameConfig('numeric', { nLevel, rounds });
+      }
+
+      if (mode === 'spatial') {
+        updateGameConfig('spatial', { nLevel, rounds, gridSize });
+      }
+
       setNextConfig({ nLevel, totalRounds: rounds, mode, gridSize });
       navigate(`/train/${mode}`);
     },

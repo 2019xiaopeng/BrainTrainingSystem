@@ -30,8 +30,8 @@ export interface BrainStats {
   observation: number;
   /** Load Capacity (负载力) — house + numeric N-Back combined */
   loadCapacity: number;
-  /** Speed — average reaction time inverted (higher = faster) */
-  speed: number;
+  /** Reaction (反应力) — average reaction time inverted (higher = faster) */
+  reaction: number;
 }
 
 /** Brain Rank level definition */
@@ -40,8 +40,16 @@ export interface BrainRankLevel {
   titleZh: string;
   titleEn: string;
   xpRequired: number;
-  /** Milestone requirements (e.g., unlock 2-Back Numeric) */
+  /** 
+   * Milestone requirements (e.g., unlock 2-Back Numeric). 
+   * Each inner array is an OR group (any one of them satisfied is enough).
+   * Wait, PRD says "A > 90% OR B > 90%". 
+   * Let's simplify: `milestones` is a list of milestone IDs.
+   * If `milestoneLogic` is 'OR', then meeting ANY one is sufficient.
+   * If `milestoneLogic` is 'AND' (default), then ALL must be met.
+   */
   milestones?: string[];
+  milestoneLogic?: 'AND' | 'OR';
 }
 
 /** All brain rank levels */
@@ -52,42 +60,48 @@ export const BRAIN_RANK_LEVELS: BrainRankLevel[] = [
     titleZh: '觉醒', 
     titleEn: 'Awakened', 
     xpRequired: 500,
-    milestones: ['numeric_2back']
+    milestones: ['numeric_2back', 'spatial_3x3_2back'],
+    milestoneLogic: 'OR'
   },
   { 
     level: 3, 
     titleZh: '敏捷', 
     titleEn: 'Agile', 
-    xpRequired: 2500,
-    milestones: ['numeric_3back', 'spatial_3x3']
+    xpRequired: 2000,
+    milestones: ['spatial_4x4_2back', 'mouse_4mice'],
+    milestoneLogic: 'OR'
   },
   { 
     level: 4, 
     titleZh: '逻辑', 
     titleEn: 'Logical', 
-    xpRequired: 10000,
-    milestones: ['numeric_5back', 'spatial_4x4']
+    xpRequired: 5000,
+    milestones: ['numeric_3back', 'house_normal_10'],
+    milestoneLogic: 'OR'
   },
   { 
     level: 5, 
     titleZh: '深邃', 
     titleEn: 'Profound', 
-    xpRequired: 25000,
-    milestones: ['numeric_7back']
+    xpRequired: 10000,
+    milestones: ['spatial_5x5_3back', 'mouse_7mice'],
+    milestoneLogic: 'OR'
   },
   { 
     level: 6, 
     titleZh: '大师', 
     titleEn: 'Master', 
-    xpRequired: 50000,
-    milestones: ['numeric_9back']
+    xpRequired: 30000,
+    milestones: ['numeric_5back', 'house_fast_15'],
+    milestoneLogic: 'OR'
   },
   { 
     level: 7, 
     titleZh: '超凡', 
     titleEn: 'Transcendent', 
     xpRequired: 80000,
-    milestones: ['numeric_11back']
+    milestones: ['numeric_7back', 'spatial_5x5', 'mouse_9mice', 'house_double'],
+    milestoneLogic: 'AND' // All required for Transcendent
   },
 ];
 
@@ -98,8 +112,14 @@ export function getBrainRank(xp: number, completedMilestones: string[] = []): Br
     if (xp >= rank.xpRequired) {
       // Check if milestones are met (if any)
       if (rank.milestones && rank.milestones.length > 0) {
-        const allMet = rank.milestones.every(m => completedMilestones.includes(m));
-        if (allMet) return rank;
+        if (rank.milestoneLogic === 'OR') {
+          const anyMet = rank.milestones.some(m => completedMilestones.includes(m));
+          if (anyMet) return rank;
+        } else {
+          // Default AND
+          const allMet = rank.milestones.every(m => completedMilestones.includes(m));
+          if (allMet) return rank;
+        }
       } else {
         // No milestones required
         return rank;
@@ -153,8 +173,8 @@ export interface UserProfile {
   auth: AuthProfile;
   /** Completed milestones (e.g., ['numeric_2back', 'spatial_3x3']) */
   completedMilestones: string[];
-  /** In-game currency (Brain Points) */
-  brainPoints: number;
+  /** In-game currency (Brain Coins) */
+  brainCoins: number;
   /** Energy system state */
   energy: EnergyState;
   /** Check-in system state */
@@ -162,6 +182,13 @@ export interface UserProfile {
   /** Owned permanent items (product IDs) */
   ownedItems: string[];
 }
+
+export type GameUnlocks = {
+  numeric: { maxN: number; roundsByN: Record<string, number[]> };
+  spatial: { grids: number[]; maxNByGrid: Record<string, number>; roundsByN: Record<string, number[]> };
+  mouse: { maxMice: number; grids: [number, number][]; difficulties: MouseDifficultyLevel[]; maxRounds: number };
+  house: { speeds: HouseSpeed[]; maxInitialPeople: number; maxEvents: number; maxRounds: number };
+};
 
 // ------------------------------------------------------------
 // Energy System
@@ -223,10 +250,10 @@ export interface CheckInState {
 }
 
 /** Check-in reward tiers */
-export function getCheckInReward(consecutiveDays: number): { xp: number; points: number } {
-  if (consecutiveDays >= 7) return { xp: 50, points: 300 };
-  if (consecutiveDays >= 3) return { xp: 50, points: 100 };
-  return { xp: 50, points: 50 };
+export function getCheckInReward(consecutiveDays: number): { xp: number; coins: number } {
+  if (consecutiveDays >= 7) return { xp: 50, coins: 60 };
+  if (consecutiveDays >= 3) return { xp: 50, coins: 20 };
+  return { xp: 50, coins: 10 };
 }
 
 // ------------------------------------------------------------
@@ -289,6 +316,12 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     effect: { type: 'premium_report' },
   },
 ];
+
+export interface DailyActivityEntry {
+  date: string;
+  totalXp: number;
+  sessionsCount: number;
+}
 
 /** Simplified session entry for history list */
 export interface SessionHistoryEntry {
@@ -593,9 +626,9 @@ export interface HouseRoundResult {
 
 /** Speed preset → delay range [min, max] ms */
 export const HOUSE_SPEED_MAP: Record<HouseSpeed, { label: string; delayRange: [number, number] }> = {
-  easy:   { label: '慢速', delayRange: [1200, 2000] },
-  normal: { label: '正常', delayRange: [800, 1500] },
-  fast:   { label: '快速', delayRange: [400, 900] },
+  easy:   { label: '慢速', delayRange: [960, 1600] },
+  normal: { label: '正常', delayRange: [640, 1200] },
+  fast:   { label: '快速', delayRange: [320, 720] },
 };
 
 /** Build a HouseGameConfig from user selections */
@@ -605,9 +638,14 @@ export function buildHouseGameConfig(
   speed: HouseSpeed,
   totalRounds: number,
 ): HouseGameConfig {
+  const clampToStep = (value: number, min: number, max: number, step: number) => {
+    const clamped = Math.max(min, Math.min(value, max));
+    return min + Math.floor((clamped - min) / step) * step;
+  };
+
   return {
     initialPeople: Math.max(3, Math.min(initialPeople, 7)),
-    eventCount: Math.max(5, Math.min(eventCount, 15)),
+    eventCount: clampToStep(eventCount, 6, 24, 3),
     delayRange: HOUSE_SPEED_MAP[speed].delayRange,
     totalRounds: Math.max(3, Math.min(totalRounds, 5)),
   };

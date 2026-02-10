@@ -122,7 +122,7 @@ export function ActivityHeatmap({ data, compact = false }: ActivityHeatmapProps)
               return (
                 <div
                   key={di}
-                  className="text-[9px] text-zen-400"
+                  className="text-xs text-zen-400"
                   style={{ height: `${cellSize}px`, lineHeight: `${cellSize}px` }}
                 >
                   {label}
@@ -144,7 +144,7 @@ export function ActivityHeatmap({ data, compact = false }: ActivityHeatmapProps)
                   .map(({ label, weekIndex }, i) => (
                     <span
                       key={`${label}-${weekIndex}-${i}`}
-                      className="absolute top-0 text-[9px] text-zen-400"
+                      className="absolute top-0 text-xs text-zen-400"
                       style={{ left: `${weekIndex * weekWidth}px` }}
                     >
                       {label}
@@ -190,7 +190,7 @@ export function ActivityHeatmap({ data, compact = false }: ActivityHeatmapProps)
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="fixed z-50 pointer-events-none bg-zen-800 text-white text-[10px] px-2 py-1 rounded shadow-lg"
+          className="fixed z-50 pointer-events-none bg-zen-800 text-white text-xs px-2 py-1 rounded shadow-lg"
           style={{
             left: tooltip.x,
             top: tooltip.y,
@@ -207,7 +207,7 @@ export function ActivityHeatmap({ data, compact = false }: ActivityHeatmapProps)
 
       {/* Legend */}
       <div className="flex items-center justify-end gap-1 mt-2">
-        <span className="text-[10px] text-zen-400 mr-1">{t('profile.heatmap.less')}</span>
+        <span className="text-xs text-zen-400 mr-1">{t('profile.heatmap.less')}</span>
         {colorScale.map((color, i) => (
           <div
             key={i}
@@ -220,7 +220,7 @@ export function ActivityHeatmap({ data, compact = false }: ActivityHeatmapProps)
             }}
           />
         ))}
-        <span className="text-[10px] text-zen-400 ml-1">{t('profile.heatmap.more')}</span>
+        <span className="text-xs text-zen-400 ml-1">{t('profile.heatmap.more')}</span>
       </div>
     </div>
   );

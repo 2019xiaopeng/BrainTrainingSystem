@@ -1,5 +1,4 @@
-export * from "./account";
-export * from "./session";
-export * from "./user";
-export * from "./verification";
-
+export * from "./account.js";
+export * from "./session.js";
+export * from "./user.js";
+export * from "./verification.js";
