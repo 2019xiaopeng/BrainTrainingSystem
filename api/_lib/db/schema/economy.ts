@@ -13,6 +13,7 @@ export const products = pgTable("products", {
   
   priceCny: integer("price_cny").notNull(), // 单位: 分
   priceUsd: integer("price_usd").notNull(), // 单位: Cent
+  priceCoins: integer("price_coins").notNull(),
   
   // 购买后的奖励/效果，由后端解析执行
   // e.g. { "energy": 5, "points": 100 }

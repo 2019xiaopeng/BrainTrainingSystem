@@ -9,7 +9,7 @@ const ENERGY_MAX = 5;
 const ENERGY_RECOVERY_INTERVAL_MS = 4 * 60 * 60 * 1000;
 const DAILY_FIRST_WIN_BONUS_COINS = 15;
 const DAILY_PERFECT_BONUS_COINS = 30;
-const UNLOCK_BONUS_COINS_PER_UNLOCK = 50;
+const UNLOCK_BONUS_COINS_PER_UNLOCK = 20;
 const COINS_PER_SCORE = 0.05;
 const MAX_COINS_PER_SESSION = 20;
 
@@ -572,10 +572,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       const levelUp = brainLevelAfter > brainLevelBefore;
 
       const energyAfterConsume = isUnlimited ? ENERGY_MAX : Math.max(0, energyBeforeConsume - 1);
-      const energyAfterRefund =
-        !isUnlimited && unlockUpdate.newlyUnlocked.length > 0
-          ? Math.min(ENERGY_MAX, energyAfterConsume + 1)
-          : energyAfterConsume;
+      const energyAfterRefund = energyAfterConsume;
 
       const brainCoinsBefore = clampInt(u.brainCoins ?? 0, 0);
       const unlockBonusCoins = unlockUpdate.newlyUnlocked.length * UNLOCK_BONUS_COINS_PER_UNLOCK;
@@ -647,7 +644,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         dailyPerfectBonus,
         dailyFirstWinBonus,
         energyConsumed: isUnlimited ? 0 : 1,
-        energyRefunded: !isUnlimited && unlockUpdate.newlyUnlocked.length > 0 ? 1 : 0,
+        energyRefunded: 0,
         brainCoinsAfter,
         energy: {
           current: energyAfterRefund,

@@ -950,7 +950,7 @@ export const useGameStore = create<GameStore>()(
         const xpEarnedLocal = calculateXpEarned(enrichedSummary);
         const unlockBase = state.optimisticUnlocks ?? state.cloudUnlocks ?? defaultUnlocks();
         const unlockUpdateLocal = updateUnlocksAfterSession(unlockBase, enrichedSummary, modeDetails);
-        const unlockBonusCoinsLocal = unlockUpdateLocal.newlyUnlocked.length * 50;
+        const unlockBonusCoinsLocal = unlockUpdateLocal.newlyUnlocked.length * 20;
 
         const brainCoinsEarnedLocal = calculateBrainCoinsEarned(score);
         const dailyPerfectBonusLocal = 0;
@@ -969,7 +969,7 @@ export const useGameStore = create<GameStore>()(
         const now = Date.now();
         const energyUnlimited = state.userProfile.energy.unlimitedUntil > now;
         const energyConsumedLocal = energyUnlimited ? 0 : 1;
-        const energyRefundedLocal = !energyUnlimited && unlockUpdateLocal.newlyUnlocked.length > 0 ? 1 : 0;
+        const energyRefundedLocal = 0;
 
         set({
           lastSummary: enrichedSummary,

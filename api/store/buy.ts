@@ -1,24 +1,11 @@
 import { eq } from "drizzle-orm";
 import { db } from "../_lib/db/index.js";
-import { user } from "../_lib/db/schema/index.js";
+import { products, user } from "../_lib/db/schema/index.js";
 import { requireSessionUser } from "../_lib/session.js";
 import type { RequestLike, ResponseLike } from "../_lib/http.js";
 import { isRecord } from "../_lib/http.js";
 
 const ENERGY_MAX = 5;
-
-type Product =
-  | { id: "energy_1"; price: number; kind: "energy"; amount: number }
-  | { id: "energy_5"; price: number; kind: "energy"; amount: number }
-  | { id: "streak_saver"; price: number; kind: "inventory"; inventoryKey: string; amount: number }
-  | { id: "premium_report"; price: number; kind: "permanent"; ownedItemId: string };
-
-const PRODUCTS: Record<string, Product> = {
-  energy_1: { id: "energy_1", price: 100, kind: "energy", amount: 1 },
-  energy_5: { id: "energy_5", price: 450, kind: "energy", amount: 5 },
-  streak_saver: { id: "streak_saver", price: 500, kind: "inventory", inventoryKey: "streak_saver", amount: 1 },
-  premium_report: { id: "premium_report", price: 1000, kind: "permanent", ownedItemId: "premium_report" },
-};
 
 const parseBody = (req: RequestLike): unknown => {
   if (req.body && typeof req.body === "object") return req.body;
@@ -53,8 +40,20 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   }
 
   const productId = String(body.productId ?? "");
-  const product = PRODUCTS[productId];
-  if (!product) {
+  const productRow = await db
+    .select({
+      id: products.id,
+      type: products.type,
+      priceCoins: products.priceCoins,
+      rewards: products.rewards,
+      isActive: products.isActive,
+    })
+    .from(products)
+    .where(eq(products.id, productId))
+    .limit(1);
+
+  const product = productRow[0];
+  if (!product || (product.isActive ?? 1) !== 1) {
     res.status(400).json({ error: "invalid_product" });
     return;
   }
@@ -76,7 +75,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       if (!u) throw new Error("user_not_found");
 
       const brainCoinsBefore = u.brainCoins ?? 0;
-      if (brainCoinsBefore < product.price) {
+      if (brainCoinsBefore < (product.priceCoins ?? 0)) {
         const err = new Error("insufficient_coins") as Error & { code?: string };
         err.code = "insufficient_coins";
         throw err;
@@ -88,27 +87,40 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         Object.entries(inventoryRaw).map(([k, v]) => [k, Number(v) || 0])
       );
 
-      if (product.kind === "permanent" && ownedItems.includes(product.ownedItemId)) {
+      const rewards = (product.rewards && typeof product.rewards === "object" ? (product.rewards as Record<string, unknown>) : {}) as Record<
+        string,
+        unknown
+      >;
+
+      const ownedItemId = typeof rewards.ownedItem === "string" ? rewards.ownedItem : null;
+      if (product.type === "permanent" && ownedItemId && ownedItems.includes(ownedItemId)) {
         const err = new Error("already_owned") as Error & { code?: string };
         err.code = "already_owned";
         throw err;
       }
 
-      const brainCoinsAfter = brainCoinsBefore - product.price;
+      const brainCoinsAfter = brainCoinsBefore - (product.priceCoins ?? 0);
       let energyAfter = u.energyCurrent ?? ENERGY_MAX;
       let nextOwnedItems = ownedItems;
       let nextInventory = inventory;
 
-      if (product.kind === "energy") {
-        energyAfter = Math.min(ENERGY_MAX, energyAfter + product.amount);
+      if (typeof rewards.energy === "number") {
+        energyAfter = Math.min(ENERGY_MAX, energyAfter + Math.max(0, Math.trunc(rewards.energy)));
       }
 
-      if (product.kind === "permanent") {
-        nextOwnedItems = [...ownedItems, product.ownedItemId];
+      if (product.type === "permanent" && ownedItemId) {
+        nextOwnedItems = [...ownedItems, ownedItemId];
       }
 
-      if (product.kind === "inventory") {
-        nextInventory = { ...inventory, [product.inventoryKey]: (inventory[product.inventoryKey] ?? 0) + product.amount };
+      const inv = rewards.inventory && typeof rewards.inventory === "object" ? (rewards.inventory as Record<string, unknown>) : null;
+      if (inv) {
+        const next: Record<string, number> = { ...inventory };
+        for (const [k, v] of Object.entries(inv)) {
+          const amt = Number(v) || 0;
+          if (!Number.isFinite(amt) || amt <= 0) continue;
+          next[k] = (next[k] ?? 0) + Math.trunc(amt);
+        }
+        nextInventory = next;
       }
 
       await tx
