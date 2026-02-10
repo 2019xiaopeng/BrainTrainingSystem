@@ -1,23 +1,30 @@
 import { NavLink } from 'react-router-dom';
-import { Home, User, ShoppingBag, Trophy } from 'lucide-react';
+import { Home, User, ShoppingBag, Trophy, HelpCircle, Languages } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 /**
  * MobileNav - 移动端底部导航栏
  */
 export function MobileNav() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const items = [
     { to: '/', icon: Home, label: t('nav.home') },
     { to: '/rank', icon: Trophy, label: t('nav.rank') },
     { to: '/store', icon: ShoppingBag, label: t('nav.store') },
     { to: '/profile', icon: User, label: t('nav.profile') },
+    { to: '/instruction', icon: HelpCircle, label: t('nav.instruction') },
   ];
+
+  const toggleLang = () => {
+    const next = i18n.language === 'zh' ? 'en' : 'zh';
+    i18n.changeLanguage(next);
+    localStorage.setItem('brain-flow-lang', next);
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-zen-200 z-40">
-      <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
+      <div className="grid grid-cols-6 items-center h-16 max-w-lg mx-auto">
         {items.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
@@ -33,6 +40,14 @@ export function MobileNav() {
             <span className="text-xs font-medium">{label}</span>
           </NavLink>
         ))}
+        <button
+          type="button"
+          onClick={toggleLang}
+          className="flex flex-col items-center gap-0.5 px-4 py-1 transition-all text-zen-400 hover:text-zen-600"
+        >
+          <Languages className="w-5 h-5" />
+          <span className="text-xs font-medium">{i18n.language === 'zh' ? 'EN' : '中'}</span>
+        </button>
       </div>
     </nav>
   );

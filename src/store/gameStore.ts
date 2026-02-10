@@ -905,7 +905,7 @@ export const useGameStore = create<GameStore>()(
         );
 
         const milestones = [...(state.userProfile.completedMilestones || [])];
-        if (summary.accuracy >= 80) {
+        if (summary.accuracy >= 90) {
           const mode = summary.config.mode;
           const n = summary.config.nLevel;
           if (mode === 'numeric') {
@@ -913,13 +913,13 @@ export const useGameStore = create<GameStore>()(
             if (n >= 3 && !milestones.includes('numeric_3back')) milestones.push('numeric_3back');
             if (n >= 5 && !milestones.includes('numeric_5back')) milestones.push('numeric_5back');
             if (n >= 7 && !milestones.includes('numeric_7back')) milestones.push('numeric_7back');
-            if (n >= 9 && !milestones.includes('numeric_9back')) milestones.push('numeric_9back');
-            if (n >= 11 && !milestones.includes('numeric_11back')) milestones.push('numeric_11back');
           }
           if (mode === 'spatial') {
             const gridSize = summary.config.gridSize || 3;
-            if (gridSize >= 3 && !milestones.includes('spatial_3x3')) milestones.push('spatial_3x3');
-            if (gridSize >= 4 && !milestones.includes('spatial_4x4')) milestones.push('spatial_4x4');
+            if (gridSize === 3 && n >= 2 && !milestones.includes('spatial_3x3_2back')) milestones.push('spatial_3x3_2back');
+            if (gridSize === 4 && n >= 2 && !milestones.includes('spatial_4x4_2back')) milestones.push('spatial_4x4_2back');
+            if (gridSize === 5 && n >= 3 && !milestones.includes('spatial_5x5_3back')) milestones.push('spatial_5x5_3back');
+            if (gridSize === 5 && !milestones.includes('spatial_5x5')) milestones.push('spatial_5x5');
           }
         }
 

@@ -88,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             daysStreak: data.daysStreak ?? s.userProfile.daysStreak,
             brainStats: data.brainStats ?? s.userProfile.brainStats,
             brainCoins: data.brainCoins ?? s.userProfile.brainCoins,
+            completedMilestones: Array.isArray(data.completedMilestones) ? data.completedMilestones : s.userProfile.completedMilestones,
             energy: mergeEnergyState(s.userProfile.energy, data.energy),
             checkIn: data.checkIn ?? s.userProfile.checkIn,
             ownedItems: Array.isArray(data.ownedItems) ? data.ownedItems : s.userProfile.ownedItems,

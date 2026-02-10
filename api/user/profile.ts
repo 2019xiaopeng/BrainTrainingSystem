@@ -23,7 +23,7 @@ const recoverEnergy = (current: number, lastUpdated: Date | null) => {
 
 const defaultUnlocks = () => ({
   numeric: { maxN: 1, roundsByN: { "1": [5, 10] } as Record<string, number[]> },
-  spatial: { grids: [3], maxNByGrid: { "3": 1 }, roundsByN: { "1": [5, 10] as number[] } as Record<string, number[]> },
+  spatial: { grids: [3], maxNByGrid: { "3": 1 } as Record<string, number>, roundsByN: { "1": [5, 10] as number[] } as Record<string, number[]> },
   mouse: { maxMice: 3, grids: [[4, 3]], difficulties: ["easy"], maxRounds: 3 },
   house: { speeds: ["easy"], maxInitialPeople: 3, maxEvents: 6, maxRounds: 3 },
 });
@@ -114,6 +114,48 @@ const normalizeHouseUnlocks = (raw: Record<string, unknown>): Unlocks["house"] =
     maxEvents: Math.max(6, Math.min(24, clampInt(raw.maxEvents, 6))),
     maxRounds: Math.max(3, Math.min(5, clampInt(raw.maxRounds, 3))),
   } as Unlocks["house"];
+};
+
+const extractGridSize = (snapshot: unknown) => {
+  if (!isRecord(snapshot)) return 3;
+  return clampInt(snapshot.gridSize, 3);
+};
+
+const computeCompletedMilestones = (
+  recentRows: Array<{ gameMode: unknown; nLevel: unknown; accuracy: unknown; configSnapshot: unknown }>,
+  unlocks: Unlocks
+) => {
+  const milestones = new Set<string>();
+  const meets = (mode: string, nAtLeast: number, predicate?: (row: { configSnapshot: unknown }) => boolean) =>
+    recentRows.some((r) => {
+      if (String(r.gameMode ?? "") !== mode) return false;
+      const acc = clampInt(r.accuracy, 0);
+      if (acc < 90) return false;
+      const n = clampInt(r.nLevel, 0);
+      if (n < nAtLeast) return false;
+      return predicate ? predicate({ configSnapshot: r.configSnapshot }) : true;
+    });
+
+  if (meets("numeric", 2)) milestones.add("numeric_2back");
+  if (meets("numeric", 3)) milestones.add("numeric_3back");
+  if (meets("numeric", 5)) milestones.add("numeric_5back");
+  if (meets("numeric", 7)) milestones.add("numeric_7back");
+
+  if (meets("spatial", 2, ({ configSnapshot }) => extractGridSize(configSnapshot) === 3)) milestones.add("spatial_3x3_2back");
+  if (meets("spatial", 2, ({ configSnapshot }) => extractGridSize(configSnapshot) === 4)) milestones.add("spatial_4x4_2back");
+  if (meets("spatial", 3, ({ configSnapshot }) => extractGridSize(configSnapshot) === 5)) milestones.add("spatial_5x5_3back");
+  if (Array.isArray(unlocks.spatial.grids) && unlocks.spatial.grids.includes(5)) milestones.add("spatial_5x5");
+
+  if (clampInt(unlocks.mouse.maxMice, 0) >= 4) milestones.add("mouse_4mice");
+  if (clampInt(unlocks.mouse.maxMice, 0) >= 7) milestones.add("mouse_7mice");
+  if (clampInt(unlocks.mouse.maxMice, 0) >= 9) milestones.add("mouse_9mice");
+
+  const houseSpeeds = Array.isArray(unlocks.house.speeds) ? unlocks.house.speeds.map(String) : [];
+  const houseMaxEvents = clampInt(unlocks.house.maxEvents, 0);
+  if (houseSpeeds.includes("normal") && houseMaxEvents >= 12) milestones.add("house_normal_10");
+  if (houseSpeeds.includes("fast") && houseMaxEvents >= 15) milestones.add("house_fast_15");
+
+  return Array.from(milestones).sort();
 };
 
 type BrainStats = {
@@ -326,6 +368,8 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       };
     });
 
+  const completedMilestones = computeCompletedMilestones(recentRows, unlocks);
+
   let brainStats = normalizeBrainStats(u.brainStats);
   const recentForStats = sessionHistory.slice(-20);
   if (recentForStats.length > 0) {
@@ -370,6 +414,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       consecutiveDays: u.checkInStreak ?? 0,
     },
     unlocks,
+    completedMilestones,
     dailyActivity: activityRows.map((row) => ({
       date: String(row.date),
       totalXp: row.totalXp ?? 0,

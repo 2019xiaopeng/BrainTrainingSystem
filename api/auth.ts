@@ -4,7 +4,7 @@ import { ensureSchemaReady } from "./_lib/db/index.js";
 
 const handler = toNodeHandler(auth);
 
-export default async function authHandler(req: unknown, res: { status: (code: number) => { json: (body: unknown) => void } }) {
+export default async function authHandler(req: any, res: any) {
   try {
     await ensureSchemaReady();
   } catch {
