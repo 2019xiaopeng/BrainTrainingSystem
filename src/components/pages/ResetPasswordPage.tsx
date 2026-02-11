@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
-import { authClient } from '../../lib/auth/client';
 
-function useToken() {
+function useEmail() {
   const location = useLocation();
   return useMemo(() => {
     const params = new URLSearchParams(location.search);
-    return params.get('token') || '';
+    return params.get('email') || '';
   }, [location.search]);
 }
 
@@ -21,8 +20,10 @@ function useCallbackURL() {
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
-  const token = useToken();
+  const defaultEmail = useEmail();
   const callbackURL = useCallbackURL();
+  const [email, setEmail] = useState(defaultEmail);
+  const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -33,8 +34,12 @@ export function ResetPasswordPage() {
     e.preventDefault();
     setError(null);
     setMessage(null);
-    if (!token) {
-      setError('缺少重置 token');
+    if (!email) {
+      setError('请输入邮箱');
+      return;
+    }
+    if (otp.length !== 6) {
+      setError('请输入 6 位验证码');
       return;
     }
     if (password.length < 8) {
@@ -47,9 +52,13 @@ export function ResetPasswordPage() {
     }
     setSubmitting(true);
     try {
-      const { error: e } = await authClient.resetPassword({ token, newPassword: password });
-      if (e) {
-        setError(e.message || '重置失败，请稍后再试');
+      const resp = await fetch('/api/auth/email-otp/reset-password', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, otp, password }),
+      });
+      if (!resp.ok) {
+        setError('验证码错误或已过期');
         return;
       }
       setMessage('密码已重置，请重新登录。');
@@ -65,11 +74,38 @@ export function ResetPasswordPage() {
     <div className="max-w-md mx-auto">
       <div className="mb-4">
         <h1 className="text-xl font-semibold text-zen-800">重置密码</h1>
-        <p className="text-sm text-zen-500">通过邮箱链接进入此页（功能预留）。</p>
+        <p className="text-sm text-zen-500">输入邮箱与 6 位验证码以重置密码。</p>
       </div>
 
       <Card className="p-6">
         <form className="space-y-4" onSubmit={onSubmit}>
+          <div>
+            <label className="block text-xs text-zen-500 mb-1">邮箱</label>
+            <input
+              className="w-full rounded-lg border border-zen-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zen-200"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              inputMode="email"
+              required
+              disabled={submitting}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs text-zen-500 mb-1">6 位验证码</label>
+            <input
+              className="w-full rounded-lg border border-zen-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zen-200 tracking-[0.25em]"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\s/g, ''))}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              required
+              disabled={submitting}
+            />
+          </div>
+
           <div>
             <label className="block text-xs text-zen-500 mb-1">新密码</label>
             <input

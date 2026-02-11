@@ -84,7 +84,7 @@ export function ChangePasswordPage() {
     <div className="max-w-md mx-auto">
       <div className="mb-4">
         <h1 className="text-xl font-semibold text-zen-800">修改密码</h1>
-        <p className="text-sm text-zen-500">更新你的登录密码（功能预留）。</p>
+        <p className="text-sm text-zen-500">更新你的登录密码。</p>
       </div>
 
       <Card className="p-6">

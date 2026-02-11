@@ -520,6 +520,7 @@ export const useGameStore = create<GameStore>()(
           consecutiveDays: 0,
         },
         ownedItems: [],
+        inventory: {},
       },
       gameConfigs: {
         numeric: { nLevel: 1, rounds: 10 },
@@ -612,6 +613,7 @@ export const useGameStore = create<GameStore>()(
                   consecutiveDays: 0,
                 },
                 ownedItems: [],
+                inventory: {},
               },
               gameConfigs: {
                 numeric: { nLevel: 1, rounds: 10 },
@@ -654,6 +656,7 @@ export const useGameStore = create<GameStore>()(
                   consecutiveDays: 0,
                 },
                 ownedItems: [],
+                inventory: {},
               },
               gameConfigs: {
                 numeric: { nLevel: 1, rounds: 10 },
@@ -1207,6 +1210,8 @@ export const useGameStore = create<GameStore>()(
               brainCoins: typeof data?.brainCoins === 'number' ? data.brainCoins : s.userProfile.brainCoins,
               energy: data?.energy ? { ...s.userProfile.energy, ...data.energy } : s.userProfile.energy,
               ownedItems: Array.isArray(data?.ownedItems) ? data.ownedItems : s.userProfile.ownedItems,
+              inventory:
+                data?.inventory && typeof data.inventory === 'object' ? (data.inventory as Record<string, number>) : s.userProfile.inventory,
             },
           }));
 
@@ -1286,6 +1291,7 @@ export const useGameStore = create<GameStore>()(
               consecutiveDays: 0,
             },
             ownedItems: p.ownedItems ?? [],
+            inventory: (p as unknown as { inventory?: Record<string, number> }).inventory ?? {},
           };
         }
 

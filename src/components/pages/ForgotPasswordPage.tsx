@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
-import { authClient } from '../../lib/auth/client';
 
 function useCallbackURL() {
   const location = useLocation();
@@ -12,6 +11,7 @@ function useCallbackURL() {
 }
 
 export function ForgotPasswordPage() {
+  const navigate = useNavigate();
   const callbackURL = useCallbackURL();
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -24,15 +24,24 @@ export function ForgotPasswordPage() {
     setMessage(null);
     setSubmitting(true);
     try {
-      const { error: e } = await authClient.requestPasswordReset({
-        email,
-        redirectTo: `/reset-password?callback=${encodeURIComponent(callbackURL)}`,
+      const resp = await fetch('/api/auth/email-otp/request-password-reset', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email }),
       });
-      if (e) {
-        setError(e.message || '请求失败，请稍后再试');
+      if (!resp.ok) {
+        setError('请求失败，请稍后再试');
         return;
       }
-      setMessage('如果该邮箱已注册，我们会发送重置链接到你的邮箱。');
+      setMessage('如果该邮箱已注册，我们会发送 6 位验证码到你的邮箱。');
+      setTimeout(
+        () =>
+          navigate(
+            `/reset-password?email=${encodeURIComponent(email)}&callback=${encodeURIComponent(callbackURL)}`,
+            { replace: true }
+          ),
+        400
+      );
     } catch {
       setError('请求失败，请检查网络后重试');
     } finally {
@@ -44,7 +53,7 @@ export function ForgotPasswordPage() {
     <div className="max-w-md mx-auto">
       <div className="mb-4">
         <h1 className="text-xl font-semibold text-zen-800">找回密码</h1>
-        <p className="text-sm text-zen-500">输入邮箱，我们将发送重置链接（功能预留）。</p>
+        <p className="text-sm text-zen-500">输入邮箱，我们将发送 6 位验证码用于重置密码。</p>
       </div>
 
       <Card className="p-6">
@@ -70,7 +79,7 @@ export function ForgotPasswordPage() {
             disabled={submitting}
             type="submit"
           >
-            {submitting ? '提交中…' : '发送重置链接'}
+            {submitting ? '提交中…' : '发送验证码'}
           </button>
         </form>
       </Card>

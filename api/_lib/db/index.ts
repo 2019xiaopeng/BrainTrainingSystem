@@ -51,7 +51,8 @@ export const ensureSchemaReady = async () => {
           ('energy_1', 'consumable', 0, 0, 100, '{"energy":1}'::jsonb, 1),
           ('energy_5', 'consumable', 0, 0, 450, '{"energy":5}'::jsonb, 1),
           ('streak_saver', 'consumable', 0, 0, 500, '{"inventory":{"streak_saver":1}}'::jsonb, 1),
-          ('premium_report', 'permanent', 0, 0, 1000, '{"ownedItem":"premium_report"}'::jsonb, 1)
+          ('premium_report', 'permanent', 0, 0, 1000, '{"ownedItem":"premium_report"}'::jsonb, 1),
+          ('rename_card', 'consumable', 0, 0, 1000, '{"inventory":{"rename_card":1}}'::jsonb, 1)
         ON CONFLICT ("id") DO UPDATE SET
           "type" = EXCLUDED."type",
           "price_coins" = EXCLUDED."price_coins",

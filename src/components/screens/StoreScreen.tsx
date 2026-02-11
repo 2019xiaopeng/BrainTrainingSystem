@@ -5,7 +5,7 @@ import { STORE_PRODUCTS } from '../../types/game';
 import type { StoreProduct } from '../../types/game';
 import { Card } from '../ui/Card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Coins, Zap, Shield, BarChart3, CheckCircle, XCircle } from 'lucide-react';
+import { ShoppingBag, Coins, Zap, Shield, BarChart3, CheckCircle, XCircle, Pencil } from 'lucide-react';
 
 /**
  * StoreScreen — 虚拟商城页面
@@ -46,6 +46,7 @@ export function StoreScreen() {
     switch (product.effect.type) {
       case 'energy': return <Zap className="w-5 h-5 text-amber-500" />;
       case 'streak_saver': return <Shield className="w-5 h-5 text-blue-500" />;
+      case 'rename_card': return <Pencil className="w-5 h-5 text-emerald-600" />;
       case 'premium_report': return <BarChart3 className="w-5 h-5 text-purple-500" />;
     }
   };

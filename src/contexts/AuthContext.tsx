@@ -95,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             energy: mergeEnergyState(s.userProfile.energy, data.energy),
             checkIn: data.checkIn ?? s.userProfile.checkIn,
             ownedItems: Array.isArray(data.ownedItems) ? data.ownedItems : s.userProfile.ownedItems,
+            inventory: data.inventory && typeof data.inventory === 'object' ? data.inventory : s.userProfile.inventory,
           },
           cloudUnlocks: data.unlocks ?? s.cloudUnlocks,
           cloudDailyActivity: Array.isArray(data.dailyActivity) ? data.dailyActivity : s.cloudDailyActivity,

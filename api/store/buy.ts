@@ -138,6 +138,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         brainCoins: brainCoinsAfter,
         energy: { current: energyAfter, max: ENERGY_MAX },
         ownedItems: nextOwnedItems,
+        inventory: nextInventory,
       };
     });
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
-import { authClient, signIn } from '../../lib/auth/client';
+import { signIn } from '../../lib/auth/client';
 
 function useCallbackURL() {
   const location = useLocation();
@@ -40,7 +40,7 @@ export function SignInPage() {
         const msg = res.error.message || '登录失败';
         setError(msg);
         if (String(msg).toLowerCase().includes('verify')) {
-          setInfo('你的邮箱尚未验证。已为你发送验证邮件，请查收。');
+          setInfo('你的邮箱尚未验证。已发送 6 位验证码，请完成验证后再登录。');
         }
         return;
       }
@@ -124,16 +124,27 @@ export function SignInPage() {
           {info && (
             <div className="text-sm text-zen-600">
               {info}{' '}
+              <Link
+                className="text-zen-700 hover:underline"
+                to={`/verify-email?email=${encodeURIComponent(email)}&callback=${encodeURIComponent(callbackURL)}`}
+              >
+                去验证
+              </Link>{' '}
               <button
                 type="button"
                 className="text-zen-700 hover:underline"
                 onClick={async () => {
-                  const { error: e } = await authClient.sendVerificationEmail({
-                    email,
-                    callbackURL,
-                  });
-                  if (e) setError(e.message || '发送失败');
-                  else setInfo('验证邮件已发送，请查收。');
+                  try {
+                    const resp = await fetch('/api/auth/email-otp/send-verification-otp', {
+                      method: 'POST',
+                      headers: { 'content-type': 'application/json' },
+                      body: JSON.stringify({ email, type: 'email-verification' }),
+                    });
+                    if (!resp.ok) throw new Error('发送失败');
+                    setInfo('验证码已发送，请查收。');
+                  } catch (e) {
+                    setError((e as Error)?.message || '发送失败');
+                  }
                 }}
                 disabled={submitting || !email}
               >

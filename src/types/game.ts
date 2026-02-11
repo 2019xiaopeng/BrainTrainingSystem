@@ -183,6 +183,8 @@ export interface UserProfile {
   checkIn: CheckInState;
   /** Owned permanent items (product IDs) */
   ownedItems: string[];
+  /** Inventory item counts (consumables / tickets) */
+  inventory: Record<string, number>;
 }
 
 export type GameUnlocks = {
@@ -266,6 +268,7 @@ export function getCheckInReward(consecutiveDays: number): { xp: number; coins: 
 export type ProductEffect =
   | { type: 'energy'; amount: number }
   | { type: 'streak_saver' }
+  | { type: 'rename_card' }
   | { type: 'premium_report' };
 
 /** Store product definition */
@@ -307,6 +310,15 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     price: 500,
     icon: '🛡️',
     effect: { type: 'streak_saver' },
+  },
+  {
+    id: 'rename_card',
+    type: 'consumable',
+    nameKey: 'store.renameCard',
+    descKey: 'store.renameCardDesc',
+    price: 1000,
+    icon: '✏️',
+    effect: { type: 'rename_card' },
   },
   {
     id: 'premium_report',

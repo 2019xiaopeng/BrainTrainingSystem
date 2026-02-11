@@ -8,6 +8,7 @@ import { SignUpPage } from './components/pages/SignUpPage';
 import { ForgotPasswordPage } from './components/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './components/pages/ResetPasswordPage';
 import { ChangePasswordPage } from './components/pages/ChangePasswordPage';
+import { VerifyEmailPage } from './components/pages/VerifyEmailPage';
 import { ProfileScreen } from './components/screens/ProfileScreen';
 import { StoreScreen } from './components/screens/StoreScreen';
 import { InstructionScreen } from './components/screens/InstructionScreen';
@@ -31,6 +32,7 @@ function App() {
           {/* 登录/注册 */}
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />

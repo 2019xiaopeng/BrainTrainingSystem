@@ -1,5 +1,5 @@
 import { createAuthClient } from 'better-auth/react';
-import { usernameClient } from 'better-auth/client/plugins';
+import { emailOTPClient, usernameClient } from 'better-auth/client/plugins';
 
 const envBaseURL = import.meta.env.VITE_AUTH_BASE_URL as string | undefined;
 const baseURL =
@@ -10,7 +10,7 @@ export const authClient = createAuthClient({
   emailAndPassword: {
     enabled: true,
   },
-  plugins: [usernameClient()],
+  plugins: [usernameClient(), emailOTPClient()],
 });
 
 export const { signIn, signUp, signOut, useSession, getSession } = authClient;

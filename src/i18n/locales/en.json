@@ -257,6 +257,8 @@
     "energyPotion5Desc": "Instantly restore 5 energy (full)",
     "streakSaver": "Streak Shield",
     "streakSaverDesc": "Protect your streak from one missed day",
+    "renameCard": "Rename Card",
+    "renameCardDesc": "Consume 1 rename card to change your display name",
     "premiumReport": "Premium Analysis",
     "premiumReportDesc": "Unlock detailed six-dimension cognitive analysis and training recommendations"
   },

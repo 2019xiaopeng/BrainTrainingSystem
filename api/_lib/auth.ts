@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { username } from "better-auth/plugins";
+import { emailOTP, username } from "better-auth/plugins";
 import { db } from "./db/index.js";
 import { restrictedUsernames } from "./usernames.js";
 import { sendResendEmail } from "./email/resend.js";
@@ -31,36 +31,48 @@ export const auth = betterAuth({
       usernameValidator: (value) => !restrictedUsernames.includes(value),
       usernameNormalization: (value) => value.toLowerCase(),
     }),
+    emailOTP({
+      otpLength: 6,
+      expiresIn: 600,
+      overrideDefaultEmailVerification: true,
+      sendVerificationOTP: async ({ email, otp, type }) => {
+        if (type === "email-verification") {
+          const subject = "邮箱验证码";
+          const text = `你的邮箱验证码是：${otp}\n\n该验证码 10 分钟内有效。`;
+          await sendResendEmail({
+            to: email,
+            subject,
+            text,
+            html: `<p>你的邮箱验证码是：</p><p style="font-size:20px;font-weight:700;letter-spacing:2px">${otp}</p><p>该验证码 10 分钟内有效。</p>`,
+          });
+          return;
+        }
+        if (type === "forget-password") {
+          const subject = "重置密码验证码";
+          const text = `你的重置密码验证码是：${otp}\n\n该验证码 10 分钟内有效。`;
+          await sendResendEmail({
+            to: email,
+            subject,
+            text,
+            html: `<p>你的重置密码验证码是：</p><p style="font-size:20px;font-weight:700;letter-spacing:2px">${otp}</p><p>该验证码 10 分钟内有效。</p>`,
+          });
+          return;
+        }
+        const subject = "登录验证码";
+        const text = `你的登录验证码是：${otp}\n\n该验证码 10 分钟内有效。`;
+        await sendResendEmail({
+          to: email,
+          subject,
+          text,
+          html: `<p>你的登录验证码是：</p><p style="font-size:20px;font-weight:700;letter-spacing:2px">${otp}</p><p>该验证码 10 分钟内有效。</p>`,
+        });
+      },
+    }),
   ],
-  emailVerification: {
-    sendOnSignUp: false,
-    sendOnSignIn: true,
-    autoSignInAfterVerification: true,
-    sendVerificationEmail: async ({ user, url }) => {
-      const subject = "验证你的邮箱";
-      const text = `请点击链接验证邮箱：${url}`;
-      await sendResendEmail({
-        to: user.email,
-        subject,
-        text,
-        html: `<p>请点击链接验证邮箱：</p><p><a href="${url}">${url}</a></p>`,
-      });
-    },
-  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
     minPasswordLength: 8,
-    sendResetPassword: async ({ user, url }) => {
-      const subject = "重置你的密码";
-      const text = `请点击链接重置密码：${url}`;
-      await sendResendEmail({
-        to: user.email,
-        subject,
-        text,
-        html: `<p>请点击链接重置密码：</p><p><a href="${url}">${url}</a></p>`,
-      });
-    },
   },
   user: {
     additionalFields: {

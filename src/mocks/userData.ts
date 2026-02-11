@@ -250,4 +250,5 @@ export const MOCK_USER_PROFILE: UserProfile = {
     consecutiveDays: 5,
   },
   ownedItems: [],
+  inventory: {},
 };

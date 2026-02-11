@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { User, Link2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { AuthProfile } from '../../types/game';
-import { authClient, signOut, signIn } from '../../lib/auth/client';
+import { signOut, signIn } from '../../lib/auth/client';
+import { useGameStore } from '../../store/gameStore';
 
 interface AuthSectionProps {
   auth?: AuthProfile;
@@ -14,6 +16,13 @@ interface AuthSectionProps {
 export function AuthSection({ auth }: AuthSectionProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const inventory = useGameStore((s) => s.userProfile.inventory);
+  const setProfile = useGameStore.setState;
+  const renameCount = Math.max(0, Number(inventory?.rename_card ?? 0) || 0);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [renameSubmitting, setRenameSubmitting] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
   
   // Fallback for undefined auth (should not happen with migration, but safe guard)
   const safeAuth: AuthProfile = auth || {
@@ -59,16 +68,107 @@ export function AuthSection({ auth }: AuthSectionProps) {
           <div className="font-medium">邮箱未验证</div>
           <div className="mt-1 flex items-center justify-between gap-2">
             <span className="text-amber-800">{safeAuth.email}</span>
+            <div className="flex items-center gap-2">
+              <Link className="text-amber-800 hover:underline" to={`/verify-email?email=${encodeURIComponent(safeAuth.email!)}`}>
+                去验证
+              </Link>
+              <button
+                type="button"
+                className="shrink-0 px-2 py-1 rounded-md bg-amber-600 text-white hover:bg-amber-700 transition-colors"
+                onClick={async () => {
+                  await fetch('/api/auth/email-otp/send-verification-otp', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ email: safeAuth.email!, type: 'email-verification' }),
+                  });
+                }}
+              >
+                重发
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isGuest && (
+        <div className="mt-4 rounded-lg border border-zen-200 bg-zen-50 px-3 py-2">
+          <div className="flex items-center justify-between text-xs text-zen-600">
+            <span>改名卡</span>
+            <span className="font-mono text-zen-700">{renameCount}</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-2">
             <button
               type="button"
-              className="shrink-0 px-2 py-1 rounded-md bg-amber-600 text-white hover:bg-amber-700 transition-colors"
-              onClick={async () => {
-                await authClient.sendVerificationEmail({ email: safeAuth.email!, callbackURL: '/profile' });
+              className="text-xs text-zen-700 hover:underline disabled:opacity-60"
+              disabled={renameSubmitting}
+              onClick={() => {
+                setRenameError(null);
+                setRenameOpen((v) => !v);
+                setDisplayName(safeAuth.displayName);
               }}
             >
-              重新发送
+              修改显示名称
             </button>
+            <Link className="text-xs text-zen-500 hover:underline" to="/store">
+              去商城购买
+            </Link>
           </div>
+
+          {renameOpen && (
+            <div className="mt-3 space-y-2">
+              <input
+                className="w-full rounded-lg border border-zen-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zen-200"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                disabled={renameSubmitting}
+                placeholder="2-20 字"
+              />
+              {renameError && <div className="text-xs text-red-600">{renameError}</div>}
+              <button
+                type="button"
+                className="w-full rounded-lg bg-sage-600 text-white px-4 py-2 text-sm hover:bg-sage-700 transition-colors disabled:opacity-60"
+                disabled={renameSubmitting || renameCount <= 0}
+                onClick={async () => {
+                  setRenameError(null);
+                  setRenameSubmitting(true);
+                  try {
+                    const resp = await fetch('/api/user/display-name', {
+                      method: 'POST',
+                      headers: { 'content-type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify({ displayName }),
+                    });
+                    if (!resp.ok) {
+                      const data = await resp.json().catch(() => null);
+                      const code = String((data as { error?: unknown } | null)?.error ?? '');
+                      if (code === 'no_rename_card') setRenameError('改名卡不足，请先购买');
+                      else if (code === 'invalid_display_name') setRenameError('名称长度需为 2-20');
+                      else setRenameError('修改失败，请稍后再试');
+                      return;
+                    }
+                    const data = (await resp.json()) as { displayName?: unknown; inventory?: unknown };
+                    setProfile((s) => ({
+                      userProfile: {
+                        ...s.userProfile,
+                        auth: { ...s.userProfile.auth, displayName: String(data.displayName ?? s.userProfile.auth.displayName) },
+                        inventory:
+                          data.inventory && typeof data.inventory === 'object'
+                            ? (data.inventory as Record<string, number>)
+                            : s.userProfile.inventory,
+                      },
+                    }));
+                    setRenameOpen(false);
+                  } catch {
+                    setRenameError('网络错误，请稍后再试');
+                  } finally {
+                    setRenameSubmitting(false);
+                  }
+                }}
+              >
+                {renameCount <= 0 ? '改名卡不足' : '使用改名卡'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 

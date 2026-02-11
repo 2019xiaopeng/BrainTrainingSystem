@@ -413,6 +413,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     brainLevel: u.brainLevel ?? 1,
     brainCoins: u.brainCoins ?? 0,
     ownedItems: Array.isArray(u.ownedItems) ? u.ownedItems : [],
+    inventory: isRecord(u.inventory) ? u.inventory : {},
     totalScore,
     maxNLevel,
     daysStreak,

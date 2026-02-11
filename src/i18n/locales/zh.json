@@ -257,6 +257,8 @@
     "energyPotion5Desc": "立即恢复 5 点能量（满充）",
     "streakSaver": "连续天数护盾",
     "streakSaverDesc": "中断一天不会重置连续天数",
+    "renameCard": "改名卡",
+    "renameCardDesc": "消耗 1 张改名卡，可修改显示名称",
     "premiumReport": "高级分析报告",
     "premiumReportDesc": "解锁详细的六维能力分析与训练建议"
   },
