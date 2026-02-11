@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
-import { Clock, Trophy, TrendingUp } from 'lucide-react';
+import { Clock, Trophy, TrendingUp, Coins } from 'lucide-react';
 import { CheckInWidget } from '../economy/CheckInWidget';
+import { LeaderboardWidget } from '../leaderboard/LeaderboardWidget';
 
 type DashboardTab = 'history' | 'leaderboard';
-type LeaderboardLevel = '2back' | '3back';
+type LeaderboardTab = 'coins' | 'level';
 
 /**
  * RightPanel - 桌面端右侧仪表盘
@@ -15,7 +16,7 @@ export function RightPanel() {
   const { t } = useTranslation();
   const { sessionHistory, userProfile } = useGameStore();
   const [tab, setTab] = useState<DashboardTab>('history');
-  const [lbLevel, setLbLevel] = useState<LeaderboardLevel>('2back');
+  const [lbTab, setLbTab] = useState<LeaderboardTab>('coins');
   const isGuest = (userProfile.auth?.status ?? 'guest') === 'guest';
 
   // Take last 5 recent sessions
@@ -155,34 +156,38 @@ export function RightPanel() {
       {/* Leaderboard Tab */}
       {tab === 'leaderboard' && (
         <div className="space-y-3">
-          {/* Level sub-tabs */}
           <div className="flex gap-2">
             <button
-              onClick={() => setLbLevel('2back')}
+              onClick={() => setLbTab('coins')}
               className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${
-                lbLevel === '2back'
+                lbTab === 'coins'
                   ? 'bg-sage-100 text-sage-700'
                   : 'text-zen-400 hover:bg-zen-50'
               }`}
             >
-              2-Back
+              <span className="inline-flex items-center justify-center gap-1.5">
+                <Coins className="w-3.5 h-3.5" />
+                积分榜
+              </span>
             </button>
             <button
-              onClick={() => setLbLevel('3back')}
+              onClick={() => setLbTab('level')}
               className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${
-                lbLevel === '3back'
+                lbTab === 'level'
                   ? 'bg-sage-100 text-sage-700'
                   : 'text-zen-400 hover:bg-zen-50'
               }`}
             >
-              3-Back
+              段位榜
             </button>
           </div>
 
-          {/* Leaderboard list */}
-          <div className="bg-white/60 rounded-lg p-4 border border-zen-200/50 text-center text-xs text-zen-500">
-            {isGuest ? t('sidebar.leaderboardLoginRequired') : t('sidebar.leaderboardComingSoon')}
-          </div>
+          {isGuest && (
+            <div className="bg-white/60 rounded-lg p-3 border border-zen-200/50 text-center text-xs text-zen-500">
+              {t('sidebar.leaderboardLoginRequired')}
+            </div>
+          )}
+          <LeaderboardWidget kind={lbTab} compact />
         </div>
       )}
     </div>

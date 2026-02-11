@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, User, ShoppingBag, HelpCircle } from 'lucide-react';
+import { Home, User, ShoppingBag, Settings } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
 import { BrainRankCard } from '../profile/BrainRankCard';
@@ -22,7 +22,7 @@ export function Sidebar() {
     { to: '/', icon: Home, label: t('nav.home') },
     { to: '/profile', icon: User, label: t('nav.profile') },
     { to: '/store', icon: ShoppingBag, label: t('nav.store') },
-    { to: '/instruction', icon: HelpCircle, label: t('nav.instruction') },
+    { to: '/settings', icon: Settings, label: t('nav.settings') },
   ];
 
   const toggleLang = () => {

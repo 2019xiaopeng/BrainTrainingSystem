@@ -1,16 +1,17 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Clock, TrendingUp, Trophy } from 'lucide-react';
+import { Clock, TrendingUp, Trophy, Coins } from 'lucide-react';
 import { useGameStore } from '../../store/gameStore';
+import { LeaderboardWidget } from '../leaderboard/LeaderboardWidget';
 
 type DashboardTab = 'history' | 'leaderboard';
-type LeaderboardLevel = '2back' | '3back';
+type LeaderboardTab = 'coins' | 'level';
 
 export function RankScreen() {
   const { t } = useTranslation();
   const { sessionHistory, userProfile } = useGameStore();
   const [tab, setTab] = useState<DashboardTab>('history');
-  const [lbLevel, setLbLevel] = useState<LeaderboardLevel>('2back');
+  const [lbTab, setLbTab] = useState<LeaderboardTab>('coins');
   const isGuest = (userProfile.auth?.status ?? 'guest') === 'guest';
 
   const recentSessions = useMemo(
@@ -122,30 +123,34 @@ export function RankScreen() {
         <div className="space-y-3">
           <div className="flex gap-2">
             <button
-              onClick={() => setLbLevel('2back')}
+              onClick={() => setLbTab('coins')}
               className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
-                lbLevel === '2back'
+                lbTab === 'coins'
                   ? 'bg-sage-100 text-sage-700'
                   : 'bg-white text-zen-400 border border-zen-200/50 hover:bg-zen-50'
               }`}
             >
-              2-Back
+              <span className="inline-flex items-center justify-center gap-1.5">
+                <Coins className="w-3.5 h-3.5" />
+                积分榜
+              </span>
             </button>
             <button
-              onClick={() => setLbLevel('3back')}
+              onClick={() => setLbTab('level')}
               className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
-                lbLevel === '3back'
+                lbTab === 'level'
                   ? 'bg-sage-100 text-sage-700'
                   : 'bg-white text-zen-400 border border-zen-200/50 hover:bg-zen-50'
               }`}
             >
-              3-Back
+              段位榜
             </button>
           </div>
 
-          <div className="bg-white rounded-xl p-4 border border-zen-200/50 text-center text-sm text-zen-500">
-            {isGuest ? t('sidebar.leaderboardLoginRequired') : t('sidebar.leaderboardComingSoon')}
+          <div className="text-xs text-zen-400 text-center">
+            {isGuest ? t('sidebar.leaderboardLoginRequired') : ''}
           </div>
+          <LeaderboardWidget kind={lbTab} />
         </div>
       )}
     </div>

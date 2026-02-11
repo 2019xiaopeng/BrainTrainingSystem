@@ -4,6 +4,9 @@
     "subtitle": "Brain Training System",
     "backHome": "返回首页"
   },
+  "common": {
+    "cancel": "取消"
+  },
   "home": {
     "profile": "个人档案",
     "streak": "🔥 {{days}} 天连续",
@@ -213,6 +216,42 @@
     "settings": "设置",
     "store": "商城",
     "instruction": "帮助"
+  },
+  "settings": {
+    "tabs": {
+      "profile": "资料",
+      "security": "安全",
+      "accounts": "绑定账号",
+      "notifications": "通知",
+      "help": "帮助"
+    },
+    "emailVerified": "已验证",
+    "emailNotVerified": "未验证",
+    "profile": {
+      "displayName": "显示名称",
+      "renameHint": "消耗 1 张改名卡可修改显示名称",
+      "rename": "改名",
+      "renamePlaceholder": "2-20 字",
+      "renameNeedCard": "改名卡不足，",
+      "goStore": "去商城",
+      "renameNoCard": "改名卡不足，请先购买",
+      "renameInvalid": "名称长度需为 2-20",
+      "renameFailed": "修改失败，请稍后再试",
+      "renameNetworkError": "网络错误，请稍后再试",
+      "renameConfirm": "确认改名",
+      "avatar": "头像",
+      "avatarHint": "即将支持上传/选择头像"
+    },
+    "security": {
+      "title": "账号安全",
+      "changePassword": "修改密码",
+      "verifyEmail": "验证邮箱",
+      "signOut": "退出登录"
+    },
+    "notifications": {
+      "weeklyReport": "邮件通知",
+      "weeklyReportHint": "训练周报/高级报告（暂存本地开关）"
+    }
   },
   "sidebar": {
     "leaderboard": "排行榜",

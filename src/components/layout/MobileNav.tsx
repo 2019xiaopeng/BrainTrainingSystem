@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, User, ShoppingBag, Trophy, HelpCircle, Languages } from 'lucide-react';
+import { Home, User, ShoppingBag, Trophy, Settings, Languages } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -13,7 +13,7 @@ export function MobileNav() {
     { to: '/rank', icon: Trophy, label: t('nav.rank') },
     { to: '/store', icon: ShoppingBag, label: t('nav.store') },
     { to: '/profile', icon: User, label: t('nav.profile') },
-    { to: '/instruction', icon: HelpCircle, label: t('nav.instruction') },
+    { to: '/settings', icon: Settings, label: t('nav.settings') },
   ];
 
   const toggleLang = () => {

@@ -4,6 +4,9 @@
     "subtitle": "Brain Training System",
     "backHome": "Back to Home"
   },
+  "common": {
+    "cancel": "Cancel"
+  },
   "home": {
     "profile": "Profile",
     "streak": "🔥 {{days}} day streak",
@@ -213,6 +216,42 @@
     "settings": "Settings",
     "store": "Store",
     "instruction": "Help"
+  },
+  "settings": {
+    "tabs": {
+      "profile": "Profile",
+      "security": "Security",
+      "accounts": "Accounts",
+      "notifications": "Notifications",
+      "help": "Help"
+    },
+    "emailVerified": "Verified",
+    "emailNotVerified": "Unverified",
+    "profile": {
+      "displayName": "Display name",
+      "renameHint": "Consume 1 rename card to change your display name",
+      "rename": "Rename",
+      "renamePlaceholder": "2-20 chars",
+      "renameNeedCard": "No rename card, ",
+      "goStore": "Go to store",
+      "renameNoCard": "No rename card. Please purchase first.",
+      "renameInvalid": "Name length must be 2-20",
+      "renameFailed": "Update failed. Please try again.",
+      "renameNetworkError": "Network error. Please try again.",
+      "renameConfirm": "Confirm",
+      "avatar": "Avatar",
+      "avatarHint": "Avatar upload/selection is coming soon"
+    },
+    "security": {
+      "title": "Account security",
+      "changePassword": "Change password",
+      "verifyEmail": "Verify email",
+      "signOut": "Sign out"
+    },
+    "notifications": {
+      "weeklyReport": "Email notifications",
+      "weeklyReportHint": "Weekly report / premium insights (local toggle for now)"
+    }
   },
   "sidebar": {
     "leaderboard": "Leaderboard",

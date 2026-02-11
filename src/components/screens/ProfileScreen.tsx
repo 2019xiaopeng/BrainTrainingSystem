@@ -4,11 +4,11 @@ import { useGameStore } from '../../store/gameStore';
 import { BrainRankCard } from '../profile/BrainRankCard';
 import { RadarChartWidget } from '../profile/RadarChartWidget';
 import { ActivityHeatmap } from '../profile/ActivityHeatmap';
-import { AuthSection } from '../profile/AuthSection';
 import { EnergyBar } from '../economy/EnergyBar';
 import { CheckInWidget } from '../economy/CheckInWidget';
 import { generateYearlyHeatmap } from '../../mocks/userData';
 import { Trophy, Target, Flame, BarChart3, Coins } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 /**
  * ProfileScreen - 完整个人档案页面
@@ -84,7 +84,6 @@ export function ProfileScreen() {
         <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm">
           <EnergyBar />
         </div>
-        {!isGuest && <CheckInWidget />}
       </div>
 
       {isGuest ? (
@@ -112,6 +111,19 @@ export function ProfileScreen() {
         </div>
       ) : (
         <>
+          <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm flex items-center justify-between">
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-zen-700 truncate">{authProfile.displayName}</div>
+              <div className="text-xs text-zen-400 truncate">{authProfile.email ?? ''}</div>
+            </div>
+            <Link
+              className="shrink-0 px-3 py-2 rounded-lg border border-zen-200 text-zen-700 text-xs hover:bg-zen-50 transition-colors"
+              to="/settings"
+            >
+              {t('nav.settings')}
+            </Link>
+          </div>
+
           {/* Brain Rank Card */}
           <BrainRankCard
             totalXP={userProfile.totalXP ?? 0}
@@ -224,9 +236,6 @@ export function ProfileScreen() {
           </div>
         </>
       )}
-
-      {/* Auth Section */}
-      <AuthSection auth={authProfile} />
     </div>
   );
 }
