@@ -147,6 +147,8 @@ export interface AuthProfile {
   userId?: string;
   /** User email (optional) */
   email?: string;
+  /** Whether email is verified (if applicable) */
+  emailVerified?: boolean;
   /** Display name */
   displayName: string;
   /** Avatar URL (null for default) */

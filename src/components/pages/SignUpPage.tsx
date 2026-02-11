@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
-import { signIn, signUp } from '../../lib/auth/client';
+import { authClient, signIn, signUp } from '../../lib/auth/client';
 
 function useCallbackURL() {
   const location = useLocation();
@@ -23,10 +23,12 @@ export function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setInfo(null);
 
     if (password !== confirmPassword) {
       setError('两次输入的密码不一致');
@@ -58,7 +60,16 @@ export function SignUpPage() {
         return;
       }
 
-      navigate(callbackURL, { replace: true });
+      const { error: e } = await authClient.sendVerificationEmail({
+        email,
+        callbackURL,
+      });
+      if (e) {
+        setError(e.message || '发送验证邮件失败');
+        return;
+      }
+      setInfo('验证邮件已发送，请查收后完成验证。');
+      setTimeout(() => navigate(`/signin?callback=${encodeURIComponent(callbackURL)}`, { replace: true }), 700);
     } finally {
       setSubmitting(false);
     }
@@ -189,6 +200,7 @@ export function SignUpPage() {
           </div>
 
           {error && <div className="text-sm text-red-600">{error}</div>}
+          {info && <div className="text-sm text-green-700">{info}</div>}
 
           <button
             className="w-full rounded-lg bg-zen-800 text-white px-4 py-2.5 text-sm hover:bg-zen-900 transition-colors disabled:opacity-60"

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { User, Link2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { AuthProfile } from '../../types/game';
-import { signOut, signIn } from '../../lib/auth/client';
+import { authClient, signOut, signIn } from '../../lib/auth/client';
 
 interface AuthSectionProps {
   auth?: AuthProfile;
@@ -24,6 +24,7 @@ export function AuthSection({ auth }: AuthSectionProps) {
   };
   
   const isGuest = safeAuth.status === 'guest';
+  const needsEmailVerification = !isGuest && safeAuth.email && safeAuth.emailVerified === false;
 
   const handleSignOut = async () => {
     await signOut();
@@ -52,6 +53,24 @@ export function AuthSection({ auth }: AuthSectionProps) {
           </div>
         </div>
       </div>
+
+      {needsEmailVerification && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-900">
+          <div className="font-medium">邮箱未验证</div>
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <span className="text-amber-800">{safeAuth.email}</span>
+            <button
+              type="button"
+              className="shrink-0 px-2 py-1 rounded-md bg-amber-600 text-white hover:bg-amber-700 transition-colors"
+              onClick={async () => {
+                await authClient.sendVerificationEmail({ email: safeAuth.email!, callbackURL: '/profile' });
+              }}
+            >
+              重新发送
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Link accounts */}
       <div className="space-y-2">

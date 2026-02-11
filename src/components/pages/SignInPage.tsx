@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
-import { signIn } from '../../lib/auth/client';
+import { authClient, signIn } from '../../lib/auth/client';
 
 function useCallbackURL() {
   const location = useLocation();
@@ -19,10 +19,12 @@ export function SignInPage() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     setSubmitting(true);
 
     try {
@@ -35,7 +37,11 @@ export function SignInPage() {
       });
 
       if (res?.error) {
-        setError(res.error.message || '登录失败');
+        const msg = res.error.message || '登录失败';
+        setError(msg);
+        if (String(msg).toLowerCase().includes('verify')) {
+          setInfo('你的邮箱尚未验证。已为你发送验证邮件，请查收。');
+        }
         return;
       }
 
@@ -115,6 +121,26 @@ export function SignInPage() {
           </div>
 
           {error && <div className="text-sm text-red-600">{error}</div>}
+          {info && (
+            <div className="text-sm text-zen-600">
+              {info}{' '}
+              <button
+                type="button"
+                className="text-zen-700 hover:underline"
+                onClick={async () => {
+                  const { error: e } = await authClient.sendVerificationEmail({
+                    email,
+                    callbackURL,
+                  });
+                  if (e) setError(e.message || '发送失败');
+                  else setInfo('验证邮件已发送，请查收。');
+                }}
+                disabled={submitting || !email}
+              >
+                重新发送
+              </button>
+            </div>
+          )}
 
           <button
             className="w-full rounded-lg bg-zen-800 text-white px-4 py-2.5 text-sm hover:bg-zen-900 transition-colors disabled:opacity-60"

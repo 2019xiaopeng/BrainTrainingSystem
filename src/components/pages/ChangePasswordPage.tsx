@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
 import { useGameStore } from '../../store/gameStore';
+import { authClient } from '../../lib/auth/client';
 
 export function ChangePasswordPage() {
   const navigate = useNavigate();
@@ -33,20 +34,13 @@ export function ChangePasswordPage() {
     }
     setSubmitting(true);
     try {
-      const resp = await fetch('/api/user/password/change', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ currentPassword, password }),
+      const { error: e } = await authClient.changePassword({
+        currentPassword,
+        newPassword: password,
+        revokeOtherSessions: true,
       });
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => null);
-        const code = String((data as { error?: unknown } | null)?.error ?? '');
-        if (code === 'not_implemented') {
-          setError('该功能已预留接口，后端尚未接入修改密码流程。');
-          return;
-        }
-        setError('修改失败，请稍后再试');
+      if (e) {
+        setError(e.message || '修改失败，请稍后再试');
         return;
       }
       setMessage('密码已更新');
@@ -155,4 +149,3 @@ export function ChangePasswordPage() {
     </div>
   );
 }
-

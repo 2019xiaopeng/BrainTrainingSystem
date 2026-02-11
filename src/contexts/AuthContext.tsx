@@ -8,6 +8,7 @@ type SessionUser = {
   name?: string;
   username?: string;
   email?: string;
+  emailVerified?: boolean;
   image?: string | null;
 };
 
@@ -19,6 +20,7 @@ const guestProfile: AuthProfile = {
   status: 'guest',
   userId: undefined,
   email: undefined,
+  emailVerified: false,
   displayName: 'Guest',
   avatarUrl: null,
   linkedProviders: ['guest'],
@@ -69,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status: 'authenticated',
       userId: user.id,
       email: user.email,
+      emailVerified: Boolean(user.emailVerified),
       displayName,
       avatarUrl,
       linkedProviders: ['email'],

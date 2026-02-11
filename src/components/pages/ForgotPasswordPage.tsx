@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Card } from '../ui/Card';
+import { authClient } from '../../lib/auth/client';
 
 function useCallbackURL() {
   const location = useLocation();
@@ -23,13 +24,12 @@ export function ForgotPasswordPage() {
     setMessage(null);
     setSubmitting(true);
     try {
-      const resp = await fetch('/api/user/password/reset-request', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email }),
+      const { error: e } = await authClient.requestPasswordReset({
+        email,
+        redirectTo: `/reset-password?callback=${encodeURIComponent(callbackURL)}`,
       });
-      if (!resp.ok) {
-        setError('请求失败，请稍后再试');
+      if (e) {
+        setError(e.message || '请求失败，请稍后再试');
         return;
       }
       setMessage('如果该邮箱已注册，我们会发送重置链接到你的邮箱。');
@@ -83,4 +83,3 @@ export function ForgotPasswordPage() {
     </div>
   );
 }
-

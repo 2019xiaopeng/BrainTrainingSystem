@@ -330,14 +330,14 @@
 #### 7.1.1 密码找回与修改（UI 与接口预留）
 - **找回密码（Forgot Password）**:
   - 登录页提供“忘记密码？”入口，跳转到找回页输入邮箱。
-  - 接口：`POST /api/user/password/reset-request`（不暴露“邮箱是否存在”，统一返回 ok）。
-  - 邮件发送：后端生成一次性 token，通过 Resend 发出重置链接 `/reset-password?token=...`。
+  - 接口：使用 Better Auth 内置 `forgetPassword`（不暴露“邮箱是否存在”，统一返回 ok）。
+  - 邮件发送：由 Better Auth 回调 `sendResetPassword` 触发 Resend 发信，链接指向 `/reset-password?...&token=...`。
 - **重置密码（Reset Password）**:
   - 用户从邮件链接进入重置页，设置新密码。
-  - 接口：`POST /api/user/password/reset-confirm`（token + 新密码）。
+  - 接口：使用 Better Auth 内置 `resetPassword`（token + newPassword）。
 - **修改密码（Change Password）**:
   - Profile/Auth 区域提供“修改密码”入口。
-  - 接口：`POST /api/user/password/change`（需登录态，旧密码 + 新密码）。
+  - 接口：使用 Better Auth 内置 `changePassword`（需登录态，currentPassword + newPassword，可选 revokeOtherSessions）。
   - 预留策略：对于 OAuth-only 用户，UI 仍展示入口，但后端可返回未支持提示或引导“改用邮箱登录/绑定邮箱”。
 
 ### 7.2 支付与订单架构 (Payment Architecture)

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
+import { authClient } from '../../lib/auth/client';
 
 function useToken() {
   const location = useLocation();
@@ -46,19 +47,9 @@ export function ResetPasswordPage() {
     }
     setSubmitting(true);
     try {
-      const resp = await fetch('/api/user/password/reset-confirm', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ token, password }),
-      });
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => null);
-        const code = String((data as { error?: unknown } | null)?.error ?? '');
-        if (code === 'not_implemented') {
-          setError('该功能已预留接口，后端尚未接入邮件重置流程。');
-          return;
-        }
-        setError('重置失败，请稍后再试');
+      const { error: e } = await authClient.resetPassword({ token, newPassword: password });
+      if (e) {
+        setError(e.message || '重置失败，请稍后再试');
         return;
       }
       setMessage('密码已重置，请重新登录。');
@@ -126,4 +117,3 @@ export function ResetPasswordPage() {
     </div>
   );
 }
-
