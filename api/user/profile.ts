@@ -404,7 +404,15 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     }
   }
 
-  if (isRecord(u.brainStats) === false || Object.keys(u.brainStats as object).length === 0) {
+  const existingStats = normalizeBrainStats(u.brainStats);
+  const changed =
+    existingStats.memory !== brainStats.memory ||
+    existingStats.focus !== brainStats.focus ||
+    existingStats.math !== brainStats.math ||
+    existingStats.observation !== brainStats.observation ||
+    existingStats.loadCapacity !== brainStats.loadCapacity ||
+    existingStats.reaction !== brainStats.reaction;
+  if (changed) {
     await db.update(user).set({ brainStats }).where(eq(user.id, sessionUser.id));
   }
 

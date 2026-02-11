@@ -1,4 +1,4 @@
-import { and, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte } from "drizzle-orm";
 import { db } from "../_lib/db/index.js";
 import { dailyActivity, gameSessions, user, userUnlocks } from "../_lib/db/schema/index.js";
 import { requireSessionUser } from "../_lib/session.js";
@@ -28,6 +28,65 @@ const recoverEnergy = (current: number, lastUpdated: Date | null) => {
 
 const clampInt = (n: unknown, fallback = 0) => (Number.isFinite(Number(n)) ? Math.trunc(Number(n)) : fallback);
 const clampFloat = (n: unknown, fallback = 0) => (Number.isFinite(Number(n)) ? Number(n) : fallback);
+
+type BrainStats = {
+  memory: number;
+  focus: number;
+  math: number;
+  observation: number;
+  loadCapacity: number;
+  reaction: number;
+};
+
+const normalizeBrainStats = (raw: unknown): BrainStats => {
+  if (!isRecord(raw)) {
+    return { memory: 0, focus: 0, math: 0, observation: 0, loadCapacity: 0, reaction: 0 };
+  }
+  const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
+  return {
+    memory: clamp(clampFloat(raw.memory, 0)),
+    focus: clamp(clampFloat(raw.focus, 0)),
+    math: clamp(clampFloat(raw.math, 0)),
+    observation: clamp(clampFloat(raw.observation, 0)),
+    loadCapacity: clamp(clampFloat(raw.loadCapacity, 0)),
+    reaction: clamp(clampFloat(raw.reaction, 0)),
+  };
+};
+
+const computeBrainStats = (
+  current: BrainStats,
+  summary: { mode: string; nLevel: number; accuracy: number; avgReactionTimeMs: number },
+  lastSessions: Array<{ accuracy: number }>
+): BrainStats => {
+  const recent20 = lastSessions.slice(-20);
+  const avgAccuracy =
+    recent20.length > 0 ? recent20.reduce((sum, s) => sum + s.accuracy, 0) / recent20.length : summary.accuracy;
+
+  const mode = summary.mode;
+  const n = summary.nLevel;
+  const acc = summary.accuracy;
+  const avgRT = summary.avgReactionTimeMs || 2000;
+
+  const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
+
+  const memoryDelta = mode === "numeric" || mode === "spatial" || mode === "mouse" ? n * 8 * (acc / 100) : 0;
+  const memory = clamp(Math.max(current.memory, memoryDelta));
+
+  const focus = clamp(avgAccuracy);
+
+  const math = mode === "numeric" ? clamp(Math.max(current.math, acc * 0.8 + n * 4)) : current.math;
+
+  const observation =
+    mode === "spatial" || mode === "mouse" ? clamp(Math.max(current.observation, acc * 0.7 + n * 5)) : current.observation;
+
+  const loadCapacity =
+    mode === "house" || n >= 3 ? clamp(Math.max(current.loadCapacity, acc * 0.75 + n * 3)) : current.loadCapacity;
+
+  const reactionScore = clamp(((5000 - avgRT) / 3000) * 100);
+  const reaction = current.reaction > 0 ? clamp(current.reaction * 0.7 + reactionScore * 0.3) : reactionScore;
+
+  return { memory, focus, math, observation, loadCapacity, reaction };
+};
 
 const computeScore = (accuracy: number, nLevel: number, totalRounds: number) =>
   Math.round((accuracy * nLevel * totalRounds) / 10);
@@ -454,6 +513,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
           energyCurrent: user.energyCurrent,
           energyLastUpdated: user.energyLastUpdated,
           unlimitedEnergyUntil: user.unlimitedEnergyUntil,
+          brainStats: user.brainStats,
         })
         .from(user)
         .where(eq(user.id, sessionUser.id))
@@ -565,6 +625,37 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         createdAt: now,
       });
 
+      const recentSessionsDesc = await tx
+        .select({
+          mode: gameSessions.gameMode,
+          nLevel: gameSessions.nLevel,
+          accuracy: gameSessions.accuracy,
+          avgReactionTime: gameSessions.avgReactionTime,
+        })
+        .from(gameSessions)
+        .where(eq(gameSessions.userId, sessionUser.id))
+        .orderBy(desc(gameSessions.createdAt))
+        .limit(20);
+
+      const recentSessions = [...recentSessionsDesc].reverse();
+      let brainStats = normalizeBrainStats(u.brainStats);
+      const rolling: Array<{ accuracy: number }> = [];
+      brainStats = { memory: 0, focus: 0, math: 0, observation: 0, loadCapacity: 0, reaction: 0 };
+      for (const s of recentSessions) {
+        const acc = clampFloat(s.accuracy, 0);
+        rolling.push({ accuracy: acc });
+        brainStats = computeBrainStats(
+          brainStats,
+          {
+            mode: String(s.mode ?? "numeric"),
+            nLevel: clampInt(s.nLevel, 1),
+            accuracy: acc,
+            avgReactionTimeMs: clampInt(s.avgReactionTime ?? 2000, 2000),
+          },
+          rolling
+        );
+      }
+
       const xpBefore = clampInt(u.xp ?? 0, 0);
       const xpAfter = xpBefore + xpEarned;
       const brainLevelBefore = clampInt(u.brainLevel ?? 1, 1);
@@ -586,6 +677,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
           brainCoins: brainCoinsAfter,
           energyCurrent: energyAfterRefund,
           energyLastUpdated: isUnlimited ? u.energyLastUpdated : now,
+          brainStats,
         })
         .where(eq(user.id, sessionUser.id));
 
