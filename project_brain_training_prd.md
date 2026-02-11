@@ -209,7 +209,8 @@
     - `energy_1`（consumable）: 价格 100 Brain Coins；效果 `{ energy: 1 }`（能量上限封顶为 5）。
     - `energy_5`（consumable）: 价格 450 Brain Coins；效果 `{ energy: 5 }`（能量上限封顶为 5）。
     - `streak_saver`（consumable）: 价格 500 Brain Coins；效果 `{ inventory: { streak_saver: 1 } }`（占位：用于未来补签机制）。
-    - `premium_report`（permanent）: 价格 1000 Brain Coins；效果 `{ ownedItem: "premium_report" }`（占位：用于未来高级报告）。
+    - `rename_card`（consumable）: 价格 1000 Brain Coins；效果 `{ inventory: { rename_card: 1 } }`（改名卡：消耗后可修改显示名称）。
+    - `premium_report`（permanent）: 价格 1000 Brain Coins；效果 `{ ownedItem: "premium_report" }`（设想：接入 AI 分析与训练指导的高级权益）。
 - **后续完善方向（不影响当前版本）**:
     - **外观（Cosmetics）**: 主题配色、头像框（均作为 `permanent`/`inventory` 形式发放）。
     - **功能（Upgrades）**: 高级报表、训练计划、数据导出等（与 Resend 周报联动）。
@@ -255,15 +256,13 @@
         - **热力图渲染**: 前端通过 Profile 接口读取聚合记录，根据 `sessions_count` 渲染颜色深浅 (0=灰色, 1-2=浅绿, 3-5=中绿, 6+=深绿)。
 
 ### 4. 排行榜与社交 (Leaderboards)
-**核心逻辑**: 分 N 值赛道，比拼平均速度。
+**核心逻辑**: 避免“按 N 拆太多榜单”，改为更直观的双榜体系。
 - **榜单分类**:
-    - **2-Back 速通榜**: 仅统计 2-Back 难度的成绩。
-    - **3-Back 速通榜**: 仅统计 3-Back 难度的成绩。
-    - ...以此类推至 12-Back。
-- **排序指标**: **平均反应时间 (Average Response Time)**。
-    - 仅当准确率 >= 90% 时才有资格上榜（防止乱点）。
-    - 无论题目总数是 20 还是 50，均按平均单题耗时排序。
-- **周期**: 每周一凌晨重置（周榜），激发持续挑战。
+    - **积分榜（Brain Coins）**: 以 Brain Coins 为主排名指标（总榜/周榜可选），更符合“经济系统驱动”的目标。
+    - **Lv 榜（Brain Level）**: 以 Lv 为主排名指标；同 Lv 时可按 XP、Coins 作为 tie-break。
+- **展示策略**:
+    - 前端以 Tab/切换展示（积分榜 / Lv 榜），并突出“我的排名”。
+    - 周榜（若启用）建议使用“自然周”并明确刷新时间，避免频繁重置造成挫败。
 
 ## 5. 用户体验与架构设计 (UX & Architecture)
 **核心原则**: Mobile-First 但 PC-Friendly，全球化，无障碍。

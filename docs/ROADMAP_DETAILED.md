@@ -20,7 +20,7 @@
     - `user_unlocks`: 存储解锁状态 (user_id, game_id, unlocked_params, updated_at)。
 - [x] **后端 API 开发 (tRPC/NextAPI)**:
     - `POST /api/game/session`: 接收游戏结果，**原子性**地更新 Session 表、XP、Brain Coins。
-    - `GET /api/user/profile`: 获取用户画像 (XP/体力/签到/解锁等；雷达图目前在前端侧计算)。
+    - `GET /api/user/profile`: 获取用户画像 (XP/体力/签到/解锁等；雷达图后端计算并回写 users.brain_stats)。
 
 ### 6.2 游戏结算逻辑上云 (Sync Logic)
 - [x] **前端改造**:
@@ -48,24 +48,26 @@
     - 在 Better-Auth 配置 Provider。
     - 验证：点击“Google 登录” -> 跳转 -> 回调 -> 创建用户。
 - [ ] **邮箱验证 (Email Verification)**:
-    - 集成 Resend (如前述计划)。
-    - 实现“注册后发送验证邮件”逻辑。
-    - 实现“忘记密码/重置密码/修改密码”流程（建议尽量使用 Better-Auth 内置能力，避免自造一套鉴权与 token 体系）。
-    - [x] 已补齐前端 UI 路由：/forgot-password、/reset-password、/change-password（后端仍需接入邮件与 Better-Auth 流程）。
+    - [x] 集成 Resend（服务端发信，前端不接触密钥）。
+    - [x] 邮箱验证改为 6 位验证码（Better Auth email-otp），注册后自动发送验证码。
+    - [x] 忘记密码/重置密码/修改密码使用 Better Auth 内置能力（重置密码同样使用 6 位验证码）。
+    - [x] 路由补齐：/forgot-password、/reset-password、/change-password、/verify-email。
 
 ### 7.2 用户资料管理 (Profile Management)
 - [ ] **头像上传**:
     - 接入 Supabase Storage 或简单的 Base64 (小图片)。
     - 允许用户上传自定义头像，或选择预设的“极简几何头像”。
-- [ ] **昵称修改**:
-    - 简单的 CRUD 页面。
+- [x] **昵称修改（道具制）**:
+    - 引入“改名卡”，消耗后可修改显示名称（Profile 内入口）。
+- [ ] **用户资料页重构（减少拥挤）**:
+    - 将头像/昵称/安全设置拆到独立页面或 Drawer，Profile 主面板只保留关键信息概览。
 
 ### 7.3 排行榜系统 (Leaderboard)
 - [ ] **后端 API**:
-    - `GET /api/leaderboard`: 按 `game_mode` + `n_level` 查询 Top 50。
-    - 逻辑：基于 `game_sessions` 聚合 `AVG(avg_reaction_time)`，仅统计 `accuracy >= 90%` 的记录；周榜按周一 00:00 重置。
+    - `GET /api/leaderboard/coins`: 按 Brain Coins（积分）Top N（总榜/周榜可选）。
+    - `GET /api/leaderboard/level`: 按 Brain Level（Lv）Top N；同 Lv 再按 XP/Coins 作为 tie-break。
 - [ ] **前端 UI**:
-    - 修复移动端侧栏消失问题：将排行榜移入独立的 `/leaderboard` 路由 (Mobile) 或 侧边栏 (Desktop)。
+    - 将排行榜移入独立页面（例如 `/rank` 里切 Tab：积分榜 / Lv 榜）。
     - 增加“我的排名”高亮显示。
 
 ---
