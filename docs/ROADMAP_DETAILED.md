@@ -1,7 +1,7 @@
 # Brain Flow 深度开发路线图 (Detailed Roadmap)
 
 > **文档状态**: 活跃 (Active)
-> **最后更新**: 2026-02-08
+> **最后更新**: 2026-02-11
 > **目标**: 将项目从 "本地 MVP" 推进到 "全栈闭环商业化产品"。
 > **前置条件**: 
 > 1. 已完成基础游戏逻辑 (Numeric/Spatial/Mouse/House)。
@@ -50,7 +50,8 @@
 - [ ] **邮箱验证 (Email Verification)**:
     - 集成 Resend (如前述计划)。
     - 实现“注册后发送验证邮件”逻辑。
-    - 实现“忘记密码”流程。
+    - 实现“忘记密码/重置密码/修改密码”流程（建议尽量使用 Better-Auth 内置能力，避免自造一套鉴权与 token 体系）。
+    - [x] 已补齐前端 UI 路由：/forgot-password、/reset-password、/change-password（后端仍需接入邮件与 Better-Auth 流程）。
 
 ### 7.2 用户资料管理 (Profile Management)
 - [ ] **头像上传**:
@@ -91,8 +92,8 @@
     - [x] 倒计时组件：显示“距离下一点体力恢复还有 XX:XX”。
 
 ### 8.3 虚拟商城 (Store)
-- [ ] **商品配置**:
-    - 数据库 `products` 表 (ID, 价格, 效果)。
+- [x] **商品配置**:
+    - 数据库 `products` 表 (ID, type, price_coins, rewards, is_active)。
 - [x] **购买逻辑**:
     - 已实现 `POST /api/store/buy`：服务端扣除 Brain Coins(积分) -> 增加体力/道具，并持久化 `owned_items/inventory`。
 - [x] **前端商城页面**:
@@ -106,7 +107,7 @@
 ### 9.1 解锁树实现 (Unlock Tree)
 - [x] **后端校验**:
     - 已在 `POST /api/game/session` 中校验“本局参数是否已解锁”，未解锁直接拒绝写入。
-    - 已在结算时按 `accuracy >= 90%` 计算并更新 `user_unlocks`（并返回 `newlyUnlocked`；首通返还体力已实现）。
+    - 已在结算时按 `accuracy >= 90%` 计算并更新 `user_unlocks`（并返回 `newlyUnlocked`；首通奖励 Brain Coins 已调整为 +20/条，不返还体力）。
 - [ ] **前端可视化**:
     - 首页模式选择器改造为“技能树”或“闯关地图”样式。
     - 锁定的关卡显示灰色锁头图标。
