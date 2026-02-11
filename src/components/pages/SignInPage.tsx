@@ -40,7 +40,17 @@ export function SignInPage() {
         const msg = res.error.message || '登录失败';
         setError(msg);
         if (String(msg).toLowerCase().includes('verify')) {
-          setInfo('你的邮箱尚未验证。已发送 6 位验证码，请完成验证后再登录。');
+          try {
+            const resp = await fetch('/api/auth/email-otp/send-verification-otp', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ email, type: 'email-verification' }),
+            });
+            if (!resp.ok) throw new Error('发送失败');
+            setInfo('你的邮箱尚未验证。已发送 6 位验证码，请完成验证后再登录。');
+          } catch {
+            setInfo('你的邮箱尚未验证。请前往验证页面发送验证码并完成验证。');
+          }
         }
         return;
       }

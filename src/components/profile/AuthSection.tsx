@@ -90,88 +90,6 @@ export function AuthSection({ auth }: AuthSectionProps) {
         </div>
       )}
 
-      {!isGuest && (
-        <div className="mt-4 rounded-lg border border-zen-200 bg-zen-50 px-3 py-2">
-          <div className="flex items-center justify-between text-xs text-zen-600">
-            <span>改名卡</span>
-            <span className="font-mono text-zen-700">{renameCount}</span>
-          </div>
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              className="text-xs text-zen-700 hover:underline disabled:opacity-60"
-              disabled={renameSubmitting}
-              onClick={() => {
-                setRenameError(null);
-                setRenameOpen((v) => !v);
-                setDisplayName(safeAuth.displayName);
-              }}
-            >
-              修改显示名称
-            </button>
-            <Link className="text-xs text-zen-500 hover:underline" to="/store">
-              去商城购买
-            </Link>
-          </div>
-
-          {renameOpen && (
-            <div className="mt-3 space-y-2">
-              <input
-                className="w-full rounded-lg border border-zen-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zen-200"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                disabled={renameSubmitting}
-                placeholder="2-20 字"
-              />
-              {renameError && <div className="text-xs text-red-600">{renameError}</div>}
-              <button
-                type="button"
-                className="w-full rounded-lg bg-sage-600 text-white px-4 py-2 text-sm hover:bg-sage-700 transition-colors disabled:opacity-60"
-                disabled={renameSubmitting || renameCount <= 0}
-                onClick={async () => {
-                  setRenameError(null);
-                  setRenameSubmitting(true);
-                  try {
-                    const resp = await fetch('/api/user/display-name', {
-                      method: 'POST',
-                      headers: { 'content-type': 'application/json' },
-                      credentials: 'include',
-                      body: JSON.stringify({ displayName }),
-                    });
-                    if (!resp.ok) {
-                      const data = await resp.json().catch(() => null);
-                      const code = String((data as { error?: unknown } | null)?.error ?? '');
-                      if (code === 'no_rename_card') setRenameError('改名卡不足，请先购买');
-                      else if (code === 'invalid_display_name') setRenameError('名称长度需为 2-20');
-                      else setRenameError('修改失败，请稍后再试');
-                      return;
-                    }
-                    const data = (await resp.json()) as { displayName?: unknown; inventory?: unknown };
-                    setProfile((s) => ({
-                      userProfile: {
-                        ...s.userProfile,
-                        auth: { ...s.userProfile.auth, displayName: String(data.displayName ?? s.userProfile.auth.displayName) },
-                        inventory:
-                          data.inventory && typeof data.inventory === 'object'
-                            ? (data.inventory as Record<string, number>)
-                            : s.userProfile.inventory,
-                      },
-                    }));
-                    setRenameOpen(false);
-                  } catch {
-                    setRenameError('网络错误，请稍后再试');
-                  } finally {
-                    setRenameSubmitting(false);
-                  }
-                }}
-              >
-                {renameCount <= 0 ? '改名卡不足' : '使用改名卡'}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Link accounts */}
       <div className="space-y-2">
         <div className="text-xs text-zen-500 mb-2 flex items-center gap-1">
@@ -219,14 +137,105 @@ export function AuthSection({ auth }: AuthSectionProps) {
         </>
       ) : (
         <div className="mt-4 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            className="rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
+            onClick={() => {
+              setRenameError(null);
+              setRenameOpen(true);
+              setDisplayName(safeAuth.displayName);
+            }}
+          >
+            改名
+          </button>
           <Link
             className="text-center rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
             to="/change-password"
           >
             修改密码
           </Link>
+        </div>
+      )}
+
+      {!isGuest && renameOpen && (
+        <div className="mt-3 rounded-lg border border-zen-200 bg-zen-50 px-3 py-3 space-y-2">
+          <div className="text-xs text-zen-600">修改显示名称（需消耗 1 张改名卡）</div>
+          <input
+            className="w-full rounded-lg border border-zen-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zen-200"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            disabled={renameSubmitting}
+            placeholder="2-20 字"
+          />
+          {renameError && <div className="text-xs text-red-600">{renameError}</div>}
+          {renameCount <= 0 && (
+            <div className="text-xs text-zen-500">
+              改名卡不足，可前往 <Link className="text-zen-700 hover:underline" to="/store">商城</Link> 购买。
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              className="rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors disabled:opacity-60"
+              disabled={renameSubmitting}
+              onClick={() => {
+                setRenameOpen(false);
+                setRenameError(null);
+              }}
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              className="rounded-lg bg-sage-600 text-white px-4 py-2 text-sm hover:bg-sage-700 transition-colors disabled:opacity-60"
+              disabled={renameSubmitting || renameCount <= 0}
+              onClick={async () => {
+                setRenameError(null);
+                setRenameSubmitting(true);
+                try {
+                  const resp = await fetch('/api/user/display-name', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ displayName }),
+                  });
+                  if (!resp.ok) {
+                    const data = await resp.json().catch(() => null);
+                    const code = String((data as { error?: unknown } | null)?.error ?? '');
+                    if (code === 'no_rename_card') setRenameError('改名卡不足，请先购买');
+                    else if (code === 'invalid_display_name') setRenameError('名称长度需为 2-20');
+                    else setRenameError('修改失败，请稍后再试');
+                    return;
+                  }
+                  const data = (await resp.json()) as { displayName?: unknown; inventory?: unknown };
+                  setProfile((s) => ({
+                    userProfile: {
+                      ...s.userProfile,
+                      auth: { ...s.userProfile.auth, displayName: String(data.displayName ?? s.userProfile.auth.displayName) },
+                      inventory:
+                        data.inventory && typeof data.inventory === 'object'
+                          ? (data.inventory as Record<string, number>)
+                          : s.userProfile.inventory,
+                    },
+                  }));
+                  setRenameOpen(false);
+                } catch {
+                  setRenameError('网络错误，请稍后再试');
+                } finally {
+                  setRenameSubmitting(false);
+                }
+              }}
+            >
+              确认改名
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!isGuest && (
+        <div className="mt-3">
           <button
-            className="rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
+            className="w-full rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
             onClick={handleSignOut}
           >
             退出登录

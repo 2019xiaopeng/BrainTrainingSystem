@@ -82,7 +82,6 @@ export function SignUpPage() {
         return;
       }
 
-      await sendEmailVerificationOtp();
       setInfo('验证码已发送到邮箱，请输入 6 位验证码完成验证。');
       setStep('verify');
     } finally {

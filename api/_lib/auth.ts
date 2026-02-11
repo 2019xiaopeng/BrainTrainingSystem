@@ -37,38 +37,93 @@ export const auth = betterAuth({
       overrideDefaultEmailVerification: true,
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (type === "email-verification") {
-          const subject = "邮箱验证码";
-          const text = `你的邮箱验证码是：${otp}\n\n该验证码 10 分钟内有效。`;
+          const subject = "BrainTrainSystem 邮箱验证码";
+          const text = `你的 BrainTrainSystem 邮箱验证码：${otp}\n\n该验证码 10 分钟内有效。若非本人操作，请忽略此邮件。`;
           await sendResendEmail({
             to: email,
             subject,
             text,
-            html: `<p>你的邮箱验证码是：</p><p style="font-size:20px;font-weight:700;letter-spacing:2px">${otp}</p><p>该验证码 10 分钟内有效。</p>`,
+            html: `<div style="font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Apple Color Emoji','Segoe UI Emoji';background:#f6f7f9;padding:32px 12px">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e6e8ec;border-radius:14px;overflow:hidden">
+    <div style="padding:18px 22px;background:#0f172a;color:#ffffff">
+      <div style="font-size:14px;letter-spacing:.3px;opacity:.9">BrainTrainSystem</div>
+      <div style="font-size:18px;font-weight:700;margin-top:4px">邮箱验证码</div>
+    </div>
+    <div style="padding:22px">
+      <div style="font-size:14px;color:#111827;line-height:1.6">你的验证码如下（10 分钟内有效）：</div>
+      <div style="margin:14px 0 8px;padding:14px 16px;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;text-align:center">
+        <div style="font-size:26px;font-weight:800;letter-spacing:10px;color:#0f172a">${otp}</div>
+      </div>
+      <div style="font-size:12px;color:#64748b;line-height:1.6">若非本人操作，请忽略此邮件。</div>
+    </div>
+    <div style="padding:14px 22px;background:#f8fafc;border-top:1px solid #eef2f7;color:#94a3b8;font-size:12px;line-height:1.6">
+      此邮件由 BrainTrainSystem 自动发送，请勿回复。
+    </div>
+  </div>
+</div>`,
           });
           return;
         }
         if (type === "forget-password") {
-          const subject = "重置密码验证码";
-          const text = `你的重置密码验证码是：${otp}\n\n该验证码 10 分钟内有效。`;
+          const subject = "BrainTrainSystem 重置密码验证码";
+          const text = `你的 BrainTrainSystem 重置密码验证码：${otp}\n\n该验证码 10 分钟内有效。若非本人操作，请忽略此邮件并检查账号安全。`;
           await sendResendEmail({
             to: email,
             subject,
             text,
-            html: `<p>你的重置密码验证码是：</p><p style="font-size:20px;font-weight:700;letter-spacing:2px">${otp}</p><p>该验证码 10 分钟内有效。</p>`,
+            html: `<div style="font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Apple Color Emoji','Segoe UI Emoji';background:#f6f7f9;padding:32px 12px">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e6e8ec;border-radius:14px;overflow:hidden">
+    <div style="padding:18px 22px;background:#111827;color:#ffffff">
+      <div style="font-size:14px;letter-spacing:.3px;opacity:.9">BrainTrainSystem</div>
+      <div style="font-size:18px;font-weight:700;margin-top:4px">重置密码验证码</div>
+    </div>
+    <div style="padding:22px">
+      <div style="font-size:14px;color:#111827;line-height:1.6">你正在重置密码。验证码如下（10 分钟内有效）：</div>
+      <div style="margin:14px 0 8px;padding:14px 16px;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;text-align:center">
+        <div style="font-size:26px;font-weight:800;letter-spacing:10px;color:#111827">${otp}</div>
+      </div>
+      <div style="font-size:12px;color:#64748b;line-height:1.6">若非本人操作，请忽略此邮件并检查账号安全。</div>
+    </div>
+    <div style="padding:14px 22px;background:#f8fafc;border-top:1px solid #eef2f7;color:#94a3b8;font-size:12px;line-height:1.6">
+      此邮件由 BrainTrainSystem 自动发送，请勿回复。
+    </div>
+  </div>
+</div>`,
           });
           return;
         }
-        const subject = "登录验证码";
-        const text = `你的登录验证码是：${otp}\n\n该验证码 10 分钟内有效。`;
+        const subject = "BrainTrainSystem 登录验证码";
+        const text = `你的 BrainTrainSystem 登录验证码：${otp}\n\n该验证码 10 分钟内有效。若非本人操作，请忽略此邮件。`;
         await sendResendEmail({
           to: email,
           subject,
           text,
-          html: `<p>你的登录验证码是：</p><p style="font-size:20px;font-weight:700;letter-spacing:2px">${otp}</p><p>该验证码 10 分钟内有效。</p>`,
+          html: `<div style="font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Apple Color Emoji','Segoe UI Emoji';background:#f6f7f9;padding:32px 12px">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e6e8ec;border-radius:14px;overflow:hidden">
+    <div style="padding:18px 22px;background:#0b1220;color:#ffffff">
+      <div style="font-size:14px;letter-spacing:.3px;opacity:.9">BrainTrainSystem</div>
+      <div style="font-size:18px;font-weight:700;margin-top:4px">登录验证码</div>
+    </div>
+    <div style="padding:22px">
+      <div style="font-size:14px;color:#111827;line-height:1.6">你的验证码如下（10 分钟内有效）：</div>
+      <div style="margin:14px 0 8px;padding:14px 16px;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;text-align:center">
+        <div style="font-size:26px;font-weight:800;letter-spacing:10px;color:#0b1220">${otp}</div>
+      </div>
+      <div style="font-size:12px;color:#64748b;line-height:1.6">若非本人操作，请忽略此邮件。</div>
+    </div>
+    <div style="padding:14px 22px;background:#f8fafc;border-top:1px solid #eef2f7;color:#94a3b8;font-size:12px;line-height:1.6">
+      此邮件由 BrainTrainSystem 自动发送，请勿回复。
+    </div>
+  </div>
+</div>`,
         });
       },
     }),
   ],
+  emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: false,
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
