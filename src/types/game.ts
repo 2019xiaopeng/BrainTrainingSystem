@@ -76,7 +76,7 @@ export const BRAIN_RANK_LEVELS: BrainRankLevel[] = [
     titleZh: '逻辑', 
     titleEn: 'Logical', 
     xpRequired: 5000,
-    milestones: ['numeric_3back', 'house_normal_10'],
+    milestones: ['numeric_3back', 'house_normal_12'],
     milestoneLogic: 'OR'
   },
   { 
@@ -100,7 +100,7 @@ export const BRAIN_RANK_LEVELS: BrainRankLevel[] = [
     titleZh: '超凡', 
     titleEn: 'Transcendent', 
     xpRequired: 80000,
-    milestones: ['numeric_7back', 'spatial_5x5', 'mouse_9mice', 'house_double'],
+    milestones: ['numeric_7back', 'spatial_5x5', 'mouse_9mice', 'house_fast_15'],
     milestoneLogic: 'AND' // All required for Transcendent
   },
 ];

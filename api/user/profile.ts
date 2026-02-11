@@ -121,6 +121,16 @@ const extractGridSize = (snapshot: unknown) => {
   return clampInt(snapshot.gridSize, 3);
 };
 
+const extractHouseDetails = (snapshot: unknown) => {
+  if (!isRecord(snapshot)) return null;
+  const details = isRecord(snapshot.details) ? snapshot.details : null;
+  if (!details) return null;
+  return {
+    speed: String(details.speed ?? "easy"),
+    eventCount: clampInt(details.eventCount, 0),
+  };
+};
+
 const computeCompletedMilestones = (
   recentRows: Array<{ gameMode: unknown; nLevel: unknown; accuracy: unknown; configSnapshot: unknown }>,
   unlocks: Unlocks
@@ -150,10 +160,14 @@ const computeCompletedMilestones = (
   if (clampInt(unlocks.mouse.maxMice, 0) >= 7) milestones.add("mouse_7mice");
   if (clampInt(unlocks.mouse.maxMice, 0) >= 9) milestones.add("mouse_9mice");
 
-  const houseSpeeds = Array.isArray(unlocks.house.speeds) ? unlocks.house.speeds.map(String) : [];
-  const houseMaxEvents = clampInt(unlocks.house.maxEvents, 0);
-  if (houseSpeeds.includes("normal") && houseMaxEvents >= 12) milestones.add("house_normal_10");
-  if (houseSpeeds.includes("fast") && houseMaxEvents >= 15) milestones.add("house_fast_15");
+  if (meets("house", 1, ({ configSnapshot }) => {
+    const d = extractHouseDetails(configSnapshot);
+    return Boolean(d && d.speed === "normal" && d.eventCount >= 12);
+  })) milestones.add("house_normal_12");
+  if (meets("house", 1, ({ configSnapshot }) => {
+    const d = extractHouseDetails(configSnapshot);
+    return Boolean(d && d.speed === "fast" && d.eventCount >= 15);
+  })) milestones.add("house_fast_15");
 
   return Array.from(milestones).sort();
 };

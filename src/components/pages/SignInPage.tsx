@@ -105,6 +105,15 @@ export function SignInPage() {
             />
           </div>
 
+          <div className="flex justify-end">
+            <Link
+              className="text-xs text-zen-500 hover:text-zen-700 hover:underline"
+              to={`/forgot-password?callback=${encodeURIComponent(callbackURL)}`}
+            >
+              忘记密码？
+            </Link>
+          </div>
+
           {error && <div className="text-sm text-red-600">{error}</div>}
 
           <button

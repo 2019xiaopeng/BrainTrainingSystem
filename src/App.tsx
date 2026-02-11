@@ -5,6 +5,9 @@ import { TrainPage } from './components/pages/TrainPage';
 import { ResultPage } from './components/pages/ResultPage';
 import { SignInPage } from './components/pages/SignInPage';
 import { SignUpPage } from './components/pages/SignUpPage';
+import { ForgotPasswordPage } from './components/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './components/pages/ResetPasswordPage';
+import { ChangePasswordPage } from './components/pages/ChangePasswordPage';
 import { ProfileScreen } from './components/screens/ProfileScreen';
 import { StoreScreen } from './components/screens/StoreScreen';
 import { InstructionScreen } from './components/screens/InstructionScreen';
@@ -28,6 +31,9 @@ function App() {
           {/* 登录/注册 */}
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/change-password" element={<ChangePasswordPage />} />
           {/* 个人档案 */}
           <Route path="/profile" element={<ProfileScreen />} />
           {/* 排行榜/历史（移动端承载右栏内容） */}

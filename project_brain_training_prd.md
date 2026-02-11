@@ -99,15 +99,16 @@
         - **速度**: Easy(1.2s~1.6s/事件) -> Normal(0.64s~1.2s/事件) -> Fast(0.32s~0.72s/事件)。
         - **初始人数**: 3 -> 7。
         - **事件数**: 6次起步，按 3 为步进（6/9/12/...）。
-        - **复杂度**: 
-            - Lv1: 单门 (只进不出)。
-            - Lv2: 单门 (有进有出)。
-            - Lv3: 双门 (左进右出，需同时关注)。
-            - Lv4: 干扰 (有人走到门口折返)。
+        - **事件类型**:
+            - 进入（Enter）
+            - 离开（Leave）
+            - 同时进出（Concurrent）：同一事件内同时出现 enterCount 与 leaveCount（且两者不相等）。
+        - **人数上限**: 为避免数值爆炸，事件生成时对总人数有软上限（例如 15）。
     - **解锁路径**:
         - **入门**: 速度Easy + 初始3人 + 6事件。
-        - **晋升**: 准确率 > 90% 解锁下一级事件数（+3）与更高初始人数（+1，按需逐步开放）。
-        - **质变**: 通关 Normal 速度所有事件数 -> 解锁双门模式。
+        - **晋升（事件数）**: 当以当前已解锁的最大事件数通关（准确率 ≥ 90%）时，解锁下一档事件数（+3，直到 24）。
+        - **晋升（初始人数）**: 当以当前已解锁的最大初始人数通关（准确率 ≥ 90%）时，解锁下一档初始人数（+1，直到 7）。
+        - **晋升（速度）**: 当以当前已解锁的最高速度通关（准确率 ≥ 90%）时，解锁下一档速度（Easy → Normal → Fast）。
 
 ### 3.3 经济与经验数值配置 (Economy & XP Config)
 **设计目标**: 半年(180天)活跃玩家可达 LV7。
@@ -204,15 +205,14 @@
 - **商品配置与数据源**:
     - 后端以数据库 `products` 表为权威来源（id/type/price_coins/rewards/is_active）。
     - 前端可内置展示文案与图标，但购买时以服务端价格与效果为准。
-- **商品分类**:
-    - **补给品 (Consumables)**:
-        - **体力药水**: +1 体力 (100积分) / +5 体力 (450积分)。
-        - **补签卡 (Streak Saver)**: 恢复中断的连胜 (500积分)。
-    - **外观 (Cosmetics)**:
-        - **主题配色**: 解锁 "Dark Focus" 或 "Geek Green" 等 CSS 主题。
-        - **头像框**: 显示在排行榜上的特殊边框。
-    - **功能 (Upgrades)**:
-        - **高级报表**: 解锁 30 天能力趋势分析图。
+- **当前实际商品（与代码一致）**:
+    - `energy_1`（consumable）: 价格 100 Brain Coins；效果 `{ energy: 1 }`（能量上限封顶为 5）。
+    - `energy_5`（consumable）: 价格 450 Brain Coins；效果 `{ energy: 5 }`（能量上限封顶为 5）。
+    - `streak_saver`（consumable）: 价格 500 Brain Coins；效果 `{ inventory: { streak_saver: 1 } }`（占位：用于未来补签机制）。
+    - `premium_report`（permanent）: 价格 1000 Brain Coins；效果 `{ ownedItem: "premium_report" }`（占位：用于未来高级报告）。
+- **后续完善方向（不影响当前版本）**:
+    - **外观（Cosmetics）**: 主题配色、头像框（均作为 `permanent`/`inventory` 形式发放）。
+    - **功能（Upgrades）**: 高级报表、训练计划、数据导出等（与 Resend 周报联动）。
 
 ### 3.9 邮件系统（Resend）
 - **用途**:
@@ -226,7 +226,7 @@
   - `RESEND_API_KEY`
   - `RESEND_FROM_EMAIL`
 
-### 3.7 五维脑力模型 (Brain Radar)
+### 3.7 六维脑力模型 (Brain Radar)
 **定义**: 用户的核心属性，存储于数据库，随训练动态更新。
 - **维度计算公式**:
     1.  **记忆力 (Memory)**: `(Max_N_Numeric + Max_N_Spatial + Max_N_Mouse) * 权重`。
@@ -327,6 +327,19 @@
     - **JWT**: 无状态鉴权，Token 短效期 + Refresh Token 轮换。
     - **敏感操作**: 修改密码、支付需 Re-authentication (二次验证)。
 
+#### 7.1.1 密码找回与修改（UI 与接口预留）
+- **找回密码（Forgot Password）**:
+  - 登录页提供“忘记密码？”入口，跳转到找回页输入邮箱。
+  - 接口：`POST /api/user/password/reset-request`（不暴露“邮箱是否存在”，统一返回 ok）。
+  - 邮件发送：后端生成一次性 token，通过 Resend 发出重置链接 `/reset-password?token=...`。
+- **重置密码（Reset Password）**:
+  - 用户从邮件链接进入重置页，设置新密码。
+  - 接口：`POST /api/user/password/reset-confirm`（token + 新密码）。
+- **修改密码（Change Password）**:
+  - Profile/Auth 区域提供“修改密码”入口。
+  - 接口：`POST /api/user/password/change`（需登录态，旧密码 + 新密码）。
+  - 预留策略：对于 OAuth-only 用户，UI 仍展示入口，但后端可返回未支持提示或引导“改用邮箱登录/绑定邮箱”。
+
 ### 7.2 支付与订单架构 (Payment Architecture)
 **设计原则**: 支付网关抽象层 (Payment Gateway Abstraction)，隔离业务逻辑与具体支付渠道。
 
@@ -382,6 +395,7 @@
     - `type`: Enum ('consumable', 'subscription', 'permanent')
     - `price_cny`: Integer (单位: 分)
     - `price_usd`: Integer (单位: Cent)
+    - `price_coins`: Integer (Brain Coins 定价，免费内购用)
     - `rewards`: JSONB (e.g., `{"energy": 5, "points": 100}`)
 - **`public.orders`**:
     - `id`: UUID (PK)

@@ -276,7 +276,7 @@
       "numeric": "Delayed recall of equation answers, training working memory and math",
       "spatial": "Remember highlighted grid positions, training spatial memory and observation",
       "mouse": "Track final mouse positions after cats push them around",
-      "house": "Observe enter/leave events and remember the final head count"
+      "house": "Track enter/leave (including concurrent), report final head count"
     },
     "rank": {
       "title": "Brain Rank LV1-LV7",
@@ -300,9 +300,10 @@
         "mouse_4mice": "Mouse (4-Mice) > 90%",
         "mouse_7mice": "Mouse (7-Mice) > 85%",
         "mouse_9mice": "Mouse (9-Mice)",
-        "house_normal_10": "House (Normal, 10 Events) > 90%",
-        "house_fast_15": "House (Fast, 15 Events) > 85%",
-        "house_double": "House (Double Door)"
+        "house_normal_10": "House (Normal, 12 Events) > 90%",
+        "house_normal_12": "House (Normal, 12 Events) > 90%",
+        "house_fast_15": "House (Fast, 15 Events) > 90%",
+        "house_double": "House (Disabled)"
       }
     },
     "radar": {

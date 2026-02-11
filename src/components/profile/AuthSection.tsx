@@ -99,12 +99,20 @@ export function AuthSection({ auth }: AuthSectionProps) {
           </p>
         </>
       ) : (
-        <button
-          className="mt-4 w-full rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
-          onClick={handleSignOut}
-        >
-          退出登录
-        </button>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Link
+            className="text-center rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
+            to="/change-password"
+          >
+            修改密码
+          </Link>
+          <button
+            className="rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
+            onClick={handleSignOut}
+          >
+            退出登录
+          </button>
+        </div>
       )}
     </div>
   );

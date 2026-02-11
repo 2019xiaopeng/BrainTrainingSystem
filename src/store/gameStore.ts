@@ -921,6 +921,11 @@ export const useGameStore = create<GameStore>()(
             if (gridSize === 5 && n >= 3 && !milestones.includes('spatial_5x5_3back')) milestones.push('spatial_5x5_3back');
             if (gridSize === 5 && !milestones.includes('spatial_5x5')) milestones.push('spatial_5x5');
           }
+          if (mode === 'house') {
+            const hc = state.gameConfigs.house;
+            if (hc.speed === 'normal' && hc.eventCount >= 12 && !milestones.includes('house_normal_12')) milestones.push('house_normal_12');
+            if (hc.speed === 'fast' && hc.eventCount >= 15 && !milestones.includes('house_fast_15')) milestones.push('house_fast_15');
+          }
         }
 
         const current = get();
