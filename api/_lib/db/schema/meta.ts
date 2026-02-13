@@ -1,4 +1,4 @@
-import { boolean, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 // --- Games Meta ---
 // 游戏模式定义
@@ -25,4 +25,17 @@ export const levelConfigs = pgTable("level_configs", {
   // 具体的通关标准
   // e.g. { "accuracy": 90, "prev_level_id": 101 }
   unlockCriteria: jsonb("unlock_criteria"),
+});
+
+export const featureFlags = pgTable("feature_flags", {
+  key: text("key").primaryKey(),
+  enabled: boolean("enabled").default(false).notNull(),
+  payload: jsonb("payload").default({}).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()),
+});
+
+export const leaderboardSnapshots = pgTable("leaderboard_snapshots", {
+  kind: text("kind").primaryKey(),
+  computedAt: timestamp("computed_at").defaultNow().notNull(),
+  payload: jsonb("payload").default({}).notNull(),
 });

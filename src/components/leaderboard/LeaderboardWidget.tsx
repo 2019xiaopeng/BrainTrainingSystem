@@ -7,6 +7,7 @@ type CoinsEntry = {
   brainCoins: number;
   brainLevel: number;
   isMe: boolean;
+  medal: 'gold' | 'silver' | 'bronze' | null;
 };
 
 type LevelEntry = {
@@ -17,6 +18,7 @@ type LevelEntry = {
   xp: number;
   brainCoins: number;
   isMe: boolean;
+  medal: 'gold' | 'silver' | 'bronze' | null;
 };
 
 type CoinsPayload = {
@@ -47,7 +49,13 @@ export function LeaderboardWidget({ kind, compact }: { kind: LeaderboardKind; co
       try {
         const url = kind === 'coins' ? '/api/leaderboard/coins' : '/api/leaderboard/level';
         const resp = await fetch(url, { method: 'GET', credentials: 'include' });
-        if (!resp.ok) throw new Error('fetch_failed');
+        if (!resp.ok) {
+          if (resp.status === 503) {
+            setError('排行榜维护中');
+            return;
+          }
+          throw new Error('fetch_failed');
+        }
         const data = (await resp.json()) as unknown;
         if (cancelled) return;
         if (kind === 'coins') setCoinsData(data as CoinsPayload);
@@ -87,6 +95,7 @@ export function LeaderboardWidget({ kind, compact }: { kind: LeaderboardKind; co
   }
 
   const myRank = data.myRank;
+  const medalEmoji = (m: 'gold' | 'silver' | 'bronze' | null) => (m === 'gold' ? '🥇' : m === 'silver' ? '🥈' : m === 'bronze' ? '🥉' : '');
 
   return (
     <div className="space-y-2">
@@ -108,7 +117,7 @@ export function LeaderboardWidget({ kind, compact }: { kind: LeaderboardKind; co
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className={`w-7 text-center font-mono text-xs ${isMe ? 'text-amber-700' : 'text-zen-500'}`}>
-                  #{(e as { rank: number }).rank}
+                  {(e as { medal?: 'gold' | 'silver' | 'bronze' | null }).medal ? medalEmoji((e as { medal?: 'gold' | 'silver' | 'bronze' | null }).medal ?? null) : `#${(e as { rank: number }).rank}`}
                 </div>
                 <div className="w-8 h-8 rounded-full bg-zen-100 overflow-hidden flex items-center justify-center">
                   {(e as { avatarUrl: string | null }).avatarUrl ? (
