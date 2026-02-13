@@ -13,12 +13,17 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     return;
   }
 
-  const flagRows = await db
-    .select({ enabled: featureFlags.enabled })
-    .from(featureFlags)
-    .where(eq(featureFlags.key, "leaderboard"))
-    .limit(1);
-  const leaderboardEnabled = flagRows[0]?.enabled ?? false;
+  let leaderboardEnabled = false;
+  try {
+    const flagRows = await db
+      .select({ enabled: featureFlags.enabled })
+      .from(featureFlags)
+      .where(eq(featureFlags.key, "leaderboard"))
+      .limit(1);
+    leaderboardEnabled = flagRows[0]?.enabled ?? false;
+  } catch {
+    leaderboardEnabled = false;
+  }
   if (!leaderboardEnabled) {
     res.status(503).json({ error: "leaderboard_disabled" });
     return;
