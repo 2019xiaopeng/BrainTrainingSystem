@@ -13,17 +13,23 @@ export function CheckInWidget() {
   const checkIn = useGameStore((s) => s.userProfile.checkIn);
   const performCheckIn = useGameStore((s) => s.performCheckIn);
   const [reward, setReward] = useState<{ xp: number; coins: number } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const today = new Date().toISOString().slice(0, 10);
   const isCheckedIn = checkIn.lastCheckInDate === today;
 
   const handleCheckIn = async () => {
     if (isCheckedIn) return;
-    const result = await performCheckIn();
-    if (result) {
-      setReward({ xp: result.xpGained, coins: result.coinsGained });
-      // Auto-hide reward after 3 seconds
-      setTimeout(() => setReward(null), 3000);
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const result = await performCheckIn();
+      if (result) {
+        setReward({ xp: result.xpGained, coins: result.coinsGained });
+        setTimeout(() => setReward(null), 3000);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -49,10 +55,11 @@ export function CheckInWidget() {
       ) : (
         <button
           onClick={handleCheckIn}
+          disabled={submitting}
           className="w-full py-2.5 rounded-lg bg-gradient-to-r from-sage-400 to-sage-500 text-white text-sm font-medium
-                     hover:from-sage-500 hover:to-sage-600 active:scale-[0.98] transition-all shadow-sm"
+                     hover:from-sage-500 hover:to-sage-600 active:scale-[0.98] transition-all shadow-sm disabled:opacity-60"
         >
-          {t('checkin.claim')}
+          {submitting ? t('checkin.claiming') : t('checkin.claim')}
         </button>
       )}
 

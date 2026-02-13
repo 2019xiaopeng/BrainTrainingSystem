@@ -1,23 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useGameStore } from '../../store/gameStore';
 
 type CoinsEntry = {
   rank: number;
-  userId: string;
   displayName: string;
   avatarUrl: string | null;
   brainCoins: number;
   brainLevel: number;
+  isMe: boolean;
 };
 
 type LevelEntry = {
   rank: number;
-  userId: string;
   displayName: string;
   avatarUrl: string | null;
   brainLevel: number;
   xp: number;
   brainCoins: number;
+  isMe: boolean;
 };
 
 type CoinsPayload = {
@@ -35,8 +34,6 @@ type LevelPayload = {
 export type LeaderboardKind = 'coins' | 'level';
 
 export function LeaderboardWidget({ kind, compact }: { kind: LeaderboardKind; compact?: boolean }) {
-  const auth = useGameStore((s) => s.userProfile.auth);
-  const myUserId = auth?.status === 'authenticated' ? auth.userId : undefined;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [coinsData, setCoinsData] = useState<CoinsPayload | null>(null);
@@ -101,10 +98,10 @@ export function LeaderboardWidget({ kind, compact }: { kind: LeaderboardKind; co
 
       <div className="space-y-2">
         {entries.map((e) => {
-          const isMe = Boolean(myUserId && (e as { userId?: string }).userId === myUserId);
+          const isMe = Boolean((e as { isMe?: boolean }).isMe);
           return (
             <div
-              key={`${(e as { userId: string }).userId}-${(e as { rank: number }).rank}`}
+              key={`${(e as { rank: number }).rank}-${(e as { displayName: string }).displayName}`}
               className={`flex items-center justify-between rounded-lg border ${compact ? 'p-3' : 'p-4'} ${
                 isMe ? 'bg-amber-50 border-amber-200/60' : 'bg-white/60 border-zen-200/50'
               }`}
@@ -150,4 +147,3 @@ export function LeaderboardWidget({ kind, compact }: { kind: LeaderboardKind; co
     </div>
   );
 }
-

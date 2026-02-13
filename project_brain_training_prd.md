@@ -263,6 +263,16 @@
 - **展示策略**:
     - 前端以 Tab/切换展示（积分榜 / Lv 榜），并突出“我的排名”。
     - 周榜（若启用）建议使用“自然周”并明确刷新时间，避免频繁重置造成挫败。
+#### 4.1 排行榜数据与性能方案 (Caching & Pre-aggregation)
+- **客户端体验策略**:
+    - 切换榜单 Tab 不应清空 UI；采用本地缓存 + TTL（例如 30-120 秒）减少重复请求。
+    - 使用 “stale-while-revalidate”：先展示缓存结果，再后台刷新并平滑更新。
+- **服务端缓存策略**:
+    - 对公共榜单接口增加 HTTP 缓存头（`Cache-Control: public, max-age=30, stale-while-revalidate=120`），允许 CDN/浏览器复用。
+    - 服务端可使用进程内缓存或 Redis 缓存 TopN（30-60 秒）以降低数据库压力。
+- **数据预聚合（上量后必做）**:
+    - **索引**: `users(brain_coins desc)`、`users(brain_level desc, xp desc)`，保证 TopN 查询稳定快速。
+    - **快照表/物化视图**: 定时生成 `leaderboard_snapshot`（按 coins/level 分别存储），API 直接读取最新快照，避免每次请求实时排序与 count(*)。
 
 ## 5. 用户体验与架构设计 (UX & Architecture)
 **核心原则**: Mobile-First 但 PC-Friendly，全球化，无障碍。
@@ -288,6 +298,18 @@
     - 支持键盘操作（已部分实现）。
     - 颜色对比度符合 WCAG AA 标准。
     - 字体大小可缩放。
+
+### 4.4 性能与渲染架构 (CSR / SSR / Next.js)
+- **现状（Vite SPA，CSR）**:
+    - 首屏由浏览器拉取 JS 后渲染；登录态需要额外请求 session/profile，可能出现短暂 Guest 闪烁。
+    - 排行榜等公共数据若无缓存，切换 Tab 会频繁请求与排序，体验变慢。
+- **SSR 的价值**:
+    - 服务端基于 Cookie 识别用户，首屏 HTML 即包含已登录信息，减少“闪烁”和空窗期。
+    - 对公开页面（帮助文档、营销页、公开报告）更利于 SEO 与首屏速度。
+- **升级策略（推荐分阶段）**:
+    1. 先在 SPA 内完善 loading/skeleton、客户端缓存、服务端缓存与预聚合（性价比最高）。
+    2. 若需要 SEO/公开内容页，再评估引入 SSR/SSG（可独立站或迁移至 Next.js）。
+    3. 完整迁移到 Next.js 属于重构级别：路由、数据获取、部署方式与鉴权需要整体设计。
 
 ## 5. 技术架构升级 (Technical Roadmap)
 - **Phase 1-3**: MVP (已完成)。
@@ -338,6 +360,24 @@
   - Profile/Auth 区域提供“修改密码”入口。
   - 接口：使用 Better Auth 内置 `changePassword`（需登录态，currentPassword + newPassword，可选 revokeOtherSessions）。
   - 预留策略：对于 OAuth-only 用户，UI 仍展示入口，但后端可返回未支持提示或引导“改用邮箱登录/绑定邮箱”。
+
+#### 7.1.2 管理员账号与运营后台 (Admin & Ops)
+**目标**: 管理员可安全地管理用户与运营开关，且所有写操作可审计、可回溯。
+- **角色模型 (RBAC)**:
+  - `users.role`: `member` / `admin` / `moderator`（最小可行先 `member/admin`）。
+  - 所有后台权限必须在服务端强校验，前端隐藏入口仅作体验优化。
+- **管理员初始化**:
+  - 通过环境变量白名单（例如 `ADMIN_EMAILS`）或一次性脚本，将指定账号提升为 `admin`。
+- **后台页面**:
+  - 路由：`/admin`（不出现在普通导航）。
+  - 模块：用户管理（搜索/详情/封禁）、数据修正（XP/Coins/Energy/Inventory/BrainStats）、运营配置（排行榜开关/展示规则）、审计日志。
+  - 移动端：默认单列 + 分段/Tab，确保竖屏可用。
+- **封禁系统**:
+  - 字段：`users.banned_until`（或 `is_banned/ban_reason`）。
+  - 执行点：在结算、购买、签到等关键接口统一拦截并返回稳定错误码（例如 `banned`）。
+- **审计日志**:
+  - 表：`admin_audit_logs(admin_user_id, target_user_id, action, before, after, ip, user_agent, created_at)`。
+  - 所有管理员写操作必须写日志（包含运营开关、封禁与资产调整）。
 
 ### 7.2 支付与订单架构 (Payment Architecture)
 **设计原则**: 支付网关抽象层 (Payment Gateway Abstraction)，隔离业务逻辑与具体支付渠道。

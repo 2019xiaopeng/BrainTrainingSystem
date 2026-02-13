@@ -277,6 +277,7 @@
     "streak": "{{days}} day streak",
     "done": "Checked in today",
     "claim": "Claim Reward",
+    "claiming": "Checking in…",
     "points": "Brain Points"
   },
   "store": {

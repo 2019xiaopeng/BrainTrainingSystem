@@ -12,6 +12,14 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     return;
   }
 
+  let viewerUserId: string | null = null;
+  try {
+    const sessionUser = await requireSessionUser(req);
+    viewerUserId = sessionUser.id;
+  } catch {
+    viewerUserId = null;
+  }
+
   const rows = await db
     .select({
       id: user.id,
@@ -27,19 +35,19 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
   const entries = rows.map((r, idx) => ({
     rank: idx + 1,
-    userId: r.id,
     displayName: r.name,
     avatarUrl: r.image ?? null,
     brainLevel: r.brainLevel ?? 1,
     xp: r.xp ?? 0,
     brainCoins: r.brainCoins ?? 0,
+    isMe: viewerUserId ? r.id === viewerUserId : false,
   }));
 
   let myRank: number | null = null;
   let myEntry: (typeof entries)[number] | null = null;
 
   try {
-    const sessionUser = await requireSessionUser(req);
+    if (!viewerUserId) throw new Error("unauthorized");
     const meRows = await db
       .select({
         id: user.id,
@@ -50,7 +58,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         brainCoins: user.brainCoins,
       })
       .from(user)
-      .where(eq(user.id, sessionUser.id))
+      .where(eq(user.id, viewerUserId))
       .limit(1);
 
     const me = meRows[0];
@@ -75,12 +83,12 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       myRank = (higherRows[0]?.count ?? 0) + 1;
       myEntry = {
         rank: myRank,
-        userId: me.id,
         displayName: me.name,
         avatarUrl: me.image ?? null,
         brainLevel: meLevel,
         xp: meXp,
         brainCoins: meCoins,
+        isMe: true,
       };
     }
   } catch {
@@ -90,4 +98,3 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
   res.status(200).json({ entries, myRank, myEntry });
 }
-

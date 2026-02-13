@@ -277,6 +277,7 @@
     "streak": "连续 {{days}} 天",
     "done": "今日已签到",
     "claim": "领取奖励",
+    "claiming": "签到中…",
     "points": "脑力币"
   },
   "store": {

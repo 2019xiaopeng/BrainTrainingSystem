@@ -1138,50 +1138,82 @@ export const useGameStore = create<GameStore>()(
           },
         }));
 
-        void (async () => {
-          try {
-            const resp = await fetch('/api/user/checkin', {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              credentials: 'include',
-            });
-            if (!resp.ok) {
+        try {
+          const resp = await fetch('/api/user/checkin', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            credentials: 'include',
+          });
+
+          if (!resp.ok) throw new Error('checkin_failed');
+
+          const data = await resp.json().catch(() => null);
+          const serverCheckIn = (data as { checkIn?: unknown } | null)?.checkIn as CheckInState | undefined;
+          const alreadyCheckedIn = Boolean((data as { alreadyCheckedIn?: unknown } | null)?.alreadyCheckedIn);
+
+          set((s) => ({
+            userProfile: {
+              ...s.userProfile,
+              totalXP:
+                typeof (data as { xpAfter?: unknown } | null)?.xpAfter === 'number'
+                  ? ((data as { xpAfter: number }).xpAfter ?? s.userProfile.totalXP)
+                  : s.userProfile.totalXP,
+              brainCoins:
+                typeof (data as { brainCoinsAfter?: unknown } | null)?.brainCoinsAfter === 'number'
+                  ? ((data as { brainCoinsAfter: number }).brainCoinsAfter ?? s.userProfile.brainCoins)
+                  : s.userProfile.brainCoins,
+              checkIn: serverCheckIn ?? s.userProfile.checkIn,
+              daysStreak: serverCheckIn?.consecutiveDays ?? s.userProfile.daysStreak,
+            },
+          }));
+
+          if (alreadyCheckedIn) return null;
+          return { xpGained: reward.xp ?? 0, coinsGained: reward.coins ?? 0 };
+        } catch {
+          const reconcile = async () => {
+            try {
+              const resp = await fetch('/api/user/profile', { credentials: 'include' });
+              if (!resp.ok) throw new Error('profile_failed');
+              const p = await resp.json().catch(() => null);
+              const pCheckIn = (p as { checkIn?: unknown } | null)?.checkIn;
+              const pLastDate = (pCheckIn as { lastCheckInDate?: unknown } | null)?.lastCheckInDate;
+              const isServerChecked = String(pLastDate ?? '') === today;
+
+              if (!isServerChecked) {
+                set((s) => ({
+                  userProfile: {
+                    ...s.userProfile,
+                    totalXP: prev.totalXP,
+                    brainCoins: prev.brainCoins,
+                    checkIn: prev.checkIn,
+                    daysStreak: prev.daysStreak,
+                  },
+                }));
+                return;
+              }
+
               set((s) => ({
                 userProfile: {
                   ...s.userProfile,
-                  totalXP: prev.totalXP,
-                  brainCoins: prev.brainCoins,
-                  checkIn: prev.checkIn,
-                  daysStreak: prev.daysStreak,
+                  totalXP: (p as { xp?: number } | null)?.xp ?? s.userProfile.totalXP,
+                  brainCoins: (p as { brainCoins?: number } | null)?.brainCoins ?? s.userProfile.brainCoins,
+                  checkIn: isCheckInState(pCheckIn) ? (pCheckIn as CheckInState) : s.userProfile.checkIn,
+                  daysStreak:
+                    isCheckInState(pCheckIn) ? (pCheckIn as CheckInState).consecutiveDays : s.userProfile.daysStreak,
                 },
               }));
+            } catch {
               return;
             }
-            const data = await resp.json();
-            if (data?.alreadyCheckedIn) return;
-            set((s) => ({
-              userProfile: {
-                ...s.userProfile,
-                totalXP: data.xpAfter ?? s.userProfile.totalXP,
-                brainCoins: data.brainCoinsAfter ?? s.userProfile.brainCoins,
-                checkIn: data.checkIn ?? s.userProfile.checkIn,
-                daysStreak: data.checkIn?.consecutiveDays ?? s.userProfile.daysStreak,
-              },
-            }));
-          } catch {
-            set((s) => ({
-              userProfile: {
-                ...s.userProfile,
-                totalXP: prev.totalXP,
-                brainCoins: prev.brainCoins,
-                checkIn: prev.checkIn,
-                daysStreak: prev.daysStreak,
-              },
-            }));
-          }
-        })();
+          };
 
-        return { xpGained: reward.xp ?? 0, coinsGained: reward.coins ?? 0 };
+          void reconcile();
+          setTimeout(() => {
+            void reconcile();
+          }, 2000);
+
+          return { xpGained: reward.xp ?? 0, coinsGained: reward.coins ?? 0 };
+        }
       },
 
       purchaseProduct: async (productId) => {
