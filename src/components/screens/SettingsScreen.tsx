@@ -221,7 +221,7 @@ export function SettingsScreen() {
         <div className="space-y-3">
           <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm space-y-3">
             <div className="text-sm font-medium text-zen-700">{t('settings.security.title')}</div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className={`grid ${!isGuest && email && !emailVerified ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
               <Link
                 className={`text-center rounded-lg border border-zen-200 px-4 py-2 text-sm hover:bg-zen-50 transition-colors ${
                   isGuest ? 'pointer-events-none opacity-60' : 'text-zen-700'
@@ -230,14 +230,18 @@ export function SettingsScreen() {
               >
                 {t('settings.security.changePassword')}
               </Link>
-              <Link
-                className={`text-center rounded-lg border border-zen-200 px-4 py-2 text-sm hover:bg-zen-50 transition-colors ${
-                  isGuest ? 'pointer-events-none opacity-60' : 'text-zen-700'
-                }`}
-                to={`/verify-email?email=${encodeURIComponent(email)}&callback=${encodeURIComponent('/settings?tab=security')}`}
-              >
-                {t('settings.security.verifyEmail')}
-              </Link>
+              {!isGuest && email && !emailVerified ? (
+                <Link
+                  className="text-center rounded-lg border border-zen-200 px-4 py-2 text-sm hover:bg-zen-50 transition-colors text-zen-700"
+                  to={`/verify-email?email=${encodeURIComponent(email)}&callback=${encodeURIComponent('/settings?tab=security')}`}
+                >
+                  {t('settings.security.verifyEmail')}
+                </Link>
+              ) : !isGuest && emailVerified ? (
+                <div className="text-center rounded-lg bg-green-50 border border-green-200 text-green-700 px-4 py-2 text-sm">
+                  {t('settings.emailVerified')}
+                </div>
+              ) : null}
             </div>
 
             {!isGuest && (
