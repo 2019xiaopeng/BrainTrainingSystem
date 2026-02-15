@@ -66,7 +66,7 @@ export function AdminScreen() {
     setMeError(null);
     (async () => {
       try {
-        const resp = await fetch('/api/admin/me', { credentials: 'include' });
+        const resp = await fetch(`/api/admin/me?_t=${Date.now()}`, { credentials: 'include', cache: 'no-store' });
         if (!resp.ok) {
           const data = await resp.json().catch(() => null);
           const err = String((data as { error?: unknown } | null)?.error ?? 'unauthorized');
@@ -98,8 +98,8 @@ export function AdminScreen() {
     setUsersLoading(true);
     setUsersError(null);
     try {
-      const url = `/api/admin/users?query=${encodeURIComponent(usersQuery)}&limit=20&offset=0`;
-      const resp = await fetch(url, { credentials: 'include' });
+      const url = `/api/admin/users?query=${encodeURIComponent(usersQuery)}&limit=20&offset=0&_t=${Date.now()}`;
+      const resp = await fetch(url, { credentials: 'include', cache: 'no-store' });
       if (!resp.ok) throw new Error('fetch_failed');
       const data = (await resp.json()) as { items?: AdminUserRow[] };
       setUsers(Array.isArray(data.items) ? data.items : []);
@@ -114,7 +114,7 @@ export function AdminScreen() {
     setSelectedLoading(true);
     setSelectedError(null);
     try {
-      const resp = await fetch(`/api/admin/users/${encodeURIComponent(id)}`, { credentials: 'include' });
+      const resp = await fetch(`/api/admin/users/${encodeURIComponent(id)}?_t=${Date.now()}`, { credentials: 'include', cache: 'no-store' });
       if (!resp.ok) throw new Error('fetch_failed');
       const data = (await resp.json()) as AdminUserDetail;
       setSelectedUser(data);
@@ -145,7 +145,7 @@ export function AdminScreen() {
     setFlagsLoading(true);
     setFlagsError(null);
     try {
-      const resp = await fetch('/api/admin/feature-flags', { credentials: 'include' });
+      const resp = await fetch(`/api/admin/feature-flags?_t=${Date.now()}`, { credentials: 'include', cache: 'no-store' });
       if (!resp.ok) throw new Error('fetch_failed');
       const data = (await resp.json()) as { items?: FeatureFlagRow[] };
       setFlags(Array.isArray(data.items) ? data.items : []);
@@ -158,10 +158,11 @@ export function AdminScreen() {
 
   const toggleFlag = async (key: string, enabled: boolean) => {
     try {
-      const resp = await fetch('/api/admin/feature-flags', {
+      const resp = await fetch(`/api/admin/feature-flags?_t=${Date.now()}`, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
         credentials: 'include',
+        cache: 'no-store',
         body: JSON.stringify({ key, enabled }),
       });
       if (!resp.ok) throw new Error('update_failed');
@@ -184,7 +185,7 @@ export function AdminScreen() {
     setAuditLoading(true);
     setAuditError(null);
     try {
-      const resp = await fetch('/api/admin/audit-logs?limit=50&offset=0', { credentials: 'include' });
+      const resp = await fetch(`/api/admin/audit-logs?limit=50&offset=0&_t=${Date.now()}`, { credentials: 'include', cache: 'no-store' });
       if (!resp.ok) throw new Error('fetch_failed');
       const data = (await resp.json()) as { items?: AuditLogRow[] };
       setAudit(Array.isArray(data.items) ? data.items : []);

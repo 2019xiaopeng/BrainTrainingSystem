@@ -5,6 +5,15 @@ import { getHeader, parseJsonBody, requireAdmin } from "../_lib/admin.js";
 import { isRecord } from "../_lib/http.js";
 import type { RequestLike, ResponseLike } from "../_lib/http.js";
 
+const setNoStore = (res: ResponseLike) => {
+  const r = res as unknown as { setHeader?: (name: string, value: string) => void };
+  r.setHeader?.("Cache-Control", "no-store");
+  r.setHeader?.("CDN-Cache-Control", "no-store");
+  r.setHeader?.("Vercel-CDN-Cache-Control", "no-store");
+  r.setHeader?.("Pragma", "no-cache");
+  r.setHeader?.("Expires", "0");
+};
+
 const getUrl = (req: RequestLike): string => {
   const raw = (req as unknown as { url?: unknown }).url;
   return typeof raw === "string" ? raw : "http://localhost/api/admin";
@@ -32,6 +41,8 @@ const parseDateKey = (v: unknown): string | null => {
 };
 
 export default async function handler(req: RequestLike, res: ResponseLike) {
+  setNoStore(res);
+
   let admin;
   try {
     admin = await requireAdmin(req);
