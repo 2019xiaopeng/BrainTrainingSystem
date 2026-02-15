@@ -59,20 +59,35 @@ export function AdminScreen() {
   const [meLoading, setMeLoading] = useState(true);
   const [me, setMe] = useState<AdminMe | null>(null);
   const [meError, setMeError] = useState<string | null>(null);
+  const [meDebug, setMeDebug] = useState<{ status: number; body: unknown } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setMeLoading(true);
     setMeError(null);
+    setMeDebug(null);
     (async () => {
       try {
-        const resp = await fetch(`/api/admin/me?_t=${Date.now()}`, { credentials: 'include', cache: 'no-store' });
+        const doFetch = async () =>
+          await fetch(`/api/admin/me?_t=${Date.now()}`, {
+            credentials: 'include',
+            cache: 'no-store',
+            headers: { 'cache-control': 'no-cache', pragma: 'no-cache' },
+          });
+
+        let resp = await doFetch();
+        if (resp.status === 304) resp = await doFetch();
+
         if (!resp.ok) {
           const data = await resp.json().catch(() => null);
-          const err = String((data as { error?: unknown } | null)?.error ?? 'unauthorized');
+          if (!cancelled) setMeDebug({ status: resp.status, body: data });
+          const role = String((data as { role?: unknown } | null)?.role ?? '');
+          const errCode = String((data as { error?: unknown } | null)?.error ?? 'unauthorized');
+          const err = role ? `${errCode} (role=${role})` : errCode;
           throw new Error(err);
         }
-        const data = (await resp.json()) as AdminMe;
+        const data = (await resp.json().catch(() => null)) as AdminMe | null;
+        if (!data || typeof data !== 'object') throw new Error('invalid_admin_me_response');
         if (!cancelled) setMe(data);
       } catch {
         if (!cancelled) setMeError('无权限访问管理员后台');
@@ -215,6 +230,11 @@ export function AdminScreen() {
         <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm">
           <div className="text-sm font-medium text-zen-700">管理员后台</div>
           <div className="text-sm text-zen-500 mt-2">{meError ?? '无权限'}</div>
+          {meDebug && (
+            <div className="mt-2 text-xs text-zen-400 break-all">
+              /api/admin/me status={meDebug.status} body={JSON.stringify(meDebug.body)}
+            </div>
+          )}
           <div className="mt-3">
             <Link className="text-sm text-zen-700 hover:underline" to="/">
               返回首页
