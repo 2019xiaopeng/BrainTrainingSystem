@@ -39,8 +39,9 @@ export const requireAdmin = async (req: RequestLike): Promise<AdminViewer> => {
     .limit(1);
   const row = rows[0];
   if (!row) throw new Error("unauthorized");
-  if (row.role !== "admin") throw new Error("forbidden");
-  return { id: row.id, email: row.email, role: row.role };
+  const normalizedRole = String(row.role ?? "").trim().toLowerCase();
+  if (normalizedRole !== "admin") throw new Error(`forbidden:${normalizedRole || "unknown"}`);
+  return { id: row.id, email: row.email, role: normalizedRole };
 };
 
 export const getBanStatus = async (userId: string): Promise<{ banned: boolean; bannedUntil: Date | null }> => {
@@ -70,4 +71,3 @@ export const writeAdminAuditLog = async (args: {
     userAgent: ua,
   });
 };
-

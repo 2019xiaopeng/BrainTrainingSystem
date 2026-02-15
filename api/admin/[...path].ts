@@ -36,8 +36,13 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   try {
     admin = await requireAdmin(req);
   } catch (e) {
-    const code = (e as Error).message === "forbidden" ? 403 : 401;
-    res.status(code).json({ error: code === 403 ? "forbidden" : "unauthorized" });
+    const msg = String((e as Error).message ?? "");
+    if (msg.startsWith("forbidden:")) {
+      const role = msg.slice("forbidden:".length) || "unknown";
+      res.status(403).json({ error: "forbidden", role });
+      return;
+    }
+    res.status(401).json({ error: "unauthorized" });
     return;
   }
 
@@ -610,4 +615,3 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
   res.status(404).json({ error: "not_found" });
 }
-
