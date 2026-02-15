@@ -30,12 +30,12 @@
   - [x] 运营配置页：feature flags 开关（含排行榜开关）
   - [x] 非 admin 访问时：提示无权限并引导返回
 
-- [ ] Task 5: 管理员初始化与发布流程
+- [x] Task 5: 管理员初始化与发布流程
   - [x] 提供管理员初始化方式（环境变量白名单或一次性脚本/接口）
   - [x] 本地验证：`npm run build` 通过
-  - [ ] 创建/切换分支 `v3-dev`
-  - [ ] 提交 commit（信息清晰）
-  - [ ] 推送到远端 `v3-dev`
+  - [x] 创建/切换分支 `v3-dev`
+  - [x] 提交 commit（信息清晰）
+  - [x] 推送到远端 `v3-dev`
 
 # Task Dependencies
 - Task 2 depends on Task 1
