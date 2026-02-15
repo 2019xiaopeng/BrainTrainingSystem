@@ -1,45 +1,75 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type CoinsEntry = {
   rank: number;
+  userId: string;
   displayName: string;
   avatarUrl: string | null;
   brainCoins: number;
   brainLevel: number;
-  isMe: boolean;
   medal: 'gold' | 'silver' | 'bronze' | null;
 };
 
 type LevelEntry = {
   rank: number;
+  userId: string;
   displayName: string;
   avatarUrl: string | null;
   brainLevel: number;
   xp: number;
   brainCoins: number;
-  isMe: boolean;
+  weeklyXp?: number;
   medal: 'gold' | 'silver' | 'bronze' | null;
 };
 
-type CoinsPayload = {
+type PublicCoinsPayload = {
+  kind: 'coins';
+  scope: 'all' | 'week';
+  computedAt: string;
   entries: CoinsEntry[];
+};
+
+type PublicLevelPayload = {
+  kind: 'level';
+  scope: 'all' | 'week';
+  computedAt: string;
+  entries: LevelEntry[];
+};
+
+type MeCoinsPayload = {
+  kind: 'coins';
+  scope: 'all' | 'week';
+  computedAt: string | null;
   myRank: number | null;
   myEntry: CoinsEntry | null;
 };
 
-type LevelPayload = {
-  entries: LevelEntry[];
+type MeLevelPayload = {
+  kind: 'level';
+  scope: 'all' | 'week';
+  computedAt: string | null;
   myRank: number | null;
   myEntry: LevelEntry | null;
 };
 
 export type LeaderboardKind = 'coins' | 'level';
 
-export function LeaderboardWidget({ kind, compact }: { kind: LeaderboardKind; compact?: boolean }) {
+export function LeaderboardWidget({
+  kind,
+  scope = 'all',
+  compact,
+}: {
+  kind: LeaderboardKind;
+  scope?: 'all' | 'week';
+  compact?: boolean;
+}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [coinsData, setCoinsData] = useState<CoinsPayload | null>(null);
-  const [levelData, setLevelData] = useState<LevelPayload | null>(null);
+  const [coinsData, setCoinsData] = useState<PublicCoinsPayload | null>(null);
+  const [levelData, setLevelData] = useState<PublicLevelPayload | null>(null);
+  const [coinsMe, setCoinsMe] = useState<MeCoinsPayload | null>(null);
+  const [levelMe, setLevelMe] = useState<MeLevelPayload | null>(null);
+  const cacheRef = useRef<Record<string, { cachedAt: number; publicData: unknown; meData: unknown }>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -47,19 +77,69 @@ export function LeaderboardWidget({ kind, compact }: { kind: LeaderboardKind; co
     setError(null);
     (async () => {
       try {
+        const cacheKey = `${kind}:${scope}`;
+        const cached = cacheRef.current[cacheKey];
+        const ttlMs = 60_000;
+        if (cached && Date.now() - cached.cachedAt < ttlMs) {
+          if (kind === 'coins') {
+            setCoinsData(cached.publicData as PublicCoinsPayload);
+            setCoinsMe(cached.meData as MeCoinsPayload | null);
+          } else {
+            setLevelData(cached.publicData as PublicLevelPayload);
+            setLevelMe(cached.meData as MeLevelPayload | null);
+          }
+          setLoading(false);
+        }
+
         const url = kind === 'coins' ? '/api/leaderboard/coins' : '/api/leaderboard/level';
-        const resp = await fetch(url, { method: 'GET', credentials: 'include' });
+        const resp = await fetch(`${url}?scope=${encodeURIComponent(scope)}&_t=${Date.now()}`, {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store',
+        });
         if (!resp.ok) {
           if (resp.status === 503) {
             setError('排行榜维护中');
             return;
           }
+          if (resp.status === 401) {
+            const body = await resp.json().catch(() => null);
+            const code = String((body as { error?: unknown } | null)?.error ?? '');
+            if (code === 'login_required') {
+              setError('登录后查看排行榜');
+              return;
+            }
+          }
+          if (resp.status === 400) {
+            const body = await resp.json().catch(() => null);
+            const code = String((body as { error?: unknown } | null)?.error ?? '');
+            if (code === 'invalid_scope') {
+              setError('周榜未开启');
+              return;
+            }
+          }
           throw new Error('fetch_failed');
         }
-        const data = (await resp.json()) as unknown;
+        const publicData = (await resp.json()) as unknown;
         if (cancelled) return;
-        if (kind === 'coins') setCoinsData(data as CoinsPayload);
-        else setLevelData(data as LevelPayload);
+
+        const meUrl = kind === 'coins' ? '/api/leaderboard/coins/me' : '/api/leaderboard/level/me';
+        const meResp = await fetch(`${meUrl}?scope=${encodeURIComponent(scope)}&_t=${Date.now()}`, {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        const meData = meResp.ok ? ((await meResp.json().catch(() => null)) as unknown) : null;
+
+        if (kind === 'coins') {
+          setCoinsData(publicData as PublicCoinsPayload);
+          setCoinsMe((meData as MeCoinsPayload) ?? null);
+        } else {
+          setLevelData(publicData as PublicLevelPayload);
+          setLevelMe((meData as MeLevelPayload) ?? null);
+        }
+
+        cacheRef.current[cacheKey] = { cachedAt: Date.now(), publicData, meData };
       } catch {
         if (!cancelled) setError('加载失败，请稍后重试');
       } finally {
@@ -69,9 +149,10 @@ export function LeaderboardWidget({ kind, compact }: { kind: LeaderboardKind; co
     return () => {
       cancelled = true;
     };
-  }, [kind]);
+  }, [kind, scope]);
 
   const data = kind === 'coins' ? coinsData : levelData;
+  const me = kind === 'coins' ? coinsMe : levelMe;
 
   const entries = useMemo(() => {
     if (!data?.entries) return [];
@@ -94,7 +175,8 @@ export function LeaderboardWidget({ kind, compact }: { kind: LeaderboardKind; co
     );
   }
 
-  const myRank = data.myRank;
+  const myRank = me?.myRank ?? null;
+  const myUserId = me?.myEntry?.userId ?? null;
   const medalEmoji = (m: 'gold' | 'silver' | 'bronze' | null) => (m === 'gold' ? '🥇' : m === 'silver' ? '🥈' : m === 'bronze' ? '🥉' : '');
 
   return (
@@ -107,7 +189,7 @@ export function LeaderboardWidget({ kind, compact }: { kind: LeaderboardKind; co
 
       <div className="space-y-2">
         {entries.map((e) => {
-          const isMe = Boolean((e as { isMe?: boolean }).isMe);
+          const isMe = myUserId ? (e as { userId?: string }).userId === myUserId : false;
           return (
             <div
               key={`${(e as { rank: number }).rank}-${(e as { displayName: string }).displayName}`}
@@ -146,7 +228,9 @@ export function LeaderboardWidget({ kind, compact }: { kind: LeaderboardKind; co
               ) : (
                 <div className="text-right">
                   <div className="text-sm font-mono font-bold text-zen-700">Lv {(e as LevelEntry).brainLevel}</div>
-                  <div className="text-[11px] text-zen-400">XP {(e as LevelEntry).xp.toLocaleString()}</div>
+                  <div className="text-[11px] text-zen-400">
+                    {scope === 'week' ? `本周 XP ${((e as LevelEntry).weeklyXp ?? 0).toLocaleString()}` : `XP ${(e as LevelEntry).xp.toLocaleString()}`}
+                  </div>
                 </div>
               )}
             </div>

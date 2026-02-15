@@ -172,6 +172,7 @@ export function AdminScreen() {
   const [lbTtlSeconds, setLbTtlSeconds] = useState(String(Number(leaderboardPayload.snapshotTtlSeconds ?? 60) || 60));
   const [lbHideGuests, setLbHideGuests] = useState(Boolean(leaderboardPayload.hideGuests ?? false));
   const [lbWeeklyEnabled, setLbWeeklyEnabled] = useState(Boolean(leaderboardPayload.weeklyEnabled ?? false));
+  const [lbVersion, setLbVersion] = useState(String(Math.max(1, Math.floor(Number(leaderboardPayload.version ?? 1) || 1))));
 
   const loadFlags = async () => {
     setFlagsLoading(true);
@@ -194,6 +195,7 @@ export function AdminScreen() {
     setLbTtlSeconds(String(Number(payload.snapshotTtlSeconds ?? 60) || 60));
     setLbHideGuests(Boolean(payload.hideGuests ?? false));
     setLbWeeklyEnabled(Boolean(payload.weeklyEnabled ?? false));
+    setLbVersion(String(Math.max(1, Math.floor(Number(payload.version ?? 1) || 1))));
   }, [leaderboardFlag?.updatedAt]);
 
   const toggleFlag = async (key: string, enabled: boolean) => {
@@ -645,6 +647,20 @@ export function AdminScreen() {
                 </label>
               </div>
 
+              <div className="grid grid-cols-2 gap-2">
+                <label className="text-xs text-zen-500">
+                  版本（触发刷新）
+                  <input
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-zen-200 text-sm outline-none focus:ring-2 focus:ring-zen-200"
+                    value={lbVersion}
+                    onChange={(e) => setLbVersion(e.target.value)}
+                  />
+                </label>
+                <div className="text-xs text-zen-400 flex items-end pb-2">
+                  递增可使快照失效并重算
+                </div>
+              </div>
+
               <div className="flex items-center justify-between">
                 <div className="text-sm text-zen-700">隐藏游客</div>
                 <button
@@ -673,6 +689,7 @@ export function AdminScreen() {
                 onClick={async () => {
                   const topN = Math.max(1, Math.min(100, Number(lbTopN) || 10));
                   const ttl = Math.max(5, Math.min(3600, Number(lbTtlSeconds) || 60));
+                  const version = Math.max(1, Math.min(10_000, Math.floor(Number(lbVersion) || 1)));
                   await fetch(`/api/admin/feature-flags?_t=${Date.now()}`, {
                     method: 'PATCH',
                     headers: { 'content-type': 'application/json' },
@@ -681,7 +698,7 @@ export function AdminScreen() {
                     body: JSON.stringify({
                       key: 'leaderboard',
                       enabled: Boolean(leaderboardFlag?.enabled ?? false),
-                      payload: { ...leaderboardPayload, topN, snapshotTtlSeconds: ttl, hideGuests: lbHideGuests, weeklyEnabled: lbWeeklyEnabled },
+                      payload: { ...leaderboardPayload, topN, snapshotTtlSeconds: ttl, hideGuests: lbHideGuests, weeklyEnabled: lbWeeklyEnabled, version },
                     }),
                   });
                   await loadFlags();

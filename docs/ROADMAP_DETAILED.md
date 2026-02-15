@@ -63,26 +63,27 @@
     - 将头像/昵称/安全设置拆到独立页面或 Drawer，Profile 主面板只保留关键信息概览。
 
 ### 7.3 排行榜系统 (Leaderboard)
-- [ ] **后端 API**:
-    - `GET /api/leaderboard/coins`: 按 Brain Coins（积分）Top N（总榜/周榜可选）。
-    - `GET /api/leaderboard/level`: 按 Brain Level（Lv）Top N；同 Lv 再按 XP/Coins 作为 tie-break。
-- [ ] **前端 UI**:
-    - 将排行榜移入独立页面（例如 `/rank` 里切 Tab：积分榜 / Lv 榜）。
-    - 增加“我的排名”高亮显示。
+- [x] **后端 API**:
+    - `GET /api/leaderboard/coins`: 按 Brain Coins（积分）Top N（总榜）。
+    - `GET /api/leaderboard/level`: 按 Brain Level（Lv）Top N；同 Lv 再按 XP/Coins 作为 tie-break（支持 `scope=week` 周榜，取本周 XP 聚合）。
+    - `GET /api/leaderboard/{coins|level}/me`: 我的排名（独立端点，避免缓存污染）。
+- [x] **前端 UI**:
+    - 排行榜在 `/rank` 独立页面（Tab：积分榜 / 段位榜；段位榜支持 总榜/周榜）。
+    - “我的排名”显示与高亮（通过 `/me` 端点获取）。
 #### 7.3.1 排行榜性能与缓存策略 (Caching & Performance)
-- [ ] **客户端缓存（体验优先）**:
+- [x] **客户端缓存（体验优先）**:
     - 切换 Tab 不清空列表；使用本地缓存 + TTL（例如 30-120s）避免重复请求。
     - 采用 “stale-while-revalidate”：先展示缓存，再后台刷新并平滑更新。
     - 可选：引入 React Query / SWR 统一处理缓存、去重、并发合并、失败重试。
-- [ ] **服务端缓存（降 DB 压力）**:
+- [x] **服务端缓存（降 DB 压力）**:
     - API 增加 `Cache-Control: public, max-age=30, stale-while-revalidate=120`（可被 CDN/浏览器复用）。
-    - 服务端进程内缓存或 Redis 缓存 TopN 结果（30-60s）。
-    - “我的排名”接口结果同样缓存，避免频繁 count(*)。
+    - 公共榜单读路径优先读 DB 快照（`leaderboard_snapshots`），过期时软刷新 + 防 stampede。
+    - “我的排名”独立端点（`private, no-store`）；必要时可再加限流/缓存策略。
 #### 7.3.2 数据预聚合 (Pre-aggregation)
-- [ ] **索引与基础优化（先做）**:
+- [x] **索引与基础优化（先做）**:
     - `users(brain_coins desc)`、`users(brain_level desc, xp desc)` 等索引，确保 TopN 查询快速。
-- [ ] **快照表/物化视图（上量后）**:
-    - 建 `leaderboard_snapshot(kind, computed_at, payload_json)` 或物化视图，定时任务每 1-5 分钟刷新。
+- [x] **快照表/物化视图（上量后）**:
+    - 已使用 `leaderboard_snapshots(kind, computed_at, payload)` 存榜单快照（`coins:all`、`level:all`、`level:week`），并按 TTL 刷新。
     - API 直接读取最新快照，避免每次请求实时排序与聚合。
 
 ---

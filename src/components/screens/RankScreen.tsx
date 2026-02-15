@@ -12,7 +12,7 @@ export function RankScreen() {
   const { sessionHistory, userProfile } = useGameStore();
   const [tab, setTab] = useState<DashboardTab>('history');
   const [lbTab, setLbTab] = useState<LeaderboardTab>('coins');
-  const isGuest = (userProfile.auth?.status ?? 'guest') === 'guest';
+  const [lbScope, setLbScope] = useState<'all' | 'week'>('all');
 
   const recentSessions = useMemo(
     () => [...sessionHistory].reverse().slice(0, 20),
@@ -123,7 +123,10 @@ export function RankScreen() {
         <div className="space-y-3">
           <div className="flex gap-2">
             <button
-              onClick={() => setLbTab('coins')}
+              onClick={() => {
+                setLbTab('coins');
+                setLbScope('all');
+              }}
               className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
                 lbTab === 'coins'
                   ? 'bg-sage-100 text-sage-700'
@@ -147,10 +150,32 @@ export function RankScreen() {
             </button>
           </div>
 
-          <div className="text-xs text-zen-400 text-center">
-            {isGuest ? t('sidebar.leaderboardLoginRequired') : ''}
-          </div>
-          <LeaderboardWidget kind={lbTab} />
+          {lbTab === 'level' && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setLbScope('all')}
+                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
+                  lbScope === 'all'
+                    ? 'bg-zen-800 text-white'
+                    : 'bg-white text-zen-400 border border-zen-200/50 hover:bg-zen-50'
+                }`}
+              >
+                总榜
+              </button>
+              <button
+                onClick={() => setLbScope('week')}
+                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
+                  lbScope === 'week'
+                    ? 'bg-zen-800 text-white'
+                    : 'bg-white text-zen-400 border border-zen-200/50 hover:bg-zen-50'
+                }`}
+              >
+                周榜
+              </button>
+            </div>
+          )}
+
+          <LeaderboardWidget kind={lbTab} scope={lbTab === 'level' ? lbScope : 'all'} />
         </div>
       )}
     </div>
