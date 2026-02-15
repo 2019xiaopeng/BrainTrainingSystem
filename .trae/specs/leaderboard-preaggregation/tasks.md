@@ -20,11 +20,11 @@
   - [x] `feature_flags.key=leaderboard` payload schema 完整落地（topN/ttl/hideGuests/weeklyEnabled/version）
   - [x] Admin Console 支持配置这些字段并写入审计日志
 
-- [ ] Task 5: 验证与文档更新（含 push v3-dev）
+- [x] Task 5: 验证与文档更新（含 push v3-dev）
   - [x] 本地构建通过：`npm run build`
-  - [ ] 关键场景验证：开关/游客隐藏/缓存头/myRank 不缓存/快照刷新/周榜边界
+  - [x] 关键场景验证：开关/游客隐藏/缓存头/myRank 不缓存/快照刷新/周榜边界
   - [x] 更新 `docs/ROADMAP_DETAILED.md#L65-86` 的 checkbox 与描述（与实际实现一致）
-  - [ ] 提交并 push 到 `v3-dev`
+  - [x] 提交并 push 到 `v3-dev`
 
 # Task Dependencies
 - Task 2 depends on Task 1

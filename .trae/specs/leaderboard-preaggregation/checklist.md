@@ -7,4 +7,4 @@
 - [x] Admin Console 可配置榜单参数并写入审计日志
 - [x] `npm run build` 通过
 - [x] ROADMAP 7.3（L65-86）描述与 checkbox 已更新
-- [ ] 变更已提交并 push 到 v3-dev
+- [x] 变更已提交并 push 到 v3-dev
