@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:auth": "tsx scripts/auth-dev.ts",
+    "admin:bootstrap": "tsx scripts/bootstrap-admin.ts",
     "build": "tsc -b && vite build",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",

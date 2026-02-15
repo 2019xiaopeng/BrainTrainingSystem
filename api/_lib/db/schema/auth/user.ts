@@ -33,6 +33,10 @@ export const user = pgTable("user", {
   ownedItems: jsonb("owned_items").default([]).notNull(),
   inventory: jsonb("inventory").default({}).notNull(),
 
+  // Admin & Governance
+  bannedUntil: timestamp("banned_until"),
+  bannedReason: text("banned_reason"),
+
   // External Auth
   wechatUnionId: text("wechat_unionid").unique(),
   stripeCustomerId: text("stripe_customer_id"),

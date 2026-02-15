@@ -1,6 +1,7 @@
 import { and, desc, eq, gte } from "drizzle-orm";
 import { db } from "../_lib/db/index.js";
 import { dailyActivity, gameSessions, user, userUnlocks } from "../_lib/db/schema/index.js";
+import { getBanStatus } from "../_lib/admin.js";
 import { requireSessionUser } from "../_lib/session.js";
 import type { RequestLike, ResponseLike } from "../_lib/http.js";
 import { isRecord } from "../_lib/http.js";
@@ -465,6 +466,12 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     sessionUser = await requireSessionUser(req);
   } catch {
     res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const ban = await getBanStatus(sessionUser.id);
+  if (ban.banned) {
+    res.status(403).json({ error: "banned" });
     return;
   }
 
