@@ -8,7 +8,7 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("emailVerified").notNull(),
   image: text("image"),
-  role: text("role").default("member").notNull(),
+  role: text("role").default("user").notNull(),
   gender: boolean("gender").notNull(),
   
   // --- Game Business Fields ---

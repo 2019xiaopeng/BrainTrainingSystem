@@ -179,43 +179,44 @@
 **目标**: 提供一套安全可审计的后台能力，用于用户治理、运营开关、排行榜管理与数据修正。
 
 ### 12.1 角色与权限模型 (RBAC)
-- [ ] **用户角色**:
-    - `users.role`: `member` / `admin` / `moderator`（最小可行先 `member/admin`）。
+- [x] **用户角色**:
+    - `users.role`: `user` / `admin` / `moderator`（当前系统默认 `user`，最小可行先 `user/admin`；兼容历史值 `member`）。
     - 管理员入口不依赖前端隐藏，所有权限必须在后端强校验。
-- [ ] **初始化管理员**:
-    - 通过环境变量白名单（例如 `ADMIN_EMAILS`）或一次性脚本把指定账号提升为 admin。
+- [x] **初始化管理员**:
+    - 通过环境变量白名单（`ADMIN_EMAILS`，逗号分隔）+ 一次性脚本把指定账号提升为 admin（`npm run admin:bootstrap`）。
     - 禁止在前端写死管理员信息。
 
 ### 12.2 管理后台页面 (Admin Console)
-- [ ] **路由**: `/admin`（不出现在普通导航）。
-- [ ] **模块划分（Mobile 兼容）**:
+- [x] **路由**: `/admin`（不出现在普通导航）。
+- [x] **模块划分（Mobile 兼容）**:
     - 用户管理：搜索（email/昵称/ID）、用户详情、封禁/解封。
     - 资产与数据修正：XP/Coins/Energy/Inventory/BrainStats 的受控修改（字段白名单 + 范围校验）。
     - 运营配置：排行榜开关、周榜开关、榜单刷新频率、展示规则（TopN 数量、是否隐藏游客）。
     - 审计日志：按操作者/用户/时间筛选，支持导出。
 
 ### 12.3 后端 Admin API (Server-only)
-- [ ] **鉴权**:
+- [x] **鉴权**:
     - `requireAdmin(req)`：基于 Better Auth session + `users.role` 校验。
     - 所有 `/api/admin/*` 接口仅允许 admin 访问。
-- [ ] **核心接口示例**:
+- [x] **核心接口示例**:
     - `GET /api/admin/users?query=`：用户列表与搜索。
     - `GET /api/admin/users/:id`：用户详情。
     - `PATCH /api/admin/users/:id`：修改用户资产/状态（白名单字段）。
     - `POST /api/admin/users/:id/ban`、`POST /api/admin/users/:id/unban`：封禁管理。
     - `GET /api/admin/feature-flags`、`PATCH /api/admin/feature-flags`：运营开关。
+    - 说明：当前项目在 Vercel 上通过单个函数承载 `/api/admin/*`（`/api/admin/[...path].ts`），并在 `vercel.json` 明确路由到该函数。
 
 ### 12.4 封禁与风控 (Ban & Abuse Prevention)
-- [ ] **数据结构**:
+- [x] **数据结构**:
     - `users.banned_until`（或 `users.is_banned/ban_reason`）。
-- [ ] **执行点**:
+- [x] **执行点**:
     - 在关键写入/敏感接口（如 `POST /api/game/session`、`POST /api/store/buy`、`POST /api/user/checkin`）统一检查并拒绝。
     - 对封禁用户返回稳定错误码（例如 `banned`），前端统一提示。
 
 ### 12.5 审计日志 (Audit Logs)
-- [ ] **表结构**:
+- [x] **表结构**:
     - `admin_audit_logs(id, admin_user_id, target_user_id, action, before, after, ip, user_agent, created_at)`。
-- [ ] **要求**:
+- [x] **要求**:
     - 所有管理员写操作必须写日志（包括排行榜开关、封禁、资产调整）。
     - 后台提供查看与筛选能力。
 

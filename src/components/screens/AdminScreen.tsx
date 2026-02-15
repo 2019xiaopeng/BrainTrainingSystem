@@ -166,6 +166,12 @@ export function AdminScreen() {
   const [flagsLoading, setFlagsLoading] = useState(false);
   const [flagsError, setFlagsError] = useState<string | null>(null);
   const [flags, setFlags] = useState<FeatureFlagRow[]>([]);
+  const leaderboardFlag = useMemo(() => flags.find((f) => f.key === 'leaderboard') ?? null, [flags]);
+  const leaderboardPayload = (leaderboardFlag?.payload ?? {}) as Record<string, unknown>;
+  const [lbTopN, setLbTopN] = useState(String(Number(leaderboardPayload.topN ?? 10) || 10));
+  const [lbTtlSeconds, setLbTtlSeconds] = useState(String(Number(leaderboardPayload.snapshotTtlSeconds ?? 60) || 60));
+  const [lbHideGuests, setLbHideGuests] = useState(Boolean(leaderboardPayload.hideGuests ?? false));
+  const [lbWeeklyEnabled, setLbWeeklyEnabled] = useState(Boolean(leaderboardPayload.weeklyEnabled ?? false));
 
   const loadFlags = async () => {
     setFlagsLoading(true);
@@ -181,6 +187,14 @@ export function AdminScreen() {
       setFlagsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const payload = (leaderboardFlag?.payload ?? {}) as Record<string, unknown>;
+    setLbTopN(String(Number(payload.topN ?? 10) || 10));
+    setLbTtlSeconds(String(Number(payload.snapshotTtlSeconds ?? 60) || 60));
+    setLbHideGuests(Boolean(payload.hideGuests ?? false));
+    setLbWeeklyEnabled(Boolean(payload.weeklyEnabled ?? false));
+  }, [leaderboardFlag?.updatedAt]);
 
   const toggleFlag = async (key: string, enabled: boolean) => {
     try {
@@ -206,12 +220,24 @@ export function AdminScreen() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState<string | null>(null);
   const [audit, setAudit] = useState<AuditLogRow[]>([]);
+  const [auditAdminUserId, setAuditAdminUserId] = useState('');
+  const [auditTargetUserId, setAuditTargetUserId] = useState('');
+  const [auditFrom, setAuditFrom] = useState('');
+  const [auditTo, setAuditTo] = useState('');
 
   const loadAudit = async () => {
     setAuditLoading(true);
     setAuditError(null);
     try {
-      const resp = await fetch(`/api/admin/audit-logs?limit=50&offset=0&_t=${Date.now()}`, { credentials: 'include', cache: 'no-store' });
+      const qs = new URLSearchParams();
+      qs.set('limit', '50');
+      qs.set('offset', '0');
+      if (auditAdminUserId.trim()) qs.set('adminUserId', auditAdminUserId.trim());
+      if (auditTargetUserId.trim()) qs.set('targetUserId', auditTargetUserId.trim());
+      if (auditFrom) qs.set('from', `${auditFrom}T00:00:00.000Z`);
+      if (auditTo) qs.set('to', `${auditTo}T23:59:59.999Z`);
+      qs.set('_t', String(Date.now()));
+      const resp = await fetch(`/api/admin/audit-logs?${qs.toString()}`, { credentials: 'include', cache: 'no-store' });
       if (!resp.ok) throw new Error('fetch_failed');
       const data = (await resp.json()) as { items?: AuditLogRow[] };
       setAudit(Array.isArray(data.items) ? data.items : []);
@@ -478,6 +504,105 @@ export function AdminScreen() {
                       已审计
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      className="rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
+                      onClick={async () => {
+                        const nextEnergyStr = window.prompt('设置 Energy（整数）', String(selectedUser.energyCurrent));
+                        if (nextEnergyStr === null) return;
+                        const nextEnergy = Number(nextEnergyStr);
+                        if (!Number.isFinite(nextEnergy)) return;
+                        if (!window.confirm(`确认把 Energy 修改为 ${Math.floor(nextEnergy)} 吗？`)) return;
+                        await fetch(`/api/admin/users/${encodeURIComponent(selectedUser.id)}`, {
+                          method: 'PATCH',
+                          headers: { 'content-type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({ energyCurrent: Math.floor(nextEnergy) }),
+                        });
+                        await loadUserDetail(selectedUser.id);
+                      }}
+                    >
+                      调整 Energy
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
+                      onClick={async () => {
+                        const jsonStr = window.prompt('设置 Inventory（JSON 对象）', JSON.stringify(selectedUser.inventory ?? {}));
+                        if (jsonStr === null) return;
+                        let next: unknown;
+                        try {
+                          next = JSON.parse(jsonStr);
+                        } catch {
+                          return;
+                        }
+                        if (!next || typeof next !== 'object' || Array.isArray(next)) return;
+                        if (!window.confirm('确认更新 Inventory 吗？')) return;
+                        await fetch(`/api/admin/users/${encodeURIComponent(selectedUser.id)}`, {
+                          method: 'PATCH',
+                          headers: { 'content-type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({ inventory: next }),
+                        });
+                        await loadUserDetail(selectedUser.id);
+                      }}
+                    >
+                      编辑 Inventory
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      className="rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
+                      onClick={async () => {
+                        const jsonStr = window.prompt('设置 BrainStats（JSON 对象）', JSON.stringify(selectedUser.brainStats ?? {}));
+                        if (jsonStr === null) return;
+                        let next: unknown;
+                        try {
+                          next = JSON.parse(jsonStr);
+                        } catch {
+                          return;
+                        }
+                        if (!next || typeof next !== 'object' || Array.isArray(next)) return;
+                        if (!window.confirm('确认更新 BrainStats 吗？')) return;
+                        await fetch(`/api/admin/users/${encodeURIComponent(selectedUser.id)}`, {
+                          method: 'PATCH',
+                          headers: { 'content-type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({ brainStats: next }),
+                        });
+                        await loadUserDetail(selectedUser.id);
+                      }}
+                    >
+                      编辑 BrainStats
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
+                      onClick={async () => {
+                        const nextStreakStr = window.prompt('设置 连续签到天数（整数）', String(selectedUser.checkInStreak));
+                        if (nextStreakStr === null) return;
+                        const nextStreak = Number(nextStreakStr);
+                        if (!Number.isFinite(nextStreak)) return;
+                        const nextDate = window.prompt('设置 最近签到日期（YYYY-MM-DD 或留空清空）', selectedUser.checkInLastDate ?? '') ?? '';
+                        const patch: Record<string, unknown> = { checkInStreak: Math.floor(nextStreak) };
+                        patch.checkInLastDate = nextDate.trim() ? nextDate.trim() : null;
+                        if (!window.confirm('确认更新签到字段吗？')) return;
+                        await fetch(`/api/admin/users/${encodeURIComponent(selectedUser.id)}`, {
+                          method: 'PATCH',
+                          headers: { 'content-type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify(patch),
+                        });
+                        await loadUserDetail(selectedUser.id);
+                      }}
+                    >
+                      编辑 签到字段
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -486,8 +611,89 @@ export function AdminScreen() {
       )}
 
       {tab === 'flags' && (
-        <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm space-y-3">
-          <div className="text-sm font-medium text-zen-700">运营开关</div>
+        <div className="space-y-3">
+          <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm space-y-3">
+            <div className="text-sm font-medium text-zen-700">排行榜配置</div>
+            <div className="rounded-lg border border-zen-200/50 p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-zen-700">总榜启用</div>
+                <button
+                  type="button"
+                  className={`w-12 h-7 rounded-full p-1 transition-colors ${leaderboardFlag?.enabled ? 'bg-sage-500' : 'bg-zen-200'}`}
+                  onClick={() => void toggleFlag('leaderboard', !Boolean(leaderboardFlag?.enabled))}
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full transition-transform ${leaderboardFlag?.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <label className="text-xs text-zen-500">
+                  TopN
+                  <input
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-zen-200 text-sm outline-none focus:ring-2 focus:ring-zen-200"
+                    value={lbTopN}
+                    onChange={(e) => setLbTopN(e.target.value)}
+                  />
+                </label>
+                <label className="text-xs text-zen-500">
+                  刷新频率（秒）
+                  <input
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-zen-200 text-sm outline-none focus:ring-2 focus:ring-zen-200"
+                    value={lbTtlSeconds}
+                    onChange={(e) => setLbTtlSeconds(e.target.value)}
+                  />
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-zen-700">隐藏游客</div>
+                <button
+                  type="button"
+                  className={`w-12 h-7 rounded-full p-1 transition-colors ${lbHideGuests ? 'bg-sage-500' : 'bg-zen-200'}`}
+                  onClick={() => setLbHideGuests((v) => !v)}
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full transition-transform ${lbHideGuests ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-zen-700">周榜开关</div>
+                <button
+                  type="button"
+                  className={`w-12 h-7 rounded-full p-1 transition-colors ${lbWeeklyEnabled ? 'bg-sage-500' : 'bg-zen-200'}`}
+                  onClick={() => setLbWeeklyEnabled((v) => !v)}
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full transition-transform ${lbWeeklyEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                className="w-full px-3 py-2 rounded-lg bg-zen-800 text-white text-sm hover:bg-zen-900 transition-colors"
+                onClick={async () => {
+                  const topN = Math.max(1, Math.min(100, Number(lbTopN) || 10));
+                  const ttl = Math.max(5, Math.min(3600, Number(lbTtlSeconds) || 60));
+                  await fetch(`/api/admin/feature-flags?_t=${Date.now()}`, {
+                    method: 'PATCH',
+                    headers: { 'content-type': 'application/json' },
+                    credentials: 'include',
+                    cache: 'no-store',
+                    body: JSON.stringify({
+                      key: 'leaderboard',
+                      enabled: Boolean(leaderboardFlag?.enabled ?? false),
+                      payload: { ...leaderboardPayload, topN, snapshotTtlSeconds: ttl, hideGuests: lbHideGuests, weeklyEnabled: lbWeeklyEnabled },
+                    }),
+                  });
+                  await loadFlags();
+                }}
+              >
+                保存配置
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm space-y-3">
+            <div className="text-sm font-medium text-zen-700">运营开关</div>
           {flagsError && <div className="text-xs text-red-600">{flagsError}</div>}
           {flagsLoading ? (
             <div className="text-xs text-zen-500">加载中…</div>
@@ -512,19 +718,75 @@ export function AdminScreen() {
             </div>
           )}
         </div>
+        </div>
       )}
 
       {tab === 'audit' && (
         <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <div className="text-sm font-medium text-zen-700">审计日志</div>
-            <button
-              type="button"
-              className="text-xs px-3 py-2 rounded-lg border border-zen-200 text-zen-700 hover:bg-zen-50 transition-colors"
-              onClick={() => void loadAudit()}
-            >
-              刷新
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="text-xs px-3 py-2 rounded-lg border border-zen-200 text-zen-700 hover:bg-zen-50 transition-colors"
+                onClick={() => void loadAudit()}
+              >
+                查询
+              </button>
+              <button
+                type="button"
+                className="text-xs px-3 py-2 rounded-lg bg-zen-800 text-white hover:bg-zen-900 transition-colors"
+                onClick={() => {
+                  const qs = new URLSearchParams();
+                  if (auditAdminUserId.trim()) qs.set('adminUserId', auditAdminUserId.trim());
+                  if (auditTargetUserId.trim()) qs.set('targetUserId', auditTargetUserId.trim());
+                  if (auditFrom) qs.set('from', `${auditFrom}T00:00:00.000Z`);
+                  if (auditTo) qs.set('to', `${auditTo}T23:59:59.999Z`);
+                  qs.set('_t', String(Date.now()));
+                  window.open(`/api/admin/audit-logs/export?${qs.toString()}`, '_blank', 'noopener,noreferrer');
+                }}
+              >
+                导出 CSV
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="text-xs text-zen-500">
+              adminUserId
+              <input
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-zen-200 text-sm outline-none focus:ring-2 focus:ring-zen-200"
+                value={auditAdminUserId}
+                onChange={(e) => setAuditAdminUserId(e.target.value)}
+              />
+            </label>
+            <label className="text-xs text-zen-500">
+              targetUserId
+              <input
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-zen-200 text-sm outline-none focus:ring-2 focus:ring-zen-200"
+                value={auditTargetUserId}
+                onChange={(e) => setAuditTargetUserId(e.target.value)}
+              />
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="text-xs text-zen-500">
+              from
+              <input
+                type="date"
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-zen-200 text-sm outline-none focus:ring-2 focus:ring-zen-200"
+                value={auditFrom}
+                onChange={(e) => setAuditFrom(e.target.value)}
+              />
+            </label>
+            <label className="text-xs text-zen-500">
+              to
+              <input
+                type="date"
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-zen-200 text-sm outline-none focus:ring-2 focus:ring-zen-200"
+                value={auditTo}
+                onChange={(e) => setAuditTo(e.target.value)}
+              />
+            </label>
           </div>
           {auditError && <div className="text-xs text-red-600">{auditError}</div>}
           {auditLoading ? (

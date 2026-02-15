@@ -4,9 +4,6 @@ import { featureFlags, leaderboardSnapshots, user } from "../_lib/db/schema/inde
 import { requireSessionUser } from "../_lib/session.js";
 import type { RequestLike, ResponseLike } from "../_lib/http.js";
 
-const TOP_N = 10;
-const SNAPSHOT_TTL_MS = 60_000;
-
 export default async function handler(req: RequestLike, res: ResponseLike) {
   if (req.method !== "GET") {
     res.status(405).json({ error: "method_not_allowed" });
@@ -14,15 +11,21 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   }
 
   let leaderboardEnabled = false;
+  let leaderboardPayload: Record<string, unknown> = {};
   try {
     const flagRows = await db
-      .select({ enabled: featureFlags.enabled })
+      .select({ enabled: featureFlags.enabled, payload: featureFlags.payload })
       .from(featureFlags)
       .where(eq(featureFlags.key, "leaderboard"))
       .limit(1);
     leaderboardEnabled = flagRows[0]?.enabled ?? false;
+    leaderboardPayload =
+      flagRows[0]?.payload && typeof flagRows[0].payload === "object" && !Array.isArray(flagRows[0].payload)
+        ? (flagRows[0].payload as Record<string, unknown>)
+        : {};
   } catch {
     leaderboardEnabled = false;
+    leaderboardPayload = {};
   }
   if (!leaderboardEnabled) {
     res.status(503).json({ error: "leaderboard_disabled" });
@@ -37,6 +40,18 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     viewerUserId = null;
   }
 
+  const hideGuests = Boolean(leaderboardPayload.hideGuests ?? false);
+  if (hideGuests && !viewerUserId) {
+    res.status(401).json({ error: "login_required" });
+    return;
+  }
+
+  const topN = Math.max(1, Math.min(100, Number(leaderboardPayload.topN ?? 10) || 10));
+  const ttlSeconds = Number(leaderboardPayload.snapshotTtlSeconds ?? 60);
+  const ttlMsRaw =
+    Number.isFinite(ttlSeconds) && ttlSeconds > 0 ? ttlSeconds * 1000 : Number(leaderboardPayload.snapshotTtlMs ?? 60_000);
+  const snapshotTtlMs = Math.max(5_000, Math.min(3_600_000, Number(ttlMsRaw) || 60_000));
+
   const now = Date.now();
   const snapRows = await db
     .select({ computedAt: leaderboardSnapshots.computedAt, payload: leaderboardSnapshots.payload })
@@ -46,7 +61,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
   let snapshotPayload: unknown | null = snapRows[0]?.payload ?? null;
   const computedAtMs = snapRows[0]?.computedAt ? snapRows[0].computedAt.getTime() : 0;
-  const isFresh = computedAtMs > 0 && now - computedAtMs < SNAPSHOT_TTL_MS;
+  const isFresh = computedAtMs > 0 && now - computedAtMs < snapshotTtlMs;
 
   if (!snapshotPayload || !isFresh) {
     const rows = await db
@@ -60,7 +75,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       })
       .from(user)
       .orderBy(desc(user.brainLevel), desc(user.xp), desc(user.brainCoins), desc(user.updatedAt))
-      .limit(TOP_N);
+      .limit(topN);
 
     snapshotPayload = {
       entries: rows.map((r, idx) => ({

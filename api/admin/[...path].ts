@@ -40,6 +40,12 @@ const parseDateKey = (v: unknown): string | null => {
   return m ? v : null;
 };
 
+const toCsvCell = (v: unknown): string => {
+  const str = typeof v === "string" ? v : JSON.stringify(v ?? "");
+  const safe = str.replaceAll('"', '""');
+  return `"${safe}"`;
+};
+
 export default async function handler(req: RequestLike, res: ResponseLike) {
   setNoStore(res);
 
@@ -285,7 +291,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         return;
       }
 
-      const allowedRoles = new Set(["member", "admin", "moderator"]);
+      const allowedRoles = new Set(["user", "admin", "moderator", "member"]);
       const next: Record<string, unknown> = {};
 
       if ("xp" in body) {
@@ -531,6 +537,68 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       offset,
       nextOffset: rows.length === limit ? offset + limit : null,
     });
+    return;
+  }
+
+  if (req.method === "GET" && path.length === 2 && path[0] === "audit-logs" && path[1] === "export") {
+    const adminUserId = (url.searchParams.get("adminUserId") ?? "").trim();
+    const targetUserId = (url.searchParams.get("targetUserId") ?? "").trim();
+    const from = parseDate(url.searchParams.get("from"));
+    const to = parseDate(url.searchParams.get("to"));
+
+    const filters: Array<unknown> = [];
+    if (adminUserId) filters.push(eq(adminAuditLogs.adminUserId, adminUserId));
+    if (targetUserId) filters.push(eq(adminAuditLogs.targetUserId, targetUserId));
+    if (from) filters.push(gte(adminAuditLogs.createdAt, from));
+    if (to) filters.push(lte(adminAuditLogs.createdAt, to));
+
+    const rows = await db
+      .select({
+        id: adminAuditLogs.id,
+        adminUserId: adminAuditLogs.adminUserId,
+        targetUserId: adminAuditLogs.targetUserId,
+        action: adminAuditLogs.action,
+        before: adminAuditLogs.before,
+        after: adminAuditLogs.after,
+        ip: adminAuditLogs.ip,
+        userAgent: adminAuditLogs.userAgent,
+        createdAt: adminAuditLogs.createdAt,
+      })
+      .from(adminAuditLogs)
+      .where((filters.length ? and(...(filters as any)) : undefined) as any)
+      .orderBy(desc(adminAuditLogs.createdAt))
+      .limit(5000);
+
+    const header = ["createdAt", "action", "adminUserId", "targetUserId", "ip", "userAgent", "before", "after"];
+    const lines = [header.map(toCsvCell).join(",")];
+    for (const r of rows) {
+      lines.push(
+        [
+          r.createdAt.toISOString(),
+          r.action,
+          r.adminUserId ?? "",
+          r.targetUserId ?? "",
+          r.ip ?? "",
+          r.userAgent ?? "",
+          r.before ?? {},
+          r.after ?? {},
+        ]
+          .map(toCsvCell)
+          .join(",")
+      );
+    }
+    const csv = lines.join("\n");
+
+    const r = res as unknown as {
+      setHeader?: (name: string, value: string) => void;
+      send?: (body: string) => void;
+      end?: (body?: string) => void;
+    };
+    r.setHeader?.("Content-Type", "text/csv; charset=utf-8");
+    r.setHeader?.("Content-Disposition", 'attachment; filename="admin_audit_logs.csv"');
+    if (r.send) r.send(csv);
+    else if (r.end) r.end(csv);
+    else res.status(200).json({ csv });
     return;
   }
 
