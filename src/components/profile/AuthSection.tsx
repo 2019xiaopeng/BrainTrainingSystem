@@ -28,11 +28,11 @@ export function AuthSection({ auth }: AuthSectionProps) {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/settings?tab=accounts', { replace: true });
+    navigate('/settings?tab=security', { replace: true });
   };
 
   const handleGoogle = async () => {
-    await signIn.social({ provider: 'google', callbackURL: '/settings?tab=accounts' });
+    await signIn.social({ provider: 'google', callbackURL: '/settings?tab=security' });
   };
 
   return (
@@ -111,13 +111,13 @@ export function AuthSection({ auth }: AuthSectionProps) {
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Link
               className="text-center rounded-lg bg-zen-800 text-white px-4 py-2 text-sm hover:bg-zen-900 transition-colors"
-              to="/signin?callback=%2Fsettings%3Ftab%3Daccounts"
+              to="/signin?callback=%2Fsettings%3Ftab%3Dsecurity"
             >
               登录
             </Link>
             <Link
               className="text-center rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
-              to="/signup?callback=%2Fsettings%3Ftab%3Daccounts"
+              to="/signup?callback=%2Fsettings%3Ftab%3Dsecurity"
             >
               注册
             </Link>

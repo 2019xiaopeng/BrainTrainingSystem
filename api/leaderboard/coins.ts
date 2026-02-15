@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
 import { client, db } from "../_lib/db/index.js";
 import { featureFlags, leaderboardSnapshots } from "../_lib/db/schema/index.js";
+import * as schema from "../_lib/db/schema/index.js";
 import { requireSessionUser } from "../_lib/session.js";
 import type { RequestLike, ResponseLike } from "../_lib/http.js";
 
@@ -91,41 +93,51 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   const isFresh = computedAtMs > 0 && now - computedAtMs < snapshotTtlMs && payloadVersion === version && payloadTopN === topN;
 
   if (!snapshotPayload || !isFresh) {
-    const refreshed = await client.begin(async (tx) => {
-      const lockKey = `leaderboard:${kind}`;
-      const lockedRows = await tx<{ locked: boolean }[]>`select pg_try_advisory_xact_lock(hashtext(${lockKey})) as locked`;
-      const locked = Boolean(lockedRows[0]?.locked);
-      if (!locked) return false;
+    let refreshed = false;
+    try {
+      refreshed = await client.begin(async (tx) => {
+        const lockKey = `leaderboard:${kind}`;
+        const lockedRows = await tx<{ locked: boolean }[]>`select pg_try_advisory_xact_lock(hashtext(${lockKey})) as locked`;
+        const locked = Boolean(lockedRows[0]?.locked);
+        if (!locked) return false;
 
-      const rows = await tx<
-        Array<{ id: string; name: string; image: string | null; brainCoins: number | null; brainLevel: number | null; xp: number | null }>
-      >`select "id", "name", "image", "brain_coins" as "brainCoins", "brain_level" as "brainLevel", "xp"
-        from "user"
-        order by "brain_coins" desc, "xp" desc, "brain_level" desc, "updated_at" desc
-        limit ${topN}`;
+        const rows = await tx<
+          Array<{ id: string; name: string; image: string | null; brainCoins: number | null; brainLevel: number | null; xp: number | null }>
+        >`select "id", "name", "image", "brain_coins" as "brainCoins", "brain_level" as "brainLevel", "xp"
+          from "user"
+          order by "brain_coins" desc, "xp" desc, "brain_level" desc, "updated_at" desc
+          limit ${topN}`;
 
-      const computedAt = new Date();
-      const payload = {
-        computedAt: computedAt.toISOString(),
-        kind: "coins",
-        scope,
-        config: { topN, version },
-        entries: rows.map((r, idx) => ({
-          rank: idx + 1,
-          userId: r.id,
-          displayName: r.name,
-          avatarUrl: r.image ?? null,
-          brainCoins: r.brainCoins ?? 0,
-          brainLevel: r.brainLevel ?? 1,
-        })),
-      };
+        const computedAt = new Date();
+        const payload = {
+          computedAt: computedAt.toISOString(),
+          kind: "coins",
+          scope,
+          config: { topN, version },
+          entries: rows.map((r, idx) => ({
+            rank: idx + 1,
+            userId: r.id,
+            displayName: r.name,
+            avatarUrl: r.image ?? null,
+            brainCoins: r.brainCoins ?? 0,
+            brainLevel: r.brainLevel ?? 1,
+          })),
+        };
 
-      await tx`insert into "leaderboard_snapshots" ("kind", "computed_at", "payload")
-        values (${kind}, ${computedAt}, ${payload as unknown as Record<string, unknown>})
-        on conflict ("kind") do update set "computed_at" = excluded."computed_at", "payload" = excluded."payload"`;
+        const txDb = drizzle(tx, { schema });
+        await txDb
+          .insert(leaderboardSnapshots)
+          .values({ kind, computedAt, payload: payload as Record<string, unknown> })
+          .onConflictDoUpdate({
+            target: leaderboardSnapshots.kind,
+            set: { computedAt, payload: payload as Record<string, unknown> },
+          });
 
-      return true;
-    });
+        return true;
+      });
+    } catch {
+      refreshed = false;
+    }
 
     if (refreshed) {
       snapRows = await readSnapshot(kind);

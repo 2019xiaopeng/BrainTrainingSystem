@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ComponentType } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Shield, Users, Flag, ScrollText, Search, Ban, CheckCircle2 } from 'lucide-react';
 
@@ -52,7 +52,6 @@ type AuditLogRow = {
 
 export function AdminScreen() {
   const tab = useTab();
-  const location = useLocation();
   const navigate = useNavigate();
   const setTab = (next: Tab) => navigate(`/admin?tab=${encodeURIComponent(next)}`, { replace: true });
 
@@ -109,7 +108,7 @@ export function AdminScreen() {
     return () => {
       cancelled = true;
     };
-  }, [location.key]);
+  }, []);
 
   const [usersQuery, setUsersQuery] = useState('');
   const [usersLoading, setUsersLoading] = useState(false);
@@ -119,8 +118,11 @@ export function AdminScreen() {
   const [selectedUser, setSelectedUser] = useState<AdminUserDetail | null>(null);
   const [selectedLoading, setSelectedLoading] = useState(false);
   const [selectedError, setSelectedError] = useState<string | null>(null);
+  const usersReqIdRef = useRef(0);
+  const userDetailReqIdRef = useRef(0);
 
   const loadUsers = async () => {
+    const reqId = ++usersReqIdRef.current;
     setUsersLoading(true);
     setUsersError(null);
     try {
@@ -128,44 +130,52 @@ export function AdminScreen() {
       const resp = await fetch(url, { credentials: 'include', cache: 'no-store' });
       if (!resp.ok) throw new Error('fetch_failed');
       const data = (await resp.json()) as { items?: AdminUserRow[] };
+      if (reqId !== usersReqIdRef.current) return;
       setUsers(Array.isArray(data.items) ? data.items : []);
     } catch {
-      setUsersError('加载用户列表失败');
+      if (reqId === usersReqIdRef.current) setUsersError('加载用户列表失败');
     } finally {
-      setUsersLoading(false);
+      if (reqId === usersReqIdRef.current) setUsersLoading(false);
     }
   };
 
   const loadUserDetail = async (id: string) => {
+    const reqId = ++userDetailReqIdRef.current;
     setSelectedLoading(true);
     setSelectedError(null);
     try {
       const resp = await fetch(`/api/admin/users/${encodeURIComponent(id)}?_t=${Date.now()}`, { credentials: 'include', cache: 'no-store' });
       if (!resp.ok) throw new Error('fetch_failed');
       const data = (await resp.json()) as AdminUserDetail;
+      if (reqId !== userDetailReqIdRef.current) return;
       setSelectedUser(data);
     } catch {
-      setSelectedError('加载用户详情失败');
-      setSelectedUser(null);
+      if (reqId === userDetailReqIdRef.current) {
+        setSelectedError('加载用户详情失败');
+        setSelectedUser(null);
+      }
     } finally {
-      setSelectedLoading(false);
+      if (reqId === userDetailReqIdRef.current) setSelectedLoading(false);
     }
   };
 
   useEffect(() => {
     if (tab !== 'users') return;
+    if (users.length > 0) return;
     void loadUsers();
-  }, [tab]);
+  }, [tab, users.length]);
 
   useEffect(() => {
     if (tab !== 'users') return;
     if (!selectedUserId) return;
+    if (selectedUser?.id === selectedUserId) return;
     void loadUserDetail(selectedUserId);
-  }, [tab, selectedUserId]);
+  }, [tab, selectedUserId, selectedUser?.id]);
 
   const [flagsLoading, setFlagsLoading] = useState(false);
   const [flagsError, setFlagsError] = useState<string | null>(null);
   const [flags, setFlags] = useState<FeatureFlagRow[]>([]);
+  const flagsReqIdRef = useRef(0);
   const leaderboardFlag = useMemo(() => flags.find((f) => f.key === 'leaderboard') ?? null, [flags]);
   const leaderboardPayload = (leaderboardFlag?.payload ?? {}) as Record<string, unknown>;
   const [lbTopN, setLbTopN] = useState(String(Number(leaderboardPayload.topN ?? 10) || 10));
@@ -175,17 +185,19 @@ export function AdminScreen() {
   const [lbVersion, setLbVersion] = useState(String(Math.max(1, Math.floor(Number(leaderboardPayload.version ?? 1) || 1))));
 
   const loadFlags = async () => {
+    const reqId = ++flagsReqIdRef.current;
     setFlagsLoading(true);
     setFlagsError(null);
     try {
       const resp = await fetch(`/api/admin/feature-flags?_t=${Date.now()}`, { credentials: 'include', cache: 'no-store' });
       if (!resp.ok) throw new Error('fetch_failed');
       const data = (await resp.json()) as { items?: FeatureFlagRow[] };
+      if (reqId !== flagsReqIdRef.current) return;
       setFlags(Array.isArray(data.items) ? data.items : []);
     } catch {
-      setFlagsError('加载配置失败');
+      if (reqId === flagsReqIdRef.current) setFlagsError('加载配置失败');
     } finally {
-      setFlagsLoading(false);
+      if (reqId === flagsReqIdRef.current) setFlagsLoading(false);
     }
   };
 
@@ -216,8 +228,9 @@ export function AdminScreen() {
 
   useEffect(() => {
     if (tab !== 'flags') return;
+    if (flags.length > 0) return;
     void loadFlags();
-  }, [tab]);
+  }, [tab, flags.length]);
 
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState<string | null>(null);
@@ -226,8 +239,10 @@ export function AdminScreen() {
   const [auditTargetUserId, setAuditTargetUserId] = useState('');
   const [auditFrom, setAuditFrom] = useState('');
   const [auditTo, setAuditTo] = useState('');
+  const auditReqIdRef = useRef(0);
 
   const loadAudit = async () => {
+    const reqId = ++auditReqIdRef.current;
     setAuditLoading(true);
     setAuditError(null);
     try {
@@ -242,18 +257,20 @@ export function AdminScreen() {
       const resp = await fetch(`/api/admin/audit-logs?${qs.toString()}`, { credentials: 'include', cache: 'no-store' });
       if (!resp.ok) throw new Error('fetch_failed');
       const data = (await resp.json()) as { items?: AuditLogRow[] };
+      if (reqId !== auditReqIdRef.current) return;
       setAudit(Array.isArray(data.items) ? data.items : []);
     } catch {
-      setAuditError('加载审计日志失败');
+      if (reqId === auditReqIdRef.current) setAuditError('加载审计日志失败');
     } finally {
-      setAuditLoading(false);
+      if (reqId === auditReqIdRef.current) setAuditLoading(false);
     }
   };
 
   useEffect(() => {
     if (tab !== 'audit') return;
+    if (audit.length > 0) return;
     void loadAudit();
-  }, [tab]);
+  }, [tab, audit.length]);
 
   if (meLoading) {
     return (

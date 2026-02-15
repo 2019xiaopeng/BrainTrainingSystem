@@ -1,21 +1,22 @@
 import { useMemo, useState, type ComponentType } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Bell, HelpCircle, Link2, Lock, Settings as SettingsIcon, User } from 'lucide-react';
+import { Bell, HelpCircle, Lock, Settings as SettingsIcon, User } from 'lucide-react';
 import { useGameStore } from '../../store/gameStore';
 import { InstructionScreen } from './InstructionScreen';
 import { signOut } from '../../lib/auth/client';
 import { AuthSection } from '../profile/AuthSection';
 import { CheckInWidget } from '../economy/CheckInWidget';
 
-type SettingsTab = 'profile' | 'security' | 'accounts' | 'notifications' | 'help';
+type SettingsTab = 'profile' | 'security' | 'notifications' | 'help';
 
 function useTab(): SettingsTab {
   const location = useLocation();
   return useMemo(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
-    if (tab === 'security' || tab === 'accounts' || tab === 'notifications' || tab === 'help' || tab === 'profile') return tab;
+    if (tab === 'security' || tab === 'notifications' || tab === 'help' || tab === 'profile') return tab;
+    if (tab === 'accounts') return 'security';
     return 'profile';
   }, [location.search]);
 }
@@ -52,7 +53,6 @@ export function SettingsScreen() {
   const tabs: Array<{ key: SettingsTab; label: string; icon: ComponentType<{ className?: string }> }> = [
     { key: 'profile', label: t('settings.tabs.profile'), icon: User },
     { key: 'security', label: t('settings.tabs.security'), icon: Lock },
-    { key: 'accounts', label: t('settings.tabs.accounts'), icon: Link2 },
     { key: 'notifications', label: t('settings.tabs.notifications'), icon: Bell },
     { key: 'help', label: t('settings.tabs.help'), icon: HelpCircle },
   ];
@@ -274,11 +274,9 @@ export function SettingsScreen() {
               </div>
             )}
           </div>
-        </div>
-      )}
 
-      {tab === 'accounts' && (
-        <AuthSection auth={auth} />
+          <AuthSection auth={auth} />
+        </div>
       )}
 
       {tab === 'notifications' && (

@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
 import { client, db } from "../_lib/db/index.js";
 import { featureFlags, leaderboardSnapshots } from "../_lib/db/schema/index.js";
+import * as schema from "../_lib/db/schema/index.js";
 import { requireSessionUser } from "../_lib/session.js";
 import type { RequestLike, ResponseLike } from "../_lib/http.js";
 
@@ -96,88 +98,98 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   const isFresh = computedAtMs > 0 && now - computedAtMs < snapshotTtlMs && payloadVersion === version && payloadTopN === topN;
 
   if (!snapshotPayload || !isFresh) {
-    const refreshed = await client.begin(async (tx) => {
-      const lockKey = `leaderboard:${kind}`;
-      const lockedRows = await tx<{ locked: boolean }[]>`select pg_try_advisory_xact_lock(hashtext(${lockKey})) as locked`;
-      const locked = Boolean(lockedRows[0]?.locked);
-      if (!locked) return false;
+    let refreshed = false;
+    try {
+      refreshed = await client.begin(async (tx) => {
+        const lockKey = `leaderboard:${kind}`;
+        const lockedRows = await tx<{ locked: boolean }[]>`select pg_try_advisory_xact_lock(hashtext(${lockKey})) as locked`;
+        const locked = Boolean(lockedRows[0]?.locked);
+        if (!locked) return false;
 
-      const nowUtc = new Date();
-      const todayUtc = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()));
-      const day = todayUtc.getUTCDay();
-      const sinceMonday = (day + 6) % 7;
-      const weekStart = new Date(todayUtc);
-      weekStart.setUTCDate(weekStart.getUTCDate() - sinceMonday);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
-      const weekStartKey = weekStart.toISOString().slice(0, 10);
-      const weekEndKey = weekEnd.toISOString().slice(0, 10);
+        const nowUtc = new Date();
+        const todayUtc = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()));
+        const day = todayUtc.getUTCDay();
+        const sinceMonday = (day + 6) % 7;
+        const weekStart = new Date(todayUtc);
+        weekStart.setUTCDate(weekStart.getUTCDate() - sinceMonday);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
+        const weekStartKey = weekStart.toISOString().slice(0, 10);
+        const weekEndKey = weekEnd.toISOString().slice(0, 10);
 
-      const rows =
-        scope === "week"
-          ? await tx<
-              Array<{
-                id: string;
-                name: string;
-                image: string | null;
-                brainLevel: number | null;
-                xp: number | null;
-                brainCoins: number | null;
-                weeklyXp: number | null;
-              }>
-            >`select u."id", u."name", u."image",
-                u."brain_level" as "brainLevel",
-                u."xp",
-                u."brain_coins" as "brainCoins",
-                coalesce(sum(da."total_xp"), 0) as "weeklyXp"
-              from "user" u
-              join "daily_activity" da on da."user_id" = u."id"
-              where da."date" >= ${weekStartKey} and da."date" < ${weekEndKey}
-              group by u."id"
-              order by "weeklyXp" desc, u."brain_level" desc, u."xp" desc, u."brain_coins" desc, u."updated_at" desc
-              limit ${topN}`
-          : await tx<
-              Array<{
-                id: string;
-                name: string;
-                image: string | null;
-                brainLevel: number | null;
-                xp: number | null;
-                brainCoins: number | null;
-              }>
-            >`select "id", "name", "image", "brain_level" as "brainLevel", "xp", "brain_coins" as "brainCoins"
-              from "user"
-              order by "brain_level" desc, "xp" desc, "brain_coins" desc, "updated_at" desc
-              limit ${topN}`;
+        const rows =
+          scope === "week"
+            ? await tx<
+                Array<{
+                  id: string;
+                  name: string;
+                  image: string | null;
+                  brainLevel: number | null;
+                  xp: number | null;
+                  brainCoins: number | null;
+                  weeklyXp: number | null;
+                }>
+              >`select u."id", u."name", u."image",
+                  u."brain_level" as "brainLevel",
+                  u."xp",
+                  u."brain_coins" as "brainCoins",
+                  coalesce(sum(da."total_xp"), 0) as "weeklyXp"
+                from "user" u
+                join "daily_activity" da on da."user_id" = u."id"
+                where da."date" >= ${weekStartKey} and da."date" < ${weekEndKey}
+                group by u."id"
+                order by "weeklyXp" desc, u."brain_level" desc, u."xp" desc, u."brain_coins" desc, u."updated_at" desc
+                limit ${topN}`
+            : await tx<
+                Array<{
+                  id: string;
+                  name: string;
+                  image: string | null;
+                  brainLevel: number | null;
+                  xp: number | null;
+                  brainCoins: number | null;
+                }>
+              >`select "id", "name", "image", "brain_level" as "brainLevel", "xp", "brain_coins" as "brainCoins"
+                from "user"
+                order by "brain_level" desc, "xp" desc, "brain_coins" desc, "updated_at" desc
+                limit ${topN}`;
 
-      const computedAt = new Date();
-      const payload = {
-        computedAt: computedAt.toISOString(),
-        kind: "level",
-        scope,
-        config: {
-          topN,
-          version,
-          ...(scope === "week" ? { window: { type: "week", start: weekStartKey, end: weekEndKey } } : {}),
-        },
-        entries: rows.map((r, idx) => ({
-          rank: idx + 1,
-          userId: r.id,
-          displayName: r.name,
-          avatarUrl: r.image ?? null,
-          brainLevel: r.brainLevel ?? 1,
-          xp: r.xp ?? 0,
-          brainCoins: r.brainCoins ?? 0,
-          ...(scope === "week" ? { weeklyXp: (r as any).weeklyXp ?? 0 } : {}),
-        })),
-      };
+        const computedAt = new Date();
+        const payload = {
+          computedAt: computedAt.toISOString(),
+          kind: "level",
+          scope,
+          config: {
+            topN,
+            version,
+            ...(scope === "week" ? { window: { type: "week", start: weekStartKey, end: weekEndKey } } : {}),
+          },
+          entries: rows.map((r, idx) => ({
+            rank: idx + 1,
+            userId: r.id,
+            displayName: r.name,
+            avatarUrl: r.image ?? null,
+            brainLevel: r.brainLevel ?? 1,
+            xp: r.xp ?? 0,
+            brainCoins: r.brainCoins ?? 0,
+            ...(scope === "week" ? { weeklyXp: (r as any).weeklyXp ?? 0 } : {}),
+          })),
+        };
 
-      await tx`insert into "leaderboard_snapshots" ("kind", "computed_at", "payload")
-        values (${kind}, ${computedAt}, ${payload as unknown as Record<string, unknown>})
-        on conflict ("kind") do update set "computed_at" = excluded."computed_at", "payload" = excluded."payload"`;
+        const txDb = drizzle(tx, { schema });
+        await txDb
+          .insert(leaderboardSnapshots)
+          .values({ kind, computedAt, payload: payload as Record<string, unknown> })
+          .onConflictDoUpdate({
+            target: leaderboardSnapshots.kind,
+            set: { computedAt, payload: payload as Record<string, unknown> },
+          });
 
-      return true;
-    });
+        return true;
+      });
+    } catch {
+      refreshed = false;
+    }
 
     if (refreshed) {
       snapRows = await readSnapshot(kind);
