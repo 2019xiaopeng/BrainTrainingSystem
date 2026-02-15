@@ -79,15 +79,26 @@ export function AdminScreen() {
         if (resp.status === 304) resp = await doFetch();
 
         if (!resp.ok) {
-          const data = await resp.json().catch(() => null);
+          const clone = resp.clone();
+          const data = await resp.json().catch(async () => {
+            const text = await clone.text().catch(() => '');
+            return text ? { nonJson: text.slice(0, 300) } : null;
+          });
           if (!cancelled) setMeDebug({ status: resp.status, body: data });
           const role = String((data as { role?: unknown } | null)?.role ?? '');
           const errCode = String((data as { error?: unknown } | null)?.error ?? 'unauthorized');
           const err = role ? `${errCode} (role=${role})` : errCode;
           throw new Error(err);
         }
-        const data = (await resp.json().catch(() => null)) as AdminMe | null;
-        if (!data || typeof data !== 'object') throw new Error('invalid_admin_me_response');
+        const clone = resp.clone();
+        const data = (await resp.json().catch(async () => {
+          const text = await clone.text().catch(() => '');
+          return text ? ({ nonJson: text.slice(0, 300) } as unknown) : null;
+        })) as AdminMe | { nonJson: string } | null;
+        if (!data || typeof data !== 'object' || 'nonJson' in data) {
+          if (!cancelled) setMeDebug({ status: resp.status, body: data });
+          throw new Error('invalid_admin_me_response');
+        }
         if (!cancelled) setMe(data);
       } catch {
         if (!cancelled) setMeError('无权限访问管理员后台');
