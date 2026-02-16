@@ -228,6 +228,25 @@
       "hint": "Linking helps sign-in and account recovery",
       "loginRequired": "Sign in to link accounts"
     },
+    "general": {
+      "title": "General",
+      "language": "Language",
+      "sound": "Sound Effects",
+      "soundHint": "In-game sound effects",
+      "haptics": "Haptics",
+      "hapticsHint": "Vibration feedback"
+    },
+    "about": {
+      "title": "About",
+      "version": "Version",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "feedback": "Feedback",
+      "clearCache": "Clear Cache",
+      "clearCacheHint": "Clear local cache and refresh if you encounter issues",
+      "clearCacheConfirm": "Are you sure? This will reset local settings.",
+      "cacheCleared": "Cache cleared"
+    },
     "emailVerified": "Verified",
     "emailNotVerified": "Unverified",
     "profile": {

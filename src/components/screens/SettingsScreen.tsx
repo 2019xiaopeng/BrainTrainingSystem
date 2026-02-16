@@ -1,34 +1,35 @@
 import { useMemo, useState, type ComponentType } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Bell, HelpCircle, Lock, Settings as SettingsIcon, User } from 'lucide-react';
+import { Bell, HelpCircle, Lock, Settings as SettingsIcon, User, Sliders, Info, Trash2, Volume2, VolumeX, Smartphone, Globe } from 'lucide-react';
 import { useGameStore } from '../../store/gameStore';
 import { InstructionScreen } from './InstructionScreen';
 import { signOut } from '../../lib/auth/client';
 import { AuthSection } from '../profile/AuthSection';
 import { CheckInWidget } from '../economy/CheckInWidget';
 
-type SettingsTab = 'profile' | 'security' | 'notifications' | 'help';
+type SettingsTab = 'profile' | 'general' | 'security' | 'notifications' | 'about' | 'help';
 
 function useTab(): SettingsTab {
   const location = useLocation();
   return useMemo(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
-    if (tab === 'security' || tab === 'notifications' || tab === 'help' || tab === 'profile') return tab;
+    if (tab === 'security' || tab === 'notifications' || tab === 'help' || tab === 'profile' || tab === 'general' || tab === 'about') return tab;
     if (tab === 'accounts') return 'security';
     return 'profile';
   }, [location.search]);
 }
 
 export function SettingsScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const tab = useTab();
   const setTab = (next: SettingsTab) => navigate(`/settings?tab=${encodeURIComponent(next)}`, { replace: true });
 
   const auth = useGameStore((s) => s.userProfile.auth);
   const inventory = useGameStore((s) => s.userProfile.inventory);
+  const preferences = useGameStore((s) => s.userProfile.preferences);
   const setProfile = useGameStore.setState;
 
   const isGuest = (auth?.status ?? 'guest') === 'guest';
@@ -57,10 +58,56 @@ export function SettingsScreen() {
     return true;
   });
 
+  const toggleSound = () => {
+    setProfile((s) => ({
+      userProfile: {
+        ...s.userProfile,
+        preferences: {
+          ...s.userProfile.preferences,
+          soundEnabled: !s.userProfile.preferences.soundEnabled,
+        },
+      },
+    }));
+  };
+
+  const toggleHaptics = () => {
+    setProfile((s) => ({
+      userProfile: {
+        ...s.userProfile,
+        preferences: {
+          ...s.userProfile.preferences,
+          hapticsEnabled: !s.userProfile.preferences.hapticsEnabled,
+        },
+      },
+    }));
+  };
+
+  const changeLanguage = (lang: 'zh' | 'en') => {
+    i18n.changeLanguage(lang);
+    setProfile((s) => ({
+      userProfile: {
+        ...s.userProfile,
+        preferences: {
+          ...s.userProfile.preferences,
+          language: lang,
+        },
+      },
+    }));
+  };
+
+  const clearCache = () => {
+    if (window.confirm(t('settings.about.clearCacheConfirm'))) {
+      localStorage.clear();
+      window.location.reload();
+    }
+  };
+
   const tabs: Array<{ key: SettingsTab; label: string; icon: ComponentType<{ className?: string }> }> = [
     { key: 'profile', label: t('settings.tabs.profile'), icon: User },
+    { key: 'general', label: t('settings.tabs.general'), icon: Sliders },
     { key: 'security', label: t('settings.tabs.security'), icon: Lock },
     { key: 'notifications', label: t('settings.tabs.notifications'), icon: Bell },
+    { key: 'about', label: t('settings.tabs.about'), icon: Info },
     { key: 'help', label: t('settings.tabs.help'), icon: HelpCircle },
   ];
 
@@ -98,7 +145,7 @@ export function SettingsScreen() {
         </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
         {tabs.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -220,6 +267,87 @@ export function SettingsScreen() {
           <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm">
             <div className="text-sm font-medium text-zen-700">{t('settings.profile.avatar')}</div>
             <div className="text-xs text-zen-400 mt-1">{t('settings.profile.avatarHint')}</div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'general' && (
+        <div className="space-y-3">
+          <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm space-y-4">
+            {/* Sound */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${preferences.soundEnabled ? 'bg-sage-100 text-sage-600' : 'bg-zen-100 text-zen-400'}`}>
+                  {preferences.soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-zen-700">{t('settings.general.sound')}</div>
+                  <div className="text-xs text-zen-400">{t('settings.general.soundHint')}</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                className={`w-12 h-7 rounded-full p-1 transition-colors ${preferences.soundEnabled ? 'bg-sage-500' : 'bg-zen-200'}`}
+                onClick={toggleSound}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full transition-transform ${preferences.soundEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
+
+            {/* Haptics */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${preferences.hapticsEnabled ? 'bg-sage-100 text-sage-600' : 'bg-zen-100 text-zen-400'}`}>
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-zen-700">{t('settings.general.haptics')}</div>
+                  <div className="text-xs text-zen-400">{t('settings.general.hapticsHint')}</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                className={`w-12 h-7 rounded-full p-1 transition-colors ${preferences.hapticsEnabled ? 'bg-sage-500' : 'bg-zen-200'}`}
+                onClick={toggleHaptics}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full transition-transform ${preferences.hapticsEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
+
+            {/* Language */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-zen-100 text-zen-500">
+                  <Globe className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-zen-700">{t('settings.general.language')}</div>
+                  <div className="text-xs text-zen-400">{t('settings.general.languageHint')}</div>
+                </div>
+              </div>
+              <div className="flex bg-zen-100 rounded-lg p-1">
+                <button
+                  onClick={() => changeLanguage('zh')}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                    preferences.language === 'zh'
+                      ? 'bg-white text-zen-700 shadow-sm'
+                      : 'text-zen-400 hover:text-zen-600'
+                  }`}
+                >
+                  中文
+                </button>
+                <button
+                  onClick={() => changeLanguage('en')}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                    preferences.language === 'en'
+                      ? 'bg-white text-zen-700 shadow-sm'
+                      : 'text-zen-400 hover:text-zen-600'
+                  }`}
+                >
+                  English
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -436,6 +564,45 @@ export function SettingsScreen() {
               >
                 <div className={`w-5 h-5 bg-white rounded-full transition-transform ${emailNotifications ? 'translate-x-5' : 'translate-x-0'}`} />
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'about' && (
+        <div className="space-y-3">
+          <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-zen-900 flex items-center justify-center text-white font-bold text-xl">
+                B
+              </div>
+              <div>
+                <div className="font-medium text-zen-800">Brain Flow</div>
+                <div className="text-xs text-zen-400">{t('settings.about.version', { version: '1.0.0' })}</div>
+              </div>
+            </div>
+            
+            <div className="pt-2 border-t border-zen-100 grid grid-cols-1 gap-1">
+              <a href="/privacy" className="flex items-center justify-between py-2 text-sm text-zen-600 hover:text-zen-900">
+                {t('settings.about.privacy')}
+              </a>
+              <a href="/terms" className="flex items-center justify-between py-2 text-sm text-zen-600 hover:text-zen-900">
+                {t('settings.about.terms')}
+              </a>
+            </div>
+
+            <div className="pt-2 border-t border-zen-100">
+               <button
+                type="button"
+                className="flex items-center gap-2 text-sm text-red-500 hover:text-red-600 transition-colors"
+                onClick={clearCache}
+              >
+                <Trash2 className="w-4 h-4" />
+                {t('settings.about.clearCache')}
+              </button>
+              <p className="text-xs text-zen-400 mt-1 pl-6">
+                {t('settings.about.clearCacheHint')}
+              </p>
             </div>
           </div>
         </div>

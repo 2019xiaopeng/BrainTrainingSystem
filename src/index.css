@@ -21,4 +21,18 @@
   body {
     @apply bg-zen-50 text-zen-800 antialiased;
   }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-zen-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-zen-300 rounded-full hover:bg-zen-400 transition-colors;
+  }
 }

@@ -521,6 +521,11 @@ export const useGameStore = create<GameStore>()(
         },
         ownedItems: [],
         inventory: {},
+        preferences: {
+          language: 'zh', // Default to zh for now, or detect browser
+          soundEnabled: true,
+          hapticsEnabled: true,
+        },
       },
       gameConfigs: {
         numeric: { nLevel: 1, rounds: 10 },
@@ -614,6 +619,7 @@ export const useGameStore = create<GameStore>()(
                 },
                 ownedItems: [],
                 inventory: {},
+                preferences: { language: 'zh', soundEnabled: true, hapticsEnabled: true },
               },
               gameConfigs: {
                 numeric: { nLevel: 1, rounds: 10 },
@@ -657,6 +663,7 @@ export const useGameStore = create<GameStore>()(
                 },
                 ownedItems: [],
                 inventory: {},
+                preferences: { language: 'zh', soundEnabled: true, hapticsEnabled: true },
               },
               gameConfigs: {
                 numeric: { nLevel: 1, rounds: 10 },
@@ -1324,6 +1331,11 @@ export const useGameStore = create<GameStore>()(
             },
             ownedItems: p.ownedItems ?? [],
             inventory: (p as unknown as { inventory?: Record<string, number> }).inventory ?? {},
+            preferences: p.preferences ?? {
+              language: 'zh',
+              soundEnabled: true,
+              hapticsEnabled: true,
+            },
           };
         }
 

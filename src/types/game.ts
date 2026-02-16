@@ -185,6 +185,14 @@ export interface UserProfile {
   ownedItems: string[];
   /** Inventory item counts (consumables / tickets) */
   inventory: Record<string, number>;
+  /** User preferences (local settings) */
+  preferences: UserPreferences;
+}
+
+export interface UserPreferences {
+  language: 'zh' | 'en';
+  soundEnabled: boolean;
+  hapticsEnabled: boolean;
 }
 
 export type GameUnlocks = {

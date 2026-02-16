@@ -1,13 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
 import { BrainRankCard } from '../profile/BrainRankCard';
 import { RadarChartWidget } from '../profile/RadarChartWidget';
 import { ActivityHeatmap } from '../profile/ActivityHeatmap';
 import { EnergyBar } from '../economy/EnergyBar';
-import { CheckInWidget } from '../economy/CheckInWidget';
 import { generateYearlyHeatmap } from '../../mocks/userData';
-import { Trophy, Target, Flame, BarChart3, Coins } from 'lucide-react';
+import { Trophy, Target, Flame, BarChart3, Coins, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 /**
@@ -56,10 +55,23 @@ export function ProfileScreen() {
     return generateYearlyHeatmap(sessionHistory);
   }, [cloudDailyActivity, isGuest, sessionHistory]);
 
-  const recentSessions = useMemo(
-    () => [...sessionHistory].reverse().slice(0, 10),
-    [sessionHistory]
-  );
+  // Pagination for History
+  const ITEMS_PER_PAGE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const sortedHistory = useMemo(() => [...sessionHistory].reverse(), [sessionHistory]);
+  const totalPages = Math.max(1, Math.ceil(sortedHistory.length / ITEMS_PER_PAGE));
+  
+  const currentSessions = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return sortedHistory.slice(start, start + ITEMS_PER_PAGE);
+  }, [sortedHistory, currentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
   // Mode label mapping
   const modeEmoji: Record<string, string> = {
@@ -184,53 +196,86 @@ export function ProfileScreen() {
             <ActivityHeatmap data={heatmapData} />
           </div>
 
-          {/* Recent History (10 entries) */}
+          {/* History with Pagination */}
           <div className="bg-white rounded-xl p-5 shadow-sm border border-zen-200/50">
-            <h2 className="text-sm font-medium text-zen-600 mb-3">
-              {t('profile.history')}
-            </h2>
-            {recentSessions.length === 0 ? (
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-medium text-zen-600">
+                {t('profile.history')}
+              </h2>
+              {sortedHistory.length > 0 && (
+                <div className="text-xs text-zen-400">
+                  {t('common.total')} {sortedHistory.length}
+                </div>
+              )}
+            </div>
+
+            {sortedHistory.length === 0 ? (
               <div className="text-center py-8 text-zen-400">
                 <p className="text-sm">{t('profile.noHistory')}</p>
                 <p className="text-xs mt-1">{t('profile.startFirst')}</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {recentSessions.map((session, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-3 rounded-lg bg-zen-50 border border-zen-100 text-sm"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-base">{modeEmoji[session.mode || 'numeric']}</span>
-                      <div>
-                        <span className="font-mono text-zen-700 font-medium">
-                          {session.nLevel}-Back
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  {currentSessions.map((session, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3 rounded-lg bg-zen-50 border border-zen-100 text-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-base">{modeEmoji[session.mode || 'numeric']}</span>
+                        <div>
+                          <span className="font-mono text-zen-700 font-medium">
+                            {session.nLevel}-Back
+                          </span>
+                          <span className="text-xs text-zen-400 ml-1.5">
+                            {modeLabels[session.mode || 'numeric']}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`font-medium ${
+                            session.accuracy >= 80
+                              ? 'text-green-600'
+                              : session.accuracy >= 50
+                              ? 'text-amber-500'
+                              : 'text-red-500'
+                          }`}
+                        >
+                          {session.accuracy}%
                         </span>
-                        <span className="text-xs text-zen-400 ml-1.5">
-                          {modeLabels[session.mode || 'numeric']}
+                        <span className="text-xs text-zen-400">+{session.score}</span>
+                        <span className="text-xs text-zen-300">
+                          {new Date(session.timestamp).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`font-medium ${
-                          session.accuracy >= 80
-                            ? 'text-green-600'
-                            : session.accuracy >= 50
-                            ? 'text-amber-500'
-                            : 'text-red-500'
-                        }`}
-                      >
-                        {session.accuracy}%
-                      </span>
-                      <span className="text-xs text-zen-400">+{session.score}</span>
-                      <span className="text-xs text-zen-300">
-                        {new Date(session.timestamp).toLocaleDateString()}
-                      </span>
-                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 pt-2">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="p-1 rounded-md text-zen-500 hover:bg-zen-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <span className="text-xs text-zen-500 font-medium">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="p-1 rounded-md text-zen-500 hover:bg-zen-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>

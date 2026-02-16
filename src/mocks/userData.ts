@@ -251,4 +251,9 @@ export const MOCK_USER_PROFILE: UserProfile = {
   },
   ownedItems: [],
   inventory: {},
+  preferences: {
+    language: 'zh',
+    soundEnabled: true,
+    hapticsEnabled: true,
+  },
 };

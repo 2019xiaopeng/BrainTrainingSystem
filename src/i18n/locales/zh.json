@@ -224,6 +224,25 @@
       "notifications": "通知",
       "help": "帮助"
     },
+    "general": {
+      "title": "通用设置",
+      "language": "语言",
+      "sound": "音效",
+      "soundHint": "游戏内的音效开关",
+      "haptics": "触感反馈",
+      "hapticsHint": "震动反馈开关"
+    },
+    "about": {
+      "title": "关于",
+      "version": "版本",
+      "privacy": "隐私政策",
+      "terms": "服务条款",
+      "feedback": "意见反馈",
+      "clearCache": "清除缓存",
+      "clearCacheHint": "如果遇到问题，可以尝试清除本地缓存并刷新",
+      "clearCacheConfirm": "确定要清除缓存吗？这将重置所有本地设置。",
+      "cacheCleared": "缓存已清除"
+    },
     "accounts": {
       "hint": "绑定后可用于登录与找回账号",
       "loginRequired": "登录后可绑定第三方账号"
