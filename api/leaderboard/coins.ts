@@ -88,7 +88,15 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   const payloadConfig = isRecord(snapshotPayload) && isRecord(snapshotPayload.config) ? snapshotPayload.config : null;
   const payloadVersion = payloadConfig ? Math.floor(Number(payloadConfig.version ?? 0) || 0) : 0;
   const payloadTopN = payloadConfig ? Math.floor(Number(payloadConfig.topN ?? 0) || 0) : 0;
-  const isFresh = computedAtMs > 0 && now - computedAtMs < snapshotTtlMs && payloadVersion === version && payloadTopN === topN;
+  const payloadEntriesRaw = (snapshotPayload as { entries?: unknown } | null)?.entries;
+  const firstEntry = Array.isArray(payloadEntriesRaw) ? payloadEntriesRaw[0] : null;
+  const payloadHasScore = isRecord(firstEntry) && ("totalScore" in firstEntry);
+  const isFresh =
+    computedAtMs > 0 &&
+    now - computedAtMs < snapshotTtlMs &&
+    payloadVersion === version &&
+    payloadTopN === topN &&
+    payloadHasScore;
 
   if (!snapshotPayload || !isFresh) {
     let refreshed = false;
@@ -159,7 +167,6 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     }
   }
 
-  const payloadEntriesRaw = (snapshotPayload as { entries?: unknown } | null)?.entries;
   const payloadEntries: Array<{
     rank: number;
     userId: string;

@@ -13,20 +13,20 @@ export function MainLayout() {
   const isGameActive = location.pathname.startsWith('/train/');
 
   return (
-    <div className="min-h-screen bg-zen-50 text-zen-800 transition-colors duration-300">
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden bg-zen-50 text-zen-800 transition-colors duration-300">
       {/* Desktop 三栏布局 —— 始终保持三栏，游戏中也不隐藏 */}
-      <div className="hidden lg:flex min-h-screen">
-        <aside className="w-[250px] flex-shrink-0 border-r border-zen-200/50 overflow-y-auto">
+      <div className="hidden lg:flex h-full">
+        <aside className="w-[250px] h-full flex-shrink-0 border-r border-zen-200/50 overflow-y-auto">
           <Sidebar />
         </aside>
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 h-full overflow-y-auto">
           <div className="mx-auto max-w-2xl p-6 animate-fade-in">
             <Outlet />
           </div>
         </main>
 
-        <aside className="w-[300px] flex-shrink-0 border-l border-zen-200/50 overflow-y-auto">
+        <aside className="w-[300px] h-full flex-shrink-0 border-l border-zen-200/50 overflow-y-auto">
           <RightPanel />
         </aside>
       </div>

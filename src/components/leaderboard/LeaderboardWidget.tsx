@@ -223,7 +223,7 @@ export function LeaderboardWidget({
               {kind === 'coins' ? (
                 <div className="text-right">
                   <div className="text-sm font-mono font-bold text-zen-700">
-                    ((e as CoinsEntry).totalScore ?? 0).toLocaleString()
+                    {((e as CoinsEntry).totalScore ?? 0).toLocaleString()}
                   </div>
                   <div className="text-[11px] text-zen-400">{t('rank.metrics.score')}</div>
                 </div>
