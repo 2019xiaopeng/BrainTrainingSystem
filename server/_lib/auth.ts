@@ -5,11 +5,15 @@ import { db } from "./db/index.js";
 import { restrictedUsernames } from "./usernames.js";
 import { sendResendEmail } from "./email/resend.js";
 
+const vercelBaseURL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined;
+const baseURL = process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? vercelBaseURL;
+
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_BASE_URL,
+  baseURL,
   trustedOrigins: [
     process.env.BETTER_AUTH_URL,
     process.env.NEXT_PUBLIC_BASE_URL,
+    vercelBaseURL,
     "http://localhost:5173",
   ].filter(Boolean) as string[],
   database: drizzleAdapter(db, {
