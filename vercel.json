@@ -3,7 +3,8 @@
     { "source": "/api/campaign/meta", "destination": "/api/campaign?op=meta" },
     { "source": "/api/campaign/progress", "destination": "/api/campaign?op=progress" },
     { "source": "/api/leaderboard/coins/me", "destination": "/api/leaderboard/coins?op=me" },
-    { "source": "/api/leaderboard/level/me", "destination": "/api/leaderboard/level?op=me" }
+    { "source": "/api/leaderboard/level/me", "destination": "/api/leaderboard/level?op=me" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
 
