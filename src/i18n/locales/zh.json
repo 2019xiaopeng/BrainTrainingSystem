@@ -5,7 +5,9 @@
     "backHome": "返回首页"
   },
   "common": {
-    "cancel": "取消"
+    "cancel": "取消",
+    "gotIt": "知道了",
+    "loading": "加载中…"
   },
   "home": {
     "profile": "个人档案",
@@ -140,9 +142,6 @@
     "playAgain": "再来一局",
     "backHome": "← 返回首页"
   },
-  "common": {
-    "gotIt": "知道了"
-  },
   "unlock": {
     "numeric": "解锁：数字心流 {{n}}-Back（{{rounds}}题）",
     "spatialRounds": "解锁：空间心流 {{n}}-Back（{{rounds}}题）",
@@ -225,6 +224,9 @@
       "notifications": "通知",
       "help": "帮助"
     },
+    "accounts": {
+      "hint": "绑定后可用于登录与找回账号"
+    },
     "emailVerified": "已验证",
     "emailNotVerified": "未验证",
     "profile": {
@@ -245,13 +247,48 @@
     "security": {
       "title": "账号安全",
       "changePassword": "修改密码",
+      "changeEmail": "更改邮箱",
       "verifyEmail": "验证邮箱",
+      "guestHint": "登录后可修改密码、验证邮箱并绑定第三方账号",
+      "changeEmailHint": "验证码将发送到新邮箱",
+      "emailPlaceholder": "新邮箱地址",
+      "otpPlaceholder": "验证码（6 位）",
+      "sendCode": "发送验证码",
+      "confirmChangeEmail": "确认更改",
+      "emailInvalid": "邮箱格式不正确",
+      "emailInUse": "该邮箱已被占用",
+      "otpInvalid": "验证码无效或已过期",
+      "changeEmailFailed": "更改邮箱失败，请稍后再试",
+      "changeEmailNetworkError": "网络错误，请稍后再试",
       "signOut": "退出登录"
     },
     "notifications": {
       "weeklyReport": "邮件通知",
       "weeklyReportHint": "训练周报/高级报告（暂存本地开关）"
     }
+  },
+  "rank": {
+    "tabs": {
+      "coins": "积分榜",
+      "level": "段位榜",
+      "all": "总榜",
+      "week": "周榜"
+    },
+    "errors": {
+      "maintenance": "排行榜维护中",
+      "loginRequired": "登录后查看排行榜",
+      "weeklyDisabled": "周榜未开启",
+      "loadFailed": "加载失败，请稍后重试"
+    },
+    "metrics": {
+      "coins": "脑力币",
+      "xp": "XP {{xp}}",
+      "weeklyXp": "本周 XP {{xp}}",
+      "level": "Lv {{level}}"
+    },
+    "empty": "暂无数据",
+    "myRank": "我的排名：#{{rank}}",
+    "avgReaction": "平均 {{seconds}}s"
   },
   "sidebar": {
     "leaderboard": "排行榜",

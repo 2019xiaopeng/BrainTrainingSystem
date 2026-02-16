@@ -109,7 +109,7 @@ export function RankScreen() {
                       })}
                     </span>
                     {session.avgReactionTimeMs && (
-                      <span>{(session.avgReactionTimeMs / 1000).toFixed(1)}s avg</span>
+                      <span>{t('rank.avgReaction', { seconds: (session.avgReactionTimeMs / 1000).toFixed(1) })}</span>
                     )}
                   </div>
                 </div>
@@ -135,7 +135,7 @@ export function RankScreen() {
             >
               <span className="inline-flex items-center justify-center gap-1.5">
                 <Coins className="w-3.5 h-3.5" />
-                积分榜
+                {t('rank.tabs.coins')}
               </span>
             </button>
             <button
@@ -146,7 +146,7 @@ export function RankScreen() {
                   : 'bg-white text-zen-400 border border-zen-200/50 hover:bg-zen-50'
               }`}
             >
-              段位榜
+              {t('rank.tabs.level')}
             </button>
           </div>
 
@@ -160,7 +160,7 @@ export function RankScreen() {
                     : 'bg-white text-zen-400 border border-zen-200/50 hover:bg-zen-50'
                 }`}
               >
-                总榜
+                {t('rank.tabs.all')}
               </button>
               <button
                 onClick={() => setLbScope('week')}
@@ -170,7 +170,7 @@ export function RankScreen() {
                     : 'bg-white text-zen-400 border border-zen-200/50 hover:bg-zen-50'
                 }`}
               >
-                周榜
+                {t('rank.tabs.week')}
               </button>
             </div>
           )}

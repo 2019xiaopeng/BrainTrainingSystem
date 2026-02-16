@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type CoinsEntry = {
   rank: number;
@@ -63,6 +64,7 @@ export function LeaderboardWidget({
   scope?: 'all' | 'week';
   compact?: boolean;
 }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [coinsData, setCoinsData] = useState<PublicCoinsPayload | null>(null);
@@ -99,14 +101,14 @@ export function LeaderboardWidget({
         });
         if (!resp.ok) {
           if (resp.status === 503) {
-            setError('排行榜维护中');
+            setError(t('rank.errors.maintenance'));
             return;
           }
           if (resp.status === 401) {
             const body = await resp.json().catch(() => null);
             const code = String((body as { error?: unknown } | null)?.error ?? '');
             if (code === 'login_required') {
-              setError('登录后查看排行榜');
+              setError(t('rank.errors.loginRequired'));
               return;
             }
           }
@@ -114,7 +116,7 @@ export function LeaderboardWidget({
             const body = await resp.json().catch(() => null);
             const code = String((body as { error?: unknown } | null)?.error ?? '');
             if (code === 'invalid_scope') {
-              setError('周榜未开启');
+              setError(t('rank.errors.weeklyDisabled'));
               return;
             }
           }
@@ -141,7 +143,7 @@ export function LeaderboardWidget({
 
         cacheRef.current[cacheKey] = { cachedAt: Date.now(), publicData, meData };
       } catch {
-        if (!cancelled) setError('加载失败，请稍后重试');
+        if (!cancelled) setError(t('rank.errors.loadFailed'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -162,7 +164,7 @@ export function LeaderboardWidget({
   if (loading) {
     return (
       <div className={`bg-white/60 rounded-lg ${compact ? 'p-3' : 'p-4'} border border-zen-200/50 text-center text-xs text-zen-500`}>
-        加载中…
+        {t('common.loading')}
       </div>
     );
   }
@@ -170,7 +172,7 @@ export function LeaderboardWidget({
   if (error || !data) {
     return (
       <div className={`bg-white/60 rounded-lg ${compact ? 'p-3' : 'p-4'} border border-zen-200/50 text-center text-xs text-zen-500`}>
-        {error ?? '暂无数据'}
+        {error ?? t('rank.empty')}
       </div>
     );
   }
@@ -183,7 +185,7 @@ export function LeaderboardWidget({
     <div className="space-y-2">
       {typeof myRank === 'number' && (
         <div className={`bg-sage-50 rounded-lg ${compact ? 'p-3' : 'p-4'} border border-sage-200/60 text-xs text-sage-800`}>
-          我的排名：#{myRank}
+          {t('rank.myRank', { rank: myRank })}
         </div>
       )}
 
@@ -223,13 +225,17 @@ export function LeaderboardWidget({
                   <div className="text-sm font-mono font-bold text-zen-700">
                     {(e as CoinsEntry).brainCoins.toLocaleString()}
                   </div>
-                  <div className="text-[11px] text-zen-400">Brain Coins</div>
+                  <div className="text-[11px] text-zen-400">{t('rank.metrics.coins')}</div>
                 </div>
               ) : (
                 <div className="text-right">
-                  <div className="text-sm font-mono font-bold text-zen-700">Lv {(e as LevelEntry).brainLevel}</div>
+                  <div className="text-sm font-mono font-bold text-zen-700">
+                    {t('rank.metrics.level', { level: (e as LevelEntry).brainLevel })}
+                  </div>
                   <div className="text-[11px] text-zen-400">
-                    {scope === 'week' ? `本周 XP ${((e as LevelEntry).weeklyXp ?? 0).toLocaleString()}` : `XP ${(e as LevelEntry).xp.toLocaleString()}`}
+                    {scope === 'week'
+                      ? t('rank.metrics.weeklyXp', { xp: ((e as LevelEntry).weeklyXp ?? 0).toLocaleString() })
+                      : t('rank.metrics.xp', { xp: (e as LevelEntry).xp.toLocaleString() })}
                   </div>
                 </div>
               )}

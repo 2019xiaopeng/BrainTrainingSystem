@@ -5,7 +5,9 @@
     "backHome": "Back to Home"
   },
   "common": {
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "gotIt": "Got it",
+    "loading": "Loading…"
   },
   "home": {
     "profile": "Profile",
@@ -140,9 +142,6 @@
     "playAgain": "Play Again",
     "backHome": "← Back to Home"
   },
-  "common": {
-    "gotIt": "Got it"
-  },
   "unlock": {
     "numeric": "Unlocked: Numeric {{n}}-Back ({{rounds}} rounds)",
     "spatialRounds": "Unlocked: Spatial {{n}}-Back ({{rounds}} rounds)",
@@ -225,6 +224,9 @@
       "notifications": "Notifications",
       "help": "Help"
     },
+    "accounts": {
+      "hint": "Linking helps sign-in and account recovery"
+    },
     "emailVerified": "Verified",
     "emailNotVerified": "Unverified",
     "profile": {
@@ -245,13 +247,48 @@
     "security": {
       "title": "Account security",
       "changePassword": "Change password",
+      "changeEmail": "Change email",
       "verifyEmail": "Verify email",
+      "guestHint": "Sign in to change password, verify email, and link accounts",
+      "changeEmailHint": "We will send a code to the new email",
+      "emailPlaceholder": "New email address",
+      "otpPlaceholder": "Verification code (6 digits)",
+      "sendCode": "Send code",
+      "confirmChangeEmail": "Confirm",
+      "emailInvalid": "Invalid email",
+      "emailInUse": "Email is already in use",
+      "otpInvalid": "Invalid or expired code",
+      "changeEmailFailed": "Failed to change email. Please try again.",
+      "changeEmailNetworkError": "Network error. Please try again.",
       "signOut": "Sign out"
     },
     "notifications": {
       "weeklyReport": "Email notifications",
       "weeklyReportHint": "Weekly report / premium insights (local toggle for now)"
     }
+  },
+  "rank": {
+    "tabs": {
+      "coins": "Coins",
+      "level": "Level",
+      "all": "All-time",
+      "week": "Weekly"
+    },
+    "errors": {
+      "maintenance": "Leaderboard is under maintenance",
+      "loginRequired": "Sign in to view the leaderboard",
+      "weeklyDisabled": "Weekly leaderboard is disabled",
+      "loadFailed": "Load failed. Please try again."
+    },
+    "metrics": {
+      "coins": "Brain Points",
+      "xp": "XP {{xp}}",
+      "weeklyXp": "Weekly XP {{xp}}",
+      "level": "Lv {{level}}"
+    },
+    "empty": "No data",
+    "myRank": "Your rank: #{{rank}}",
+    "avgReaction": "Avg {{seconds}}s"
   },
   "sidebar": {
     "leaderboard": "Leaderboard",

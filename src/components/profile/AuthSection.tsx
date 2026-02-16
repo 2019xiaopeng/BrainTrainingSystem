@@ -35,7 +35,7 @@ export function AuthSection({ auth, variant = 'full' }: AuthSectionProps) {
       <div className="bg-white rounded-xl p-4 shadow-sm border border-zen-200/50 space-y-3">
         <div>
           <div className="text-sm font-medium text-zen-700">{t('settings.tabs.accounts')}</div>
-          <div className="text-xs text-zen-400">绑定后可用于登录与找回账号</div>
+          <div className="text-xs text-zen-400">{t('settings.accounts.hint')}</div>
         </div>
 
         {isGuest ? (
