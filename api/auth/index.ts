@@ -1,6 +1,6 @@
 import { toNodeHandler } from "better-auth/node";
-import { auth } from "../server/_lib/auth.js";
-import { ensureSchemaReady } from "../server/_lib/db/index.js";
+import { auth } from "../../server/_lib/auth.js";
+import { ensureSchemaReady } from "../../server/_lib/db/index.js";
 
 const handler = toNodeHandler(auth);
 

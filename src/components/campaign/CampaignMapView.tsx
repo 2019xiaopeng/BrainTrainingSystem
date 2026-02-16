@@ -139,6 +139,7 @@ export function CampaignMapView(props: {
   onStart: (nLevel: number, rounds: number, mode: GameMode, gridSize: number, mouseConfig?: MouseGameConfig, houseConfig?: HouseGameConfig) => void;
   onSetActiveCampaignRun: (run: null | { levelId: number; episodeId: number; orderInEpisode: number; minAccuracy: number; nextEpisodeId: number; nextLevelId: number }) => void;
   lastCampaignUpdate?: unknown;
+  storyOpenNonce?: number;
 }) {
   const isGuest = (props.userProfile.auth?.status ?? "guest") === "guest";
 
@@ -222,6 +223,33 @@ export function CampaignMapView(props: {
       setShowStory(false);
     }
   }, [episodes.length, activeEpisodeId, progress.state.viewedEpisodeStoryIds]);
+
+  useEffect(() => {
+    if (!props.storyOpenNonce) return;
+    if (!episodes.length) return;
+    setShowStory(true);
+  }, [props.storyOpenNonce, episodes.length]);
+
+  const theme = useMemo(() => {
+    const idx = Math.max(1, Math.min(5, activeEpisodeId));
+    if (idx === 2) return { accent: "#14b8a6", soft: "#99f6e4", path: "#0d9488", bg: "from-teal-50 to-white" };
+    if (idx === 3) return { accent: "#f59e0b", soft: "#fde68a", path: "#d97706", bg: "from-amber-50 to-white" };
+    if (idx === 4) return { accent: "#a855f7", soft: "#e9d5ff", path: "#7e22ce", bg: "from-purple-50 to-white" };
+    if (idx === 5) return { accent: "#0ea5e9", soft: "#bae6fd", path: "#0284c7", bg: "from-sky-50 to-white" };
+    return { accent: "#10b981", soft: "#a7f3d0", path: "#059669", bg: "from-sage-50 to-white" };
+  }, [activeEpisodeId]);
+
+  const jitteredPos = (lvl: CampaignLevel) => {
+    const seed = (lvl.id * 9301 + activeEpisodeId * 49297) % 233280;
+    const r1 = (seed / 233280) * 2 - 1;
+    const r2 = (((seed * 13) % 233280) / 233280) * 2 - 1;
+    const dx = Math.round(r1 * 6);
+    const dy = Math.round(r2 * 8);
+    return {
+      x: Math.max(8, Math.min(92, lvl.mapPosition.x + dx)),
+      y: Math.max(10, Math.min(90, lvl.mapPosition.y + dy)),
+    };
+  };
 
   const markEpisodeViewed = async (episodeId: number) => {
     if (isGuest) {
@@ -312,6 +340,12 @@ export function CampaignMapView(props: {
           </div>
           <div className="flex gap-2">
             <button
+              className="h-9 px-3 rounded-full bg-white border border-zen-200 text-zen-600 text-sm font-medium hover:bg-zen-50"
+              onClick={() => setShowStory(true)}
+            >
+              章节简介
+            </button>
+            <button
               className="w-9 h-9 rounded-full bg-zen-50 border border-zen-200 text-zen-500 hover:bg-zen-100 disabled:opacity-40"
               onClick={() => setActiveEpisodeId((e) => Math.max(1, e - 1))}
               disabled={activeEpisodeId <= 1}
@@ -329,31 +363,40 @@ export function CampaignMapView(props: {
         </div>
       </div>
 
-      <div className="relative w-full h-[760px] bg-white rounded-[2rem] border border-zen-200 shadow-sm overflow-hidden">
-        <div className="absolute inset-0 opacity-40 pointer-events-none">
+      <div className={`relative w-full h-[760px] bg-gradient-to-br ${theme.bg} rounded-[2rem] border border-zen-200 shadow-sm overflow-hidden`}>
+        <div
+          className="absolute -top-24 -right-24 w-[520px] h-[520px] rounded-full blur-3xl opacity-40 pointer-events-none"
+          style={{ background: `radial-gradient(circle at 30% 30%, ${theme.soft} 0%, transparent 60%)` }}
+        />
+        <div
+          className="absolute -bottom-32 -left-24 w-[560px] h-[560px] rounded-full blur-3xl opacity-35 pointer-events-none"
+          style={{ background: `radial-gradient(circle at 70% 70%, ${theme.accent} 0%, transparent 62%)` }}
+        />
+        <div className="absolute inset-0 opacity-50 pointer-events-none">
           <svg width="100%" height="100%">
             <defs>
-              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <pattern id={`grid-${activeEpisodeId}`} width="44" height="44" patternUnits="userSpaceOnUse">
                 <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e7e5e4" strokeWidth="1" />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
+            <rect width="100%" height="100%" fill={`url(#grid-${activeEpisodeId})`} />
           </svg>
         </div>
 
         <svg className="absolute inset-0 w-full h-full pointer-events-none">
-          <path d={mapPath} fill="none" stroke="#f5f5f4" strokeWidth="10" strokeLinecap="round" />
-          <path d={mapPath} fill="none" stroke="#10b981" strokeOpacity="0.55" strokeWidth="3" strokeLinecap="round" />
+          <path d={mapPath} fill="none" stroke={theme.soft} strokeWidth="10" strokeLinecap="round" strokeOpacity="0.65" />
+          <path d={mapPath} fill="none" stroke={theme.path} strokeOpacity="0.55" strokeWidth="3" strokeLinecap="round" />
         </svg>
 
         {episodeLevels.map((lvl) => {
           const st = getNodeStatus(lvl);
+          const pos = jitteredPos(lvl);
           return (
             <CampaignMapNode
               key={lvl.id}
               id={lvl.orderInEpisode}
-              x={lvl.mapPosition.x}
-              y={lvl.mapPosition.y}
+              x={pos.x}
+              y={pos.y}
               status={st.status}
               stars={st.stars}
               isBoss={lvl.boss}

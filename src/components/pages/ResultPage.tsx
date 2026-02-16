@@ -9,7 +9,7 @@ import { ResultScreen } from '../screens/ResultScreen';
  */
 export function ResultPage() {
   const navigate = useNavigate();
-  const { lastSummary, sessionHistory, userProfile, nextConfig, lastUnlocks, lastRewards } = useGameStore();
+  const { lastSummary, sessionHistory, userProfile, nextConfig, lastUnlocks, lastRewards, activeCampaignRun, lastCampaignUpdate } = useGameStore();
 
   const handlePlayAgain = useCallback(() => {
     // 直接 navigate 到上次的训练模式
@@ -19,6 +19,10 @@ export function ResultPage() {
 
   const handleBackHome = useCallback(() => {
     navigate('/', { replace: true });
+  }, [navigate]);
+
+  const handleBackCampaign = useCallback(() => {
+    navigate('/?view=campaign', { replace: true });
   }, [navigate]);
 
   if (!lastSummary) {
@@ -34,8 +38,11 @@ export function ResultPage() {
       userProfile={userProfile}
       unlockIds={lastUnlocks}
       rewards={lastRewards}
+      campaignRun={activeCampaignRun}
+      campaignUpdate={lastCampaignUpdate}
       onPlayAgain={handlePlayAgain}
       onBackHome={handleBackHome}
+      onBackCampaign={handleBackCampaign}
     />
   );
 }

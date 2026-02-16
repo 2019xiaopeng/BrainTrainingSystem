@@ -26,6 +26,7 @@ const requiredMinRoundsForN = (n: number) => {
 
 interface HomeScreenProps {
   initialMode: GameMode;
+  initialHomeView?: 'training' | 'campaign';
   userProfile: UserProfile;
   onStart: (nLevel: number, rounds: number, mode: GameMode, gridSize: number, mouseConfig?: MouseGameConfig, houseConfig?: HouseGameConfig) => void;
 }
@@ -33,7 +34,7 @@ interface HomeScreenProps {
 /**
  * HomeScreen - 首页配置界面（支持多模式选择）
  */
-export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProps) {
+export function HomeScreen({ initialMode, initialHomeView, userProfile, onStart }: HomeScreenProps) {
   const { t } = useTranslation();
   const { gameConfigs } = useGameStore();
   const cloudUnlocks = useGameStore((s) => s.cloudUnlocks);
@@ -41,9 +42,11 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   const setActiveCampaignRun = useGameStore((s) => s.setActiveCampaignRun);
   const lastCampaignUpdate = useGameStore((s) => s.lastCampaignUpdate);
   const [mode, setMode] = useState<GameMode>(initialMode);
-  const [homeView, setHomeView] = useState<'training' | 'campaign'>('training');
+  const [homeView, setHomeView] = useState<'training' | 'campaign'>(initialHomeView ?? 'training');
   const isGuest = (userProfile.auth?.status ?? 'guest') === 'guest';
   const brainLevel = getBrainRank(userProfile.totalXP ?? 0, userProfile.completedMilestones || []).level;
+  const [showCampaignLoginHint, setShowCampaignLoginHint] = useState(false);
+  const [campaignStoryOpenNonce, setCampaignStoryOpenNonce] = useState(0);
 
   const effectiveUnlocks = !isGuest ? (cloudUnlocks ?? optimisticUnlocks) : null;
   const numericUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.numeric : null;
@@ -145,6 +148,13 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   }, [isGuest, gameConfigs]);
 
   useEffect(() => {
+    if (isGuest && homeView === 'campaign') {
+      setHomeView('training');
+      setShowCampaignLoginHint(false);
+    }
+  }, [isGuest, homeView]);
+
+  useEffect(() => {
     if (isGuest) return;
     if (mode === 'spatial' && spatialAllowedRounds.length > 0 && !spatialAllowedRounds.includes(spatialRounds)) {
       const fallback =
@@ -207,7 +217,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
       </div>
 
       <div className="flex justify-center">
-        <div className="inline-flex rounded-xl bg-zen-50 border border-zen-200 p-1 shadow-sm">
+        <div className="inline-flex rounded-xl bg-zen-50 border border-zen-200 p-1 shadow-sm items-center gap-1">
           <button
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               homeView === 'training' ? 'bg-white text-zen-700 shadow' : 'text-zen-500 hover:text-zen-700'
@@ -218,43 +228,79 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
           </button>
           <button
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              homeView === 'campaign' ? 'bg-white text-zen-700 shadow' : 'text-zen-500 hover:text-zen-700'
+              homeView === 'campaign'
+                ? 'bg-white text-zen-700 shadow'
+                : isGuest
+                  ? 'text-zen-300 cursor-not-allowed'
+                  : 'text-zen-500 hover:text-zen-700'
             }`}
-            onClick={() => setHomeView('campaign')}
+            onClick={() => {
+              if (isGuest) {
+                setShowCampaignLoginHint(true);
+                return;
+              }
+              setShowCampaignLoginHint(false);
+              setHomeView('campaign');
+            }}
           >
             闯关地图
           </button>
+          {homeView === 'campaign' && !isGuest ? (
+            <button
+              className="px-3 py-2 rounded-lg text-sm font-medium text-zen-500 hover:text-zen-700 hover:bg-white/70 transition"
+              onClick={() => setCampaignStoryOpenNonce((n) => n + 1)}
+              title="查看当前章节简介"
+            >
+              查看详情
+            </button>
+          ) : null}
         </div>
       </div>
 
-      {/* Profile Summary Card */}
-      <div className="bg-gradient-to-br from-sage-400 to-sage-500 rounded-2xl p-6 shadow-lg text-white">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-medium">{t('home.profile')}</h2>
-            {!isGuest && (
-              <div className="px-2 py-0.5 rounded-full bg-white/20 text-xs font-bold tracking-wide whitespace-nowrap">
-                LV{brainLevel}
-              </div>
-            )}
+      {showCampaignLoginHint ? (
+        <div className="max-w-xl mx-auto rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
+          <div className="font-medium">闯关模式仅对登录用户开放</div>
+          <div className="mt-1 text-xs text-amber-800 flex items-center justify-between gap-3">
+            <span>登录后将同步闯关进度、星级与奖励。</span>
+            <a
+              href="/signin"
+              className="shrink-0 px-3 py-1.5 rounded-md bg-amber-600 text-white font-medium hover:bg-amber-700 transition-colors"
+            >
+              去登录
+            </a>
           </div>
         </div>
-        
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-            <div className="text-2xl font-mono font-bold">{isGuest ? '-' : userProfile.maxNLevel || '-'}</div>
-            <div className="text-xs text-white/80 mt-1">{t('home.maxLevel')}</div>
+      ) : null}
+
+      {homeView !== 'campaign' ? (
+        <div className="bg-gradient-to-br from-sage-400 to-sage-500 rounded-2xl p-6 shadow-lg text-white">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-medium">{t('home.profile')}</h2>
+              {!isGuest && (
+                <div className="px-2 py-0.5 rounded-full bg-white/20 text-xs font-bold tracking-wide whitespace-nowrap">
+                  LV{brainLevel}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-            <div className="text-2xl font-mono font-bold">{isGuest ? 0 : userProfile.totalScore}</div>
-            <div className="text-xs text-white/80 mt-1">{t('home.totalScore')}</div>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-            <div className="text-2xl font-mono font-bold">{isGuest ? 0 : userProfile.checkIn.consecutiveDays}</div>
-            <div className="text-xs text-white/80 mt-1">{t('home.streakDays')}</div>
+          
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
+              <div className="text-2xl font-mono font-bold">{isGuest ? '-' : userProfile.maxNLevel || '-'}</div>
+              <div className="text-xs text-white/80 mt-1">{t('home.maxLevel')}</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
+              <div className="text-2xl font-mono font-bold">{isGuest ? 0 : userProfile.totalScore}</div>
+              <div className="text-xs text-white/80 mt-1">{t('home.totalScore')}</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
+              <div className="text-2xl font-mono font-bold">{isGuest ? 0 : userProfile.checkIn.consecutiveDays}</div>
+              <div className="text-xs text-white/80 mt-1">{t('home.streakDays')}</div>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       {homeView === 'campaign' ? (
         <CampaignMapView
@@ -263,6 +309,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
           onStart={onStart}
           onSetActiveCampaignRun={setActiveCampaignRun}
           lastCampaignUpdate={lastCampaignUpdate}
+          storyOpenNonce={campaignStoryOpenNonce}
         />
       ) : (
         <>

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
 import { HomeScreen } from '../screens/HomeScreen';
@@ -12,8 +12,11 @@ import type { GameMode, MouseGameConfig, HouseGameConfig, MouseDifficultyLevel, 
  */
 export function HomePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const { setNextConfig, updateGameConfig, userProfile, nextConfig, recalculateEnergy, consumeEnergy } = useGameStore();
+  const params = new URLSearchParams(location.search);
+  const initialHomeView = params.get('view') === 'campaign' ? 'campaign' : 'training';
 
   const handleStart = useCallback(
     (nLevel: number, rounds: number, mode: GameMode, gridSize: number, mouseConfig?: MouseGameConfig, houseConfig?: HouseGameConfig) => {
@@ -73,6 +76,7 @@ export function HomePage() {
   return (
     <HomeScreen
       initialMode={nextConfig.mode}
+      initialHomeView={initialHomeView}
       userProfile={userProfile}
       onStart={handleStart}
     />
