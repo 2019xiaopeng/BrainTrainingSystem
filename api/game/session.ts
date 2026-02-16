@@ -1,6 +1,6 @@
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, asc, desc, eq, gte } from "drizzle-orm";
 import { db } from "../_lib/db/index.js";
-import { dailyActivity, gameSessions, user, userUnlocks } from "../_lib/db/schema/index.js";
+import { campaignEpisodes, campaignLevels, dailyActivity, gameSessions, user, userCampaignLevelResults, userCampaignState, userUnlocks } from "../_lib/db/schema/index.js";
 import { getBanStatus } from "../_lib/admin.js";
 import { requireSessionUser } from "../_lib/session.js";
 import type { RequestLike, ResponseLike } from "../_lib/http.js";
@@ -408,6 +408,18 @@ const updateUnlocksAfterSession = (
       newlyUnlocked.push(`mouse_mice_${next.maxMice}`);
     }
 
+    const grids: [number, number][] = Array.isArray((next as unknown as { grids?: unknown }).grids) ? ((next as unknown as { grids: [number, number][] }).grids) : [[4, 3]];
+    const hasGrid = (cols: number, rows: number) => grids.some((g) => clampInt(g[0], 0) === cols && clampInt(g[1], 0) === rows);
+    const nextMaxMice = clampInt(next.maxMice, maxMice);
+    if (nextMaxMice >= 5 && !hasGrid(5, 4)) {
+      (next as unknown as { grids: [number, number][] }).grids = [...grids, [5, 4]];
+      newlyUnlocked.push("mouse_grid_5x4");
+    }
+    if (nextMaxMice >= 7 && !hasGrid(6, 5)) {
+      (next as unknown as { grids: [number, number][] }).grids = [...((next as unknown as { grids: [number, number][] }).grids ?? grids), [6, 5]];
+      newlyUnlocked.push("mouse_grid_6x5");
+    }
+
     if (maxRounds < 5) {
       next.maxRounds = Math.min(5, maxRounds + 1);
       newlyUnlocked.push(`mouse_rounds_${next.maxRounds}`);
@@ -483,6 +495,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
   const summary = body.summary;
   const modeDetails = isRecord(body.modeDetails) ? body.modeDetails : {};
+  const campaignLevelId = clampInt((body as Record<string, unknown>).campaignLevelId, 0);
   if (!isRecord(summary)) {
     res.status(400).json({ error: "missing_summary" });
     return;
@@ -732,6 +745,224 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       if (mode === "mouse") unlocks.mouse = unlockUpdate.next as Unlocks["mouse"];
       if (mode === "house") unlocks.house = unlockUpdate.next as Unlocks["house"];
 
+      let campaign:
+        | null
+        | {
+            levelId: number;
+            stars: number;
+            passed: boolean;
+            currentEpisodeId: number;
+            currentLevelId: number;
+            bestStars: number;
+            bestAccuracy: number;
+          } = null;
+
+      if (campaignLevelId > 0) {
+        const campaignRows = await tx
+          .select({
+            id: campaignLevels.id,
+            episodeId: campaignLevels.episodeId,
+            orderInEpisode: campaignLevels.orderInEpisode,
+            gameMode: campaignLevels.gameMode,
+            config: campaignLevels.config,
+            passRule: campaignLevels.passRule,
+            boss: campaignLevels.boss,
+          })
+          .from(campaignLevels)
+          .where(and(eq(campaignLevels.id, campaignLevelId), eq(campaignLevels.isActive, true)))
+          .limit(1);
+
+        const cLevel = campaignRows[0];
+        if (!cLevel) {
+          const err = new Error("invalid_campaign_level") as Error & { code?: string };
+          err.code = "invalid_campaign_level";
+          throw err;
+        }
+
+        if (String(cLevel.gameMode ?? "") !== mode) {
+          const err = new Error("invalid_campaign_level") as Error & { code?: string };
+          err.code = "invalid_campaign_level";
+          throw err;
+        }
+
+        const stars = accuracyInt >= 90 ? 3 : accuracyInt >= 80 ? 2 : accuracyInt >= 60 ? 1 : 0;
+
+        const campaignCfg = isRecord(cLevel.config) ? cLevel.config : {};
+        if (mode === "numeric") {
+          if (clampInt(campaignCfg.nLevel, 0) !== nLevel || clampInt(campaignCfg.rounds, 0) !== totalRounds) {
+            const err = new Error("invalid_campaign_level") as Error & { code?: string };
+            err.code = "invalid_campaign_level";
+            throw err;
+          }
+        }
+        if (mode === "spatial") {
+          if (
+            clampInt(campaignCfg.nLevel, 0) !== nLevel ||
+            clampInt(campaignCfg.rounds, 0) !== totalRounds ||
+            clampInt(campaignCfg.gridSize, 0) !== clampInt(config.gridSize, 0)
+          ) {
+            const err = new Error("invalid_campaign_level") as Error & { code?: string };
+            err.code = "invalid_campaign_level";
+            throw err;
+          }
+        }
+        if (mode === "mouse") {
+          const details = isRecord(modeDetails.mouse) ? modeDetails.mouse : null;
+          if (
+            !details ||
+            clampInt(campaignCfg.count, 0) !== clampInt(details.numMice, 0) ||
+            clampInt(campaignCfg.rounds, 0) !== clampInt(details.totalRounds, 0) ||
+            String(campaignCfg.difficulty ?? "") !== String(details.difficulty ?? "") ||
+            !Array.isArray(campaignCfg.grid) ||
+            clampInt((campaignCfg.grid as unknown[])[0], 0) !== clampInt(details.cols, 0) ||
+            clampInt((campaignCfg.grid as unknown[])[1], 0) !== clampInt(details.rows, 0)
+          ) {
+            const err = new Error("invalid_campaign_level") as Error & { code?: string };
+            err.code = "invalid_campaign_level";
+            throw err;
+          }
+        }
+        if (mode === "house") {
+          const details = isRecord(modeDetails.house) ? modeDetails.house : null;
+          if (
+            !details ||
+            String(campaignCfg.speed ?? "") !== String(details.speed ?? "") ||
+            clampInt(campaignCfg.initialPeople, 0) !== clampInt(details.initialPeople, 0) ||
+            clampInt(campaignCfg.eventCount, 0) !== clampInt(details.eventCount, 0) ||
+            clampInt(campaignCfg.rounds, 0) !== clampInt(details.rounds, 0)
+          ) {
+            const err = new Error("invalid_campaign_level") as Error & { code?: string };
+            err.code = "invalid_campaign_level";
+            throw err;
+          }
+        }
+
+        const passRule = isRecord(cLevel.passRule) ? cLevel.passRule : {};
+        const minAcc = clampInt(passRule.minAccuracy, cLevel.boss ? 90 : 60);
+        const passed = accuracyInt >= minAcc;
+
+        const stateRows = await tx
+          .select({
+            userId: userCampaignState.userId,
+            currentEpisodeId: userCampaignState.currentEpisodeId,
+            currentLevelId: userCampaignState.currentLevelId,
+            viewedEpisodeStoryIds: userCampaignState.viewedEpisodeStoryIds,
+          })
+          .from(userCampaignState)
+          .where(eq(userCampaignState.userId, sessionUser.id))
+          .limit(1);
+
+        const existingState = stateRows[0];
+        if (!existingState) {
+          await tx.insert(userCampaignState).values({
+            userId: sessionUser.id,
+            currentEpisodeId: cLevel.episodeId,
+            currentLevelId: cLevel.id,
+            viewedEpisodeStoryIds: [],
+            updatedAt: now,
+          });
+        }
+
+        const resultRows = await tx
+          .select({
+            bestStars: userCampaignLevelResults.bestStars,
+            bestAccuracy: userCampaignLevelResults.bestAccuracy,
+            bestScore: userCampaignLevelResults.bestScore,
+            clearedAt: userCampaignLevelResults.clearedAt,
+          })
+          .from(userCampaignLevelResults)
+          .where(and(eq(userCampaignLevelResults.userId, sessionUser.id), eq(userCampaignLevelResults.levelId, cLevel.id)))
+          .limit(1);
+
+        const prev = resultRows[0];
+        const bestStars = Math.max(clampInt(prev?.bestStars, 0), stars);
+        const bestAccuracy = Math.max(clampInt(prev?.bestAccuracy, 0), accuracyInt);
+        const bestScore = prev?.bestScore == null ? score : Math.max(clampInt(prev.bestScore, 0), score);
+        const clearedAt = passed ? (prev?.clearedAt ?? now) : (prev?.clearedAt ?? null);
+
+        if (!prev) {
+          await tx.insert(userCampaignLevelResults).values({
+            userId: sessionUser.id,
+            levelId: cLevel.id,
+            bestStars,
+            bestAccuracy,
+            bestScore,
+            clearedAt,
+            updatedAt: now,
+          });
+        } else {
+          await tx
+            .update(userCampaignLevelResults)
+            .set({
+              bestStars,
+              bestAccuracy,
+              bestScore,
+              clearedAt,
+              updatedAt: now,
+            })
+            .where(and(eq(userCampaignLevelResults.userId, sessionUser.id), eq(userCampaignLevelResults.levelId, cLevel.id)));
+        }
+
+        let nextEpisodeId = existingState?.currentEpisodeId ?? cLevel.episodeId;
+        let nextLevelId = existingState?.currentLevelId ?? cLevel.id;
+
+        if (passed && (existingState?.currentLevelId ?? cLevel.id) === cLevel.id) {
+          const nextInEpisode = await tx
+            .select({ id: campaignLevels.id })
+            .from(campaignLevels)
+            .where(
+              and(
+                eq(campaignLevels.isActive, true),
+                eq(campaignLevels.episodeId, cLevel.episodeId),
+                eq(campaignLevels.orderInEpisode, cLevel.orderInEpisode + 1)
+              )
+            )
+            .limit(1);
+
+          if (nextInEpisode[0]) {
+            nextEpisodeId = cLevel.episodeId;
+            nextLevelId = nextInEpisode[0].id;
+          } else {
+            const currentEp = await tx
+              .select({ order: campaignEpisodes.order })
+              .from(campaignEpisodes)
+              .where(eq(campaignEpisodes.id, cLevel.episodeId))
+              .limit(1);
+            const nextOrder = clampInt(currentEp[0]?.order, cLevel.episodeId) + 1;
+            const nextEp = await tx
+              .select({ id: campaignEpisodes.id })
+              .from(campaignEpisodes)
+              .where(and(eq(campaignEpisodes.isActive, true), eq(campaignEpisodes.order, nextOrder)))
+              .limit(1);
+
+            if (nextEp[0]) {
+              const firstLevel = await tx
+                .select({ id: campaignLevels.id })
+                .from(campaignLevels)
+                .where(and(eq(campaignLevels.isActive, true), eq(campaignLevels.episodeId, nextEp[0].id)))
+                .orderBy(asc(campaignLevels.orderInEpisode))
+                .limit(1);
+
+              if (firstLevel[0]) {
+                nextEpisodeId = nextEp[0].id;
+                nextLevelId = firstLevel[0].id;
+              }
+            }
+          }
+        }
+
+        await tx
+          .update(userCampaignState)
+          .set({
+            currentEpisodeId: nextEpisodeId,
+            currentLevelId: nextLevelId,
+            updatedAt: now,
+          })
+          .where(eq(userCampaignState.userId, sessionUser.id));
+
+        campaign = { levelId: cLevel.id, stars, passed, currentEpisodeId: nextEpisodeId, currentLevelId: nextLevelId, bestStars, bestAccuracy };
+      }
+
       return {
         xpEarned,
         xpAfter,
@@ -753,6 +984,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         },
         unlocks,
         newlyUnlocked: unlockUpdate.newlyUnlocked,
+        ...(campaign ? { campaign } : {}),
       };
     });
 
@@ -766,6 +998,10 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     }
     if (code === "locked") {
       res.status(403).json({ error: "locked" });
+      return;
+    }
+    if (code === "invalid_campaign_level") {
+      res.status(400).json({ error: "invalid_campaign_level" });
       return;
     }
     if (code === "user_not_found") {

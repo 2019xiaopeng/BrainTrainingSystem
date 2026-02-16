@@ -4,6 +4,7 @@ import { useGameStore } from '../../store/gameStore';
 import type { UserProfile, GameMode, MouseDifficultyLevel, MouseGridPreset, HouseSpeed } from '../../types/game';
 import { getBrainRank, MOUSE_GRID_PRESETS, MOUSE_DIFFICULTY_MAP, buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
 import type { MouseGameConfig, HouseGameConfig } from '../../types/game';
+import { CampaignMapView } from '../campaign/CampaignMapView';
 
 const GUEST_DEFAULTS = {
   numeric: { nLevel: 1, rounds: 10 },
@@ -37,7 +38,10 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   const { gameConfigs } = useGameStore();
   const cloudUnlocks = useGameStore((s) => s.cloudUnlocks);
   const optimisticUnlocks = useGameStore((s) => s.optimisticUnlocks);
+  const setActiveCampaignRun = useGameStore((s) => s.setActiveCampaignRun);
+  const lastCampaignUpdate = useGameStore((s) => s.lastCampaignUpdate);
   const [mode, setMode] = useState<GameMode>(initialMode);
+  const [homeView, setHomeView] = useState<'training' | 'campaign'>('training');
   const isGuest = (userProfile.auth?.status ?? 'guest') === 'guest';
   const brainLevel = getBrainRank(userProfile.totalXP ?? 0, userProfile.completedMilestones || []).level;
 
@@ -183,6 +187,7 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
   const isConfigValid = (isNBackMode ? nLevel < rounds : true) && isUnlocked;
 
   const handleStart = () => {
+    setActiveCampaignRun(null);
     if (mode === 'mouse') {
       const mConfig = buildMouseGameConfig(effectiveMouseCount, mouseGrid, mouseDifficulty, mouseRounds);
       onStart(1, mouseRounds, mode, mouseGrid[0], mConfig);
@@ -199,6 +204,27 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
       <div className="text-center">
         <h1 className="text-4xl font-light text-zen-700 tracking-wider">{t('app.title')}</h1>
         <p className="text-sm text-zen-400 mt-2">{t('app.subtitle')}</p>
+      </div>
+
+      <div className="flex justify-center">
+        <div className="inline-flex rounded-xl bg-zen-50 border border-zen-200 p-1 shadow-sm">
+          <button
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              homeView === 'training' ? 'bg-white text-zen-700 shadow' : 'text-zen-500 hover:text-zen-700'
+            }`}
+            onClick={() => setHomeView('training')}
+          >
+            自由训练
+          </button>
+          <button
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              homeView === 'campaign' ? 'bg-white text-zen-700 shadow' : 'text-zen-500 hover:text-zen-700'
+            }`}
+            onClick={() => setHomeView('campaign')}
+          >
+            闯关地图
+          </button>
+        </div>
       </div>
 
       {/* Profile Summary Card */}
@@ -230,6 +256,16 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
         </div>
       </div>
 
+      {homeView === 'campaign' ? (
+        <CampaignMapView
+          userProfile={userProfile}
+          unlocks={effectiveUnlocks}
+          onStart={onStart}
+          onSetActiveCampaignRun={setActiveCampaignRun}
+          lastCampaignUpdate={lastCampaignUpdate}
+        />
+      ) : (
+        <>
       {/* 游戏模式选择 */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-zen-200">
         <h2 className="text-lg font-medium text-zen-600 mb-4">{t('home.gameMode')}</h2>
@@ -691,6 +727,8 @@ export function HomeScreen({ initialMode, userProfile, onStart }: HomeScreenProp
           : t('home.startNBack', { n: nLevel, mode: mode === 'numeric' ? t('home.numeric') : t('home.spatial'), rounds })
         }
       </button>
+        </>
+      )}
     </div>
   );
 }
