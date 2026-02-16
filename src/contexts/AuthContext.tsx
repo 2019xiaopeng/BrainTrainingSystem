@@ -13,7 +13,7 @@ type SessionUser = {
 };
 
 type SessionData = {
-  user: SessionUser;
+  user?: SessionUser | null;
 };
 
 const guestProfile: AuthProfile = {
@@ -55,14 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isPending) return;
 
-    if (!session) {
+    const user = (session as SessionData | null)?.user;
+    if (!session || !user || typeof user !== 'object') {
       setAuthProfile(guestProfile);
       setCloudUnlocks(null);
       setCloudDailyActivity(null);
       return;
     }
-
-    const { user } = session as SessionData;
 
     const displayName = user.name || user.username || user.email || 'User';
     const avatarUrl = user.image ?? null;
