@@ -219,32 +219,49 @@ export function SettingsScreen() {
 
       {tab === 'security' && (
         <div className="space-y-3">
-          <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm space-y-3">
-            <div className="text-sm font-medium text-zen-700">{t('settings.security.title')}</div>
-            <div className={`grid ${!isGuest && email && !emailVerified ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
-              <Link
-                className={`text-center rounded-lg border border-zen-200 px-4 py-2 text-sm hover:bg-zen-50 transition-colors ${
-                  isGuest ? 'pointer-events-none opacity-60' : 'text-zen-700'
-                }`}
-                to="/change-password"
-              >
-                {t('settings.security.changePassword')}
-              </Link>
-              {!isGuest && email && !emailVerified ? (
+          {isGuest ? (
+            <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm space-y-3">
+              <div className="text-sm font-medium text-zen-700">{t('settings.security.title')}</div>
+              <div className="text-sm text-zen-500">登录后可修改密码、验证邮箱并绑定第三方账号</div>
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  className="text-center rounded-lg bg-zen-800 text-white px-4 py-2 text-sm hover:bg-zen-900 transition-colors"
+                  to="/signin?callback=%2Fsettings%3Ftab%3Dsecurity"
+                >
+                  {t('profile.auth.goSignin')}
+                </Link>
+                <Link
+                  className="text-center rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
+                  to="/signup?callback=%2Fsettings%3Ftab%3Dsecurity"
+                >
+                  {t('profile.auth.goSignup')}
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm space-y-3">
+              <div className="text-sm font-medium text-zen-700">{t('settings.security.title')}</div>
+              <div className={`grid ${email && !emailVerified ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
                 <Link
                   className="text-center rounded-lg border border-zen-200 px-4 py-2 text-sm hover:bg-zen-50 transition-colors text-zen-700"
-                  to={`/verify-email?email=${encodeURIComponent(email)}&callback=${encodeURIComponent('/settings?tab=security')}`}
+                  to="/change-password"
                 >
-                  {t('settings.security.verifyEmail')}
+                  {t('settings.security.changePassword')}
                 </Link>
-              ) : !isGuest && emailVerified ? (
-                <div className="text-center rounded-lg bg-green-50 border border-green-200 text-green-700 px-4 py-2 text-sm">
-                  {t('settings.emailVerified')}
-                </div>
-              ) : null}
-            </div>
+                {email && !emailVerified ? (
+                  <Link
+                    className="text-center rounded-lg border border-zen-200 px-4 py-2 text-sm hover:bg-zen-50 transition-colors text-zen-700"
+                    to={`/verify-email?email=${encodeURIComponent(email)}&callback=${encodeURIComponent('/settings?tab=security')}`}
+                  >
+                    {t('settings.security.verifyEmail')}
+                  </Link>
+                ) : emailVerified ? (
+                  <div className="text-center rounded-lg bg-green-50 border border-green-200 text-green-700 px-4 py-2 text-sm">
+                    {t('settings.emailVerified')}
+                  </div>
+                ) : null}
+              </div>
 
-            {!isGuest && (
               <button
                 type="button"
                 className="w-full rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
@@ -255,27 +272,10 @@ export function SettingsScreen() {
               >
                 {t('settings.security.signOut')}
               </button>
-            )}
+            </div>
+          )}
 
-            {isGuest && (
-              <div className="grid grid-cols-2 gap-2">
-                <Link
-                  className="text-center rounded-lg bg-zen-800 text-white px-4 py-2 text-sm hover:bg-zen-900 transition-colors"
-                  to="/signin?callback=%2Fsettings"
-                >
-                  {t('profile.auth.goSignin')}
-                </Link>
-                <Link
-                  className="text-center rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
-                  to="/signup?callback=%2Fsettings"
-                >
-                  {t('profile.auth.goSignup')}
-                </Link>
-              </div>
-            )}
-          </div>
-
-          <AuthSection auth={auth} />
+          <AuthSection auth={auth} variant="link-only" />
         </div>
       )}
 
