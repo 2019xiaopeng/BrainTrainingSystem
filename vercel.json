@@ -5,6 +5,7 @@
     { "src": "^/api/campaign/progress$", "dest": "/api/campaign?op=progress" },
     { "src": "^/api/leaderboard/coins/me$", "dest": "/api/leaderboard/coins?op=me" },
     { "src": "^/api/leaderboard/level/me$", "dest": "/api/leaderboard/level?op=me" },
+    { "src": "^/api/(.*)$", "dest": "/api/$1" },
     { "src": "^/(.*)$", "dest": "/index.html" }
   ]
 }

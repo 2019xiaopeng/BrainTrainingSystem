@@ -1,0 +1,5 @@
+{
+  "name": "Brain Expedition",
+  "description": "A gamified N-Back brain training experience featuring a neural network campaign map, AI-powered coaching, and generative reward visualizations.",
+  "requestFramePermissions": []
+}
