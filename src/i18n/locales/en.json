@@ -225,7 +225,8 @@
       "help": "Help"
     },
     "accounts": {
-      "hint": "Linking helps sign-in and account recovery"
+      "hint": "Linking helps sign-in and account recovery",
+      "loginRequired": "Sign in to link accounts"
     },
     "emailVerified": "Verified",
     "emailNotVerified": "Unverified",
@@ -269,7 +270,7 @@
   },
   "rank": {
     "tabs": {
-      "coins": "Coins",
+      "coins": "Score",
       "level": "Level",
       "all": "All-time",
       "week": "Weekly"
@@ -282,6 +283,7 @@
     },
     "metrics": {
       "coins": "Brain Points",
+      "score": "Total Score",
       "xp": "XP {{xp}}",
       "weeklyXp": "Weekly XP {{xp}}",
       "level": "Lv {{level}}"

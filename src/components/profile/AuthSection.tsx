@@ -39,7 +39,7 @@ export function AuthSection({ auth, variant = 'full' }: AuthSectionProps) {
         </div>
 
         {isGuest ? (
-          <div className="text-sm text-zen-500">登录后可绑定第三方账号</div>
+          <div className="text-sm text-zen-500">{t('settings.accounts.loginRequired')}</div>
         ) : (
           <div className="space-y-2">
             <div className="text-xs text-zen-500 flex items-center gap-1">

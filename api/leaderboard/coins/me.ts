@@ -1,6 +1,6 @@
-import { and, eq, gt, or, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../_lib/db/index.js";
-import { featureFlags, leaderboardSnapshots, user } from "../../_lib/db/schema/index.js";
+import { featureFlags, gameSessions, leaderboardSnapshots, user } from "../../_lib/db/schema/index.js";
 import { requireSessionUser } from "../../_lib/session.js";
 import type { RequestLike, ResponseLike } from "../../_lib/http.js";
 
@@ -59,7 +59,6 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       id: user.id,
       name: user.name,
       image: user.image,
-      brainCoins: user.brainCoins,
       xp: user.xp,
       brainLevel: user.brainLevel,
     })
@@ -73,23 +72,34 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     return;
   }
 
-  const meCoins = me.brainCoins ?? 0;
   const meXp = me.xp ?? 0;
+  const scoreRows = await db
+    .select({ totalScore: sql<number>`coalesce(sum(${gameSessions.score}), 0)`.mapWith(Number) })
+    .from(gameSessions)
+    .where(eq(gameSessions.userId, me.id));
+  const meScore = scoreRows[0]?.totalScore ?? 0;
 
-  const higherRows = await db
-    .select({
-      count: sql<number>`count(*)`.mapWith(Number),
-    })
-    .from(user)
-    .where(
-      or(
-        gt(user.brainCoins, meCoins),
-        and(eq(user.brainCoins, meCoins), gt(user.xp, meXp)),
-        and(eq(user.brainCoins, meCoins), eq(user.xp, meXp), gt(user.id, me.id))
+  const rankRows = (await db.transaction(async (tx) => {
+    return (await tx.execute(sql`
+      with scores as (
+        select
+          u."id" as "id",
+          u."xp" as "xp",
+          coalesce(sum(gs."score"), 0) as "totalScore"
+        from "user" u
+        left join "game_sessions" gs on gs."user_id" = u."id"
+        group by u."id"
       )
-    );
-
-  const myRank = (higherRows[0]?.count ?? 0) + 1;
+      select count(*)::int as "higherCount"
+      from scores s
+      where
+        s."totalScore" > ${meScore}
+        or (s."totalScore" = ${meScore} and s."xp" > ${meXp})
+        or (s."totalScore" = ${meScore} and s."xp" = ${meXp} and s."id" > ${me.id})
+    `)) as unknown;
+  })) as unknown as Array<{ higherCount?: number }>;
+  const higherCount = Number(rankRows[0]?.higherCount ?? 0) || 0;
+  const myRank = higherCount + 1;
 
   const medalFor = (rank: number) => (rank === 1 ? "gold" : rank === 2 ? "silver" : rank === 3 ? "bronze" : null);
 
@@ -103,7 +113,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       userId: me.id,
       displayName: me.name,
       avatarUrl: me.image ?? null,
-      brainCoins: meCoins,
+      totalScore: meScore,
       brainLevel: me.brainLevel ?? 1,
       medal: medalFor(myRank),
     },

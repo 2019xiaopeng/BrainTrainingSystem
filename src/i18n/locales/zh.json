@@ -225,7 +225,8 @@
       "help": "帮助"
     },
     "accounts": {
-      "hint": "绑定后可用于登录与找回账号"
+      "hint": "绑定后可用于登录与找回账号",
+      "loginRequired": "登录后可绑定第三方账号"
     },
     "emailVerified": "已验证",
     "emailNotVerified": "未验证",
@@ -282,6 +283,7 @@
     },
     "metrics": {
       "coins": "脑力币",
+      "score": "累计得分",
       "xp": "XP {{xp}}",
       "weeklyXp": "本周 XP {{xp}}",
       "level": "Lv {{level}}"

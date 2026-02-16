@@ -1,6 +1,6 @@
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "../_lib/db/index.js";
-import { featureFlags, leaderboardSnapshots, user } from "../_lib/db/schema/index.js";
+import { featureFlags, gameSessions, leaderboardSnapshots, user } from "../_lib/db/schema/index.js";
 import { requireSessionUser } from "../_lib/session.js";
 import type { RequestLike, ResponseLike } from "../_lib/http.js";
 
@@ -101,18 +101,21 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         const locked = Boolean(lockedRows[0]?.locked);
         if (!locked) return false;
 
+        const totalScoreExpr = sql<number>`coalesce(sum(${gameSessions.score}), 0)`;
         const rows = await tx
           .select({
             id: user.id,
             name: user.name,
             image: user.image,
-            brainCoins: user.brainCoins,
+            totalScore: totalScoreExpr.as("totalScore"),
             brainLevel: user.brainLevel,
             xp: user.xp,
             updatedAt: user.updatedAt,
           })
           .from(user)
-          .orderBy(desc(user.brainCoins), desc(user.xp), desc(user.brainLevel), desc(user.updatedAt))
+          .leftJoin(gameSessions, eq(gameSessions.userId, user.id))
+          .groupBy(user.id, user.name, user.image, user.brainLevel, user.xp, user.updatedAt)
+          .orderBy(desc(totalScoreExpr), desc(user.xp), desc(user.brainLevel), desc(user.updatedAt))
           .limit(topN);
 
         const computedAt = new Date();
@@ -126,7 +129,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
             userId: r.id,
             displayName: r.name,
             avatarUrl: r.image ?? null,
-            brainCoins: r.brainCoins ?? 0,
+            totalScore: (r as any).totalScore ?? 0,
             brainLevel: r.brainLevel ?? 1,
           })),
         };
@@ -162,7 +165,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     userId: string;
     displayName: string;
     avatarUrl: string | null;
-    brainCoins: number;
+    totalScore: number;
     brainLevel: number;
   }> = Array.isArray(payloadEntriesRaw) ? (payloadEntriesRaw as typeof payloadEntries) : [];
 
@@ -173,7 +176,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     userId: r.userId,
     displayName: r.displayName,
     avatarUrl: r.avatarUrl ?? null,
-    brainCoins: r.brainCoins ?? 0,
+    totalScore: r.totalScore ?? 0,
     brainLevel: r.brainLevel ?? 1,
     medal: medalFor(r.rank),
   }));

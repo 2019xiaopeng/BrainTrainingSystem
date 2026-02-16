@@ -143,7 +143,7 @@ export function RightPanel() {
                       month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                     })}</span>
                     {session.avgReactionTimeMs && (
-                      <span>{(session.avgReactionTimeMs / 1000).toFixed(1)}s avg</span>
+                      <span>{t('rank.avgReaction', { seconds: (session.avgReactionTimeMs / 1000).toFixed(1) })}</span>
                     )}
                   </div>
                 </div>
@@ -167,7 +167,7 @@ export function RightPanel() {
             >
               <span className="inline-flex items-center justify-center gap-1.5">
                 <Coins className="w-3.5 h-3.5" />
-                积分榜
+                {t('rank.tabs.coins')}
               </span>
             </button>
             <button
@@ -178,7 +178,7 @@ export function RightPanel() {
                   : 'text-zen-400 hover:bg-zen-50'
               }`}
             >
-              段位榜
+              {t('rank.tabs.level')}
             </button>
           </div>
 

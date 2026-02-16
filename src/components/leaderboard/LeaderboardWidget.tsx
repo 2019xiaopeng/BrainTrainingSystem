@@ -6,7 +6,7 @@ type CoinsEntry = {
   userId: string;
   displayName: string;
   avatarUrl: string | null;
-  brainCoins: number;
+  totalScore: number;
   brainLevel: number;
   medal: 'gold' | 'silver' | 'bronze' | null;
 };
@@ -223,9 +223,9 @@ export function LeaderboardWidget({
               {kind === 'coins' ? (
                 <div className="text-right">
                   <div className="text-sm font-mono font-bold text-zen-700">
-                    {(e as CoinsEntry).brainCoins.toLocaleString()}
+                    ((e as CoinsEntry).totalScore ?? 0).toLocaleString()
                   </div>
-                  <div className="text-[11px] text-zen-400">{t('rank.metrics.coins')}</div>
+                  <div className="text-[11px] text-zen-400">{t('rank.metrics.score')}</div>
                 </div>
               ) : (
                 <div className="text-right">
