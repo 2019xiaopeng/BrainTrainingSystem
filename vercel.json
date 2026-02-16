@@ -1,10 +1,11 @@
 {
-  "rewrites": [
-    { "source": "/api/campaign/meta", "destination": "/api/campaign?op=meta" },
-    { "source": "/api/campaign/progress", "destination": "/api/campaign?op=progress" },
-    { "source": "/api/leaderboard/coins/me", "destination": "/api/leaderboard/coins?op=me" },
-    { "source": "/api/leaderboard/level/me", "destination": "/api/leaderboard/level?op=me" },
-    { "source": "/(?!api/)(.*)", "destination": "/index.html" }
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "^/api/campaign/meta$", "dest": "/api/campaign?op=meta" },
+    { "src": "^/api/campaign/progress$", "dest": "/api/campaign?op=progress" },
+    { "src": "^/api/leaderboard/coins/me$", "dest": "/api/leaderboard/coins?op=me" },
+    { "src": "^/api/leaderboard/level/me$", "dest": "/api/leaderboard/level?op=me" },
+    { "src": "^/(.*)$", "dest": "/index.html" }
   ]
 }
 
