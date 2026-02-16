@@ -1,9 +1,9 @@
 import { eq } from "drizzle-orm";
-import { db } from "../_lib/db/index.js";
-import { user } from "../_lib/db/schema/index.js";
-import { requireSessionUser } from "../_lib/session.js";
-import type { RequestLike, ResponseLike } from "../_lib/http.js";
-import { isRecord } from "../_lib/http.js";
+import { db } from "../../server/_lib/db/index.js";
+import { user } from "../../server/_lib/db/schema/index.js";
+import { requireSessionUser } from "../../server/_lib/session.js";
+import type { RequestLike, ResponseLike } from "../../server/_lib/http.js";
+import { isRecord } from "../../server/_lib/http.js";
 
 const parseBody = (req: RequestLike): unknown => {
   if (req.body && typeof req.body === "object") return req.body;
@@ -92,4 +92,3 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     res.status(500).json({ error: "server_error" });
   }
 }
-

@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { eq, inArray } from "drizzle-orm";
-import { db, ensureSchemaReady } from "../api/_lib/db/index.js";
-import { user } from "../api/_lib/db/schema/index.js";
+import { db, ensureSchemaReady } from "../server/_lib/db/index.js";
+import { user } from "../server/_lib/db/schema/index.js";
 
 const parseEmails = (raw: string | undefined) =>
   (raw ?? "")

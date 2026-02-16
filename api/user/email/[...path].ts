@@ -1,10 +1,10 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../../_lib/db/index.js";
-import { sendResendEmail } from "../../_lib/email/resend.js";
-import { user, verification } from "../../_lib/db/schema/index.js";
-import { requireSessionUser } from "../../_lib/session.js";
-import type { RequestLike, ResponseLike } from "../../_lib/http.js";
-import { isRecord } from "../../_lib/http.js";
+import { db } from "../../../server/_lib/db/index.js";
+import { sendResendEmail } from "../../../server/_lib/email/resend.js";
+import { user, verification } from "../../../server/_lib/db/schema/index.js";
+import { requireSessionUser } from "../../../server/_lib/session.js";
+import type { RequestLike, ResponseLike } from "../../../server/_lib/http.js";
+import { isRecord } from "../../../server/_lib/http.js";
 
 const getUrl = (req: RequestLike): string => {
   const raw = (req as unknown as { url?: unknown }).url;

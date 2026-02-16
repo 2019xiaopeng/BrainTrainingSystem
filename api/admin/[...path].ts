@@ -1,9 +1,9 @@
 import { and, desc, eq, gte, ilike, lte, or } from "drizzle-orm";
-import { db } from "../_lib/db/index.js";
-import { adminAuditLogs, featureFlags, user } from "../_lib/db/schema/index.js";
-import { getHeader, parseJsonBody, requireAdmin } from "../_lib/admin.js";
-import { isRecord } from "../_lib/http.js";
-import type { RequestLike, ResponseLike } from "../_lib/http.js";
+import { db } from "../../server/_lib/db/index.js";
+import { adminAuditLogs, featureFlags, user } from "../../server/_lib/db/schema/index.js";
+import { getHeader, parseJsonBody, requireAdmin } from "../../server/_lib/admin.js";
+import { isRecord } from "../../server/_lib/http.js";
+import type { RequestLike, ResponseLike } from "../../server/_lib/http.js";
 
 const setNoStore = (res: ResponseLike) => {
   const r = res as unknown as { setHeader?: (name: string, value: string) => void };

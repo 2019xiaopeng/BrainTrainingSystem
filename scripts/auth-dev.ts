@@ -1,8 +1,8 @@
 import "dotenv/config";
 import express from "express";
 import { toNodeHandler } from "better-auth/node";
-import { auth } from "../api/_lib/auth";
-import { ensureSchemaReady } from "../api/_lib/db/index.js";
+import { auth } from "../server/_lib/auth";
+import { ensureSchemaReady } from "../server/_lib/db/index.js";
 import gameSessionHandler from "../api/game/session";
 import storeBuyHandler from "../api/store/buy";
 import userProfileHandler from "../api/user/profile";
