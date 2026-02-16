@@ -13,6 +13,7 @@ import { ProfileScreen } from './components/screens/ProfileScreen';
 import { SettingsScreen } from './components/screens/SettingsScreen';
 import { StoreScreen } from './components/screens/StoreScreen';
 import { RankScreen } from './components/screens/RankScreen';
+import { AdminScreen } from './components/screens/AdminScreen';
 
 // ================================================================
 // Brain Flow - 脑力心流 (Phase 4: Router-based Architecture)
@@ -44,6 +45,8 @@ function App() {
           <Route path="/rank" element={<RankScreen />} />
           {/* 商城 */}
           <Route path="/store" element={<StoreScreen />} />
+          {/* 管理后台 */}
+          <Route path="/admin" element={<AdminScreen />} />
           {/* 帮助说明 */}
           <Route path="/instruction" element={<Navigate to="/settings?tab=help" replace />} />
           {/* 404 回退 */}

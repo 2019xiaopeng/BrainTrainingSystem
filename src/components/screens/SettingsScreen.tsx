@@ -1,21 +1,22 @@
 import { useMemo, useState, type ComponentType } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Bell, HelpCircle, Link2, Lock, Settings as SettingsIcon, User } from 'lucide-react';
+import { Bell, HelpCircle, Lock, Settings as SettingsIcon, User } from 'lucide-react';
 import { useGameStore } from '../../store/gameStore';
 import { InstructionScreen } from './InstructionScreen';
 import { signOut } from '../../lib/auth/client';
 import { AuthSection } from '../profile/AuthSection';
 import { CheckInWidget } from '../economy/CheckInWidget';
 
-type SettingsTab = 'profile' | 'security' | 'accounts' | 'notifications' | 'help';
+type SettingsTab = 'profile' | 'security' | 'notifications' | 'help';
 
 function useTab(): SettingsTab {
   const location = useLocation();
   return useMemo(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
-    if (tab === 'security' || tab === 'accounts' || tab === 'notifications' || tab === 'help' || tab === 'profile') return tab;
+    if (tab === 'security' || tab === 'notifications' || tab === 'help' || tab === 'profile') return tab;
+    if (tab === 'accounts') return 'security';
     return 'profile';
   }, [location.search]);
 }
@@ -42,6 +43,13 @@ export function SettingsScreen() {
   const [renameSubmitting, setRenameSubmitting] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
 
+  const [changeEmailOpen, setChangeEmailOpen] = useState(false);
+  const [changeEmailValue, setChangeEmailValue] = useState(email);
+  const [changeEmailOtp, setChangeEmailOtp] = useState('');
+  const [changeEmailStage, setChangeEmailStage] = useState<'idle' | 'sent'>('idle');
+  const [changeEmailSubmitting, setChangeEmailSubmitting] = useState(false);
+  const [changeEmailError, setChangeEmailError] = useState<string | null>(null);
+
   const [emailNotifications, setEmailNotifications] = useState<boolean>(() => {
     const raw = localStorage.getItem('brain-flow-email-notifications');
     if (raw === '0') return false;
@@ -52,7 +60,6 @@ export function SettingsScreen() {
   const tabs: Array<{ key: SettingsTab; label: string; icon: ComponentType<{ className?: string }> }> = [
     { key: 'profile', label: t('settings.tabs.profile'), icon: User },
     { key: 'security', label: t('settings.tabs.security'), icon: Lock },
-    { key: 'accounts', label: t('settings.tabs.accounts'), icon: Link2 },
     { key: 'notifications', label: t('settings.tabs.notifications'), icon: Bell },
     { key: 'help', label: t('settings.tabs.help'), icon: HelpCircle },
   ];
@@ -219,32 +226,180 @@ export function SettingsScreen() {
 
       {tab === 'security' && (
         <div className="space-y-3">
-          <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm space-y-3">
-            <div className="text-sm font-medium text-zen-700">{t('settings.security.title')}</div>
-            <div className={`grid ${!isGuest && email && !emailVerified ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
-              <Link
-                className={`text-center rounded-lg border border-zen-200 px-4 py-2 text-sm hover:bg-zen-50 transition-colors ${
-                  isGuest ? 'pointer-events-none opacity-60' : 'text-zen-700'
-                }`}
-                to="/change-password"
-              >
-                {t('settings.security.changePassword')}
-              </Link>
-              {!isGuest && email && !emailVerified ? (
+          {isGuest ? (
+            <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm space-y-3">
+              <div className="text-sm font-medium text-zen-700">{t('settings.security.title')}</div>
+              <div className="text-sm text-zen-500">{t('settings.security.guestHint')}</div>
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  className="text-center rounded-lg bg-zen-800 text-white px-4 py-2 text-sm hover:bg-zen-900 transition-colors"
+                  to="/signin?callback=%2Fsettings%3Ftab%3Dsecurity"
+                >
+                  {t('profile.auth.goSignin')}
+                </Link>
+                <Link
+                  className="text-center rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
+                  to="/signup?callback=%2Fsettings%3Ftab%3Dsecurity"
+                >
+                  {t('profile.auth.goSignup')}
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm space-y-3">
+              <div className="text-sm font-medium text-zen-700">{t('settings.security.title')}</div>
+              <div className="grid grid-cols-2 gap-2">
                 <Link
                   className="text-center rounded-lg border border-zen-200 px-4 py-2 text-sm hover:bg-zen-50 transition-colors text-zen-700"
-                  to={`/verify-email?email=${encodeURIComponent(email)}&callback=${encodeURIComponent('/settings?tab=security')}`}
+                  to="/change-password"
                 >
-                  {t('settings.security.verifyEmail')}
+                  {t('settings.security.changePassword')}
                 </Link>
-              ) : !isGuest && emailVerified ? (
-                <div className="text-center rounded-lg bg-green-50 border border-green-200 text-green-700 px-4 py-2 text-sm">
-                  {t('settings.emailVerified')}
-                </div>
-              ) : null}
-            </div>
+                <button
+                  type="button"
+                  className="text-center rounded-lg border border-zen-200 px-4 py-2 text-sm hover:bg-zen-50 transition-colors text-zen-700"
+                  onClick={() => {
+                    setChangeEmailError(null);
+                    setChangeEmailSubmitting(false);
+                    setChangeEmailStage('idle');
+                    setChangeEmailOtp('');
+                    setChangeEmailValue(email);
+                    setChangeEmailOpen((v) => !v);
+                  }}
+                >
+                  {t('settings.security.changeEmail')}
+                </button>
+                {email && !emailVerified && (
+                  <Link
+                    className="col-span-2 text-center rounded-lg border border-zen-200 px-4 py-2 text-sm hover:bg-zen-50 transition-colors text-zen-700"
+                    to={`/verify-email?email=${encodeURIComponent(email)}&callback=${encodeURIComponent('/settings?tab=security')}`}
+                  >
+                    {t('settings.security.verifyEmail')}
+                  </Link>
+                )}
+              </div>
 
-            {!isGuest && (
+              {changeEmailOpen && (
+                <div className="space-y-2">
+                  <div className="text-xs text-zen-500">{t('settings.security.changeEmailHint')}</div>
+                  <input
+                    className="w-full rounded-lg border border-zen-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zen-200"
+                    value={changeEmailValue}
+                    onChange={(e) => setChangeEmailValue(e.target.value)}
+                    disabled={changeEmailSubmitting}
+                    placeholder={t('settings.security.emailPlaceholder')}
+                  />
+                  {changeEmailStage === 'sent' && (
+                    <input
+                      className="w-full rounded-lg border border-zen-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zen-200"
+                      value={changeEmailOtp}
+                      onChange={(e) => setChangeEmailOtp(e.target.value)}
+                      disabled={changeEmailSubmitting}
+                      placeholder={t('settings.security.otpPlaceholder')}
+                    />
+                  )}
+                  {changeEmailError && <div className="text-xs text-red-600">{changeEmailError}</div>}
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      className="rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors disabled:opacity-60"
+                      disabled={changeEmailSubmitting}
+                      onClick={() => {
+                        setChangeEmailOpen(false);
+                        setChangeEmailError(null);
+                        setChangeEmailSubmitting(false);
+                        setChangeEmailStage('idle');
+                        setChangeEmailOtp('');
+                      }}
+                    >
+                      {t('common.cancel')}
+                    </button>
+
+                    {changeEmailStage === 'idle' ? (
+                      <button
+                        type="button"
+                        className="rounded-lg bg-zen-800 text-white px-4 py-2 text-sm hover:bg-zen-900 transition-colors disabled:opacity-60"
+                        disabled={changeEmailSubmitting}
+                        onClick={async () => {
+                          setChangeEmailError(null);
+                          setChangeEmailSubmitting(true);
+                          try {
+                            const resp = await fetch('/api/user/email/change-request', {
+                              method: 'POST',
+                              headers: { 'content-type': 'application/json' },
+                              credentials: 'include',
+                              body: JSON.stringify({ email: changeEmailValue }),
+                            });
+                            if (!resp.ok) {
+                              const data = await resp.json().catch(() => null);
+                              const code = String((data as { error?: unknown } | null)?.error ?? '');
+                              if (code === 'invalid_email') setChangeEmailError(t('settings.security.emailInvalid'));
+                              else if (code === 'email_in_use') setChangeEmailError(t('settings.security.emailInUse'));
+                              else setChangeEmailError(t('settings.security.changeEmailFailed'));
+                              return;
+                            }
+                            setChangeEmailStage('sent');
+                          } catch {
+                            setChangeEmailError(t('settings.security.changeEmailNetworkError'));
+                          } finally {
+                            setChangeEmailSubmitting(false);
+                          }
+                        }}
+                      >
+                        {t('settings.security.sendCode')}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="rounded-lg bg-sage-600 text-white px-4 py-2 text-sm hover:bg-sage-700 transition-colors disabled:opacity-60"
+                        disabled={changeEmailSubmitting}
+                        onClick={async () => {
+                          setChangeEmailError(null);
+                          setChangeEmailSubmitting(true);
+                          try {
+                            const resp = await fetch('/api/user/email/change-confirm', {
+                              method: 'POST',
+                              headers: { 'content-type': 'application/json' },
+                              credentials: 'include',
+                              body: JSON.stringify({ email: changeEmailValue, otp: changeEmailOtp }),
+                            });
+                            if (!resp.ok) {
+                              const data = await resp.json().catch(() => null);
+                              const code = String((data as { error?: unknown } | null)?.error ?? '');
+                              if (code === 'invalid_otp' || code === 'expired_otp') setChangeEmailError(t('settings.security.otpInvalid'));
+                              else if (code === 'email_in_use') setChangeEmailError(t('settings.security.emailInUse'));
+                              else setChangeEmailError(t('settings.security.changeEmailFailed'));
+                              return;
+                            }
+                            const data = (await resp.json()) as { email?: unknown; emailVerified?: unknown };
+                            setProfile((s) => ({
+                              userProfile: {
+                                ...s.userProfile,
+                                auth: {
+                                  ...s.userProfile.auth,
+                                  email: String(data.email ?? s.userProfile.auth.email ?? ''),
+                                  emailVerified: Boolean(data.emailVerified ?? true),
+                                },
+                              },
+                            }));
+                            setChangeEmailOpen(false);
+                            setChangeEmailStage('idle');
+                            setChangeEmailOtp('');
+                          } catch {
+                            setChangeEmailError(t('settings.security.changeEmailNetworkError'));
+                          } finally {
+                            setChangeEmailSubmitting(false);
+                          }
+                        }}
+                      >
+                        {t('settings.security.confirmChangeEmail')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <button
                 type="button"
                 className="w-full rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
@@ -255,30 +410,11 @@ export function SettingsScreen() {
               >
                 {t('settings.security.signOut')}
               </button>
-            )}
+            </div>
+          )}
 
-            {isGuest && (
-              <div className="grid grid-cols-2 gap-2">
-                <Link
-                  className="text-center rounded-lg bg-zen-800 text-white px-4 py-2 text-sm hover:bg-zen-900 transition-colors"
-                  to="/signin?callback=%2Fsettings"
-                >
-                  {t('profile.auth.goSignin')}
-                </Link>
-                <Link
-                  className="text-center rounded-lg border border-zen-200 text-zen-700 px-4 py-2 text-sm hover:bg-zen-50 transition-colors"
-                  to="/signup?callback=%2Fsettings"
-                >
-                  {t('profile.auth.goSignup')}
-                </Link>
-              </div>
-            )}
-          </div>
+          <AuthSection auth={auth} variant="link-only" />
         </div>
-      )}
-
-      {tab === 'accounts' && (
-        <AuthSection auth={auth} />
       )}
 
       {tab === 'notifications' && (

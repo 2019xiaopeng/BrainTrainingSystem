@@ -8,7 +8,7 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("emailVerified").notNull(),
   image: text("image"),
-  role: text("role").default("member").notNull(),
+  role: text("role").default("user").notNull(),
   gender: boolean("gender").notNull(),
   
   // --- Game Business Fields ---
@@ -32,6 +32,10 @@ export const user = pgTable("user", {
   // Store
   ownedItems: jsonb("owned_items").default([]).notNull(),
   inventory: jsonb("inventory").default({}).notNull(),
+
+  // Admin & Governance
+  bannedUntil: timestamp("banned_until"),
+  bannedReason: text("banned_reason"),
 
   // External Auth
   wechatUnionId: text("wechat_unionid").unique(),

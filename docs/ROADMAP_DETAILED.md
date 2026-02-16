@@ -63,26 +63,27 @@
     - 将头像/昵称/安全设置拆到独立页面或 Drawer，Profile 主面板只保留关键信息概览。
 
 ### 7.3 排行榜系统 (Leaderboard)
-- [ ] **后端 API**:
-    - `GET /api/leaderboard/coins`: 按 Brain Coins（积分）Top N（总榜/周榜可选）。
-    - `GET /api/leaderboard/level`: 按 Brain Level（Lv）Top N；同 Lv 再按 XP/Coins 作为 tie-break。
-- [ ] **前端 UI**:
-    - 将排行榜移入独立页面（例如 `/rank` 里切 Tab：积分榜 / Lv 榜）。
-    - 增加“我的排名”高亮显示。
+- [x] **后端 API**:
+    - `GET /api/leaderboard/coins`: 按 Brain Coins（积分）Top N（总榜）。
+    - `GET /api/leaderboard/level`: 按 Brain Level（Lv）Top N；同 Lv 再按 XP/Coins 作为 tie-break（支持 `scope=week` 周榜，取本周 XP 聚合）。
+    - `GET /api/leaderboard/{coins|level}/me`: 我的排名（独立端点，避免缓存污染）。
+- [x] **前端 UI**:
+    - 排行榜在 `/rank` 独立页面（Tab：积分榜 / 段位榜；段位榜支持 总榜/周榜）。
+    - “我的排名”显示与高亮（通过 `/me` 端点获取）。
 #### 7.3.1 排行榜性能与缓存策略 (Caching & Performance)
-- [ ] **客户端缓存（体验优先）**:
+- [x] **客户端缓存（体验优先）**:
     - 切换 Tab 不清空列表；使用本地缓存 + TTL（例如 30-120s）避免重复请求。
     - 采用 “stale-while-revalidate”：先展示缓存，再后台刷新并平滑更新。
     - 可选：引入 React Query / SWR 统一处理缓存、去重、并发合并、失败重试。
-- [ ] **服务端缓存（降 DB 压力）**:
+- [x] **服务端缓存（降 DB 压力）**:
     - API 增加 `Cache-Control: public, max-age=30, stale-while-revalidate=120`（可被 CDN/浏览器复用）。
-    - 服务端进程内缓存或 Redis 缓存 TopN 结果（30-60s）。
-    - “我的排名”接口结果同样缓存，避免频繁 count(*)。
+    - 公共榜单读路径优先读 DB 快照（`leaderboard_snapshots`），过期时软刷新 + 防 stampede。
+    - “我的排名”独立端点（`private, no-store`）；必要时可再加限流/缓存策略。
 #### 7.3.2 数据预聚合 (Pre-aggregation)
-- [ ] **索引与基础优化（先做）**:
+- [x] **索引与基础优化（先做）**:
     - `users(brain_coins desc)`、`users(brain_level desc, xp desc)` 等索引，确保 TopN 查询快速。
-- [ ] **快照表/物化视图（上量后）**:
-    - 建 `leaderboard_snapshot(kind, computed_at, payload_json)` 或物化视图，定时任务每 1-5 分钟刷新。
+- [x] **快照表/物化视图（上量后）**:
+    - 已使用 `leaderboard_snapshots(kind, computed_at, payload)` 存榜单快照（`coins:all`、`level:all`、`level:week`），并按 TTL 刷新。
     - API 直接读取最新快照，避免每次请求实时排序与聚合。
 
 ---
@@ -179,43 +180,44 @@
 **目标**: 提供一套安全可审计的后台能力，用于用户治理、运营开关、排行榜管理与数据修正。
 
 ### 12.1 角色与权限模型 (RBAC)
-- [ ] **用户角色**:
-    - `users.role`: `member` / `admin` / `moderator`（最小可行先 `member/admin`）。
+- [x] **用户角色**:
+    - `users.role`: `user` / `admin` / `moderator`（当前系统默认 `user`，最小可行先 `user/admin`；兼容历史值 `member`）。
     - 管理员入口不依赖前端隐藏，所有权限必须在后端强校验。
-- [ ] **初始化管理员**:
-    - 通过环境变量白名单（例如 `ADMIN_EMAILS`）或一次性脚本把指定账号提升为 admin。
+- [x] **初始化管理员**:
+    - 通过环境变量白名单（`ADMIN_EMAILS`，逗号分隔）+ 一次性脚本把指定账号提升为 admin（`npm run admin:bootstrap`）。
     - 禁止在前端写死管理员信息。
 
 ### 12.2 管理后台页面 (Admin Console)
-- [ ] **路由**: `/admin`（不出现在普通导航）。
-- [ ] **模块划分（Mobile 兼容）**:
+- [x] **路由**: `/admin`（不出现在普通导航）。
+- [x] **模块划分（Mobile 兼容）**:
     - 用户管理：搜索（email/昵称/ID）、用户详情、封禁/解封。
     - 资产与数据修正：XP/Coins/Energy/Inventory/BrainStats 的受控修改（字段白名单 + 范围校验）。
     - 运营配置：排行榜开关、周榜开关、榜单刷新频率、展示规则（TopN 数量、是否隐藏游客）。
     - 审计日志：按操作者/用户/时间筛选，支持导出。
 
 ### 12.3 后端 Admin API (Server-only)
-- [ ] **鉴权**:
+- [x] **鉴权**:
     - `requireAdmin(req)`：基于 Better Auth session + `users.role` 校验。
     - 所有 `/api/admin/*` 接口仅允许 admin 访问。
-- [ ] **核心接口示例**:
+- [x] **核心接口示例**:
     - `GET /api/admin/users?query=`：用户列表与搜索。
     - `GET /api/admin/users/:id`：用户详情。
     - `PATCH /api/admin/users/:id`：修改用户资产/状态（白名单字段）。
     - `POST /api/admin/users/:id/ban`、`POST /api/admin/users/:id/unban`：封禁管理。
     - `GET /api/admin/feature-flags`、`PATCH /api/admin/feature-flags`：运营开关。
+    - 说明：当前项目在 Vercel 上通过单个函数承载 `/api/admin/*`（`/api/admin/[...path].ts`），并在 `vercel.json` 明确路由到该函数。
 
 ### 12.4 封禁与风控 (Ban & Abuse Prevention)
-- [ ] **数据结构**:
+- [x] **数据结构**:
     - `users.banned_until`（或 `users.is_banned/ban_reason`）。
-- [ ] **执行点**:
+- [x] **执行点**:
     - 在关键写入/敏感接口（如 `POST /api/game/session`、`POST /api/store/buy`、`POST /api/user/checkin`）统一检查并拒绝。
     - 对封禁用户返回稳定错误码（例如 `banned`），前端统一提示。
 
 ### 12.5 审计日志 (Audit Logs)
-- [ ] **表结构**:
+- [x] **表结构**:
     - `admin_audit_logs(id, admin_user_id, target_user_id, action, before, after, ip, user_agent, created_at)`。
-- [ ] **要求**:
+- [x] **要求**:
     - 所有管理员写操作必须写日志（包括排行榜开关、封禁、资产调整）。
     - 后台提供查看与筛选能力。
 

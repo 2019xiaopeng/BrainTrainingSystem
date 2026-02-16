@@ -251,6 +251,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       brainLevel: user.brainLevel,
       brainCoins: user.brainCoins,
       ownedItems: user.ownedItems,
+      inventory: user.inventory,
       energyCurrent: user.energyCurrent,
       energyLastUpdated: user.energyLastUpdated,
       unlimitedEnergyUntil: user.unlimitedEnergyUntil,
