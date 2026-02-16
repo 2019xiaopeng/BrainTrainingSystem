@@ -1,8 +1,6 @@
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import { client, db } from "../_lib/db/index.js";
-import { featureFlags, leaderboardSnapshots } from "../_lib/db/schema/index.js";
-import * as schema from "../_lib/db/schema/index.js";
+import { desc, eq, sql } from "drizzle-orm";
+import { db } from "../_lib/db/index.js";
+import { featureFlags, leaderboardSnapshots, user } from "../_lib/db/schema/index.js";
 import { requireSessionUser } from "../_lib/session.js";
 import type { RequestLike, ResponseLike } from "../_lib/http.js";
 
@@ -95,18 +93,27 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   if (!snapshotPayload || !isFresh) {
     let refreshed = false;
     try {
-      refreshed = await client.begin(async (tx) => {
+      refreshed = await db.transaction(async (tx) => {
         const lockKey = `leaderboard:${kind}`;
-        const lockedRows = await tx<{ locked: boolean }[]>`select pg_try_advisory_xact_lock(hashtext(${lockKey})) as locked`;
+        const lockedRows = (await tx.execute(
+          sql`select pg_try_advisory_xact_lock(hashtext(${lockKey})) as locked`
+        )) as unknown as Array<{ locked?: boolean }>;
         const locked = Boolean(lockedRows[0]?.locked);
         if (!locked) return false;
 
-        const rows = await tx<
-          Array<{ id: string; name: string; image: string | null; brainCoins: number | null; brainLevel: number | null; xp: number | null }>
-        >`select "id", "name", "image", "brain_coins" as "brainCoins", "brain_level" as "brainLevel", "xp"
-          from "user"
-          order by "brain_coins" desc, "xp" desc, "brain_level" desc, "updated_at" desc
-          limit ${topN}`;
+        const rows = await tx
+          .select({
+            id: user.id,
+            name: user.name,
+            image: user.image,
+            brainCoins: user.brainCoins,
+            brainLevel: user.brainLevel,
+            xp: user.xp,
+            updatedAt: user.updatedAt,
+          })
+          .from(user)
+          .orderBy(desc(user.brainCoins), desc(user.xp), desc(user.brainLevel), desc(user.updatedAt))
+          .limit(topN);
 
         const computedAt = new Date();
         const payload = {
@@ -124,8 +131,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
           })),
         };
 
-        const txDb = drizzle(tx, { schema });
-        await txDb
+        await tx
           .insert(leaderboardSnapshots)
           .values({ kind, computedAt, payload: payload as Record<string, unknown> })
           .onConflictDoUpdate({

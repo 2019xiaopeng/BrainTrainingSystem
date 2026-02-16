@@ -1,8 +1,6 @@
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import { client, db } from "../_lib/db/index.js";
-import { featureFlags, leaderboardSnapshots } from "../_lib/db/schema/index.js";
-import * as schema from "../_lib/db/schema/index.js";
+import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
+import { db } from "../_lib/db/index.js";
+import { dailyActivity, featureFlags, leaderboardSnapshots, user } from "../_lib/db/schema/index.js";
 import { requireSessionUser } from "../_lib/session.js";
 import type { RequestLike, ResponseLike } from "../_lib/http.js";
 
@@ -100,9 +98,11 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   if (!snapshotPayload || !isFresh) {
     let refreshed = false;
     try {
-      refreshed = await client.begin(async (tx) => {
+      refreshed = await db.transaction(async (tx) => {
         const lockKey = `leaderboard:${kind}`;
-        const lockedRows = await tx<{ locked: boolean }[]>`select pg_try_advisory_xact_lock(hashtext(${lockKey})) as locked`;
+        const lockedRows = (await tx.execute(
+          sql`select pg_try_advisory_xact_lock(hashtext(${lockKey})) as locked`
+        )) as unknown as Array<{ locked?: boolean }>;
         const locked = Boolean(lockedRows[0]?.locked);
         if (!locked) return false;
 
@@ -117,42 +117,39 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         const weekStartKey = weekStart.toISOString().slice(0, 10);
         const weekEndKey = weekEnd.toISOString().slice(0, 10);
 
+        const weeklyXpExpr = sql<number>`coalesce(sum(${dailyActivity.totalXp}), 0)`;
         const rows =
           scope === "week"
-            ? await tx<
-                Array<{
-                  id: string;
-                  name: string;
-                  image: string | null;
-                  brainLevel: number | null;
-                  xp: number | null;
-                  brainCoins: number | null;
-                  weeklyXp: number | null;
-                }>
-              >`select u."id", u."name", u."image",
-                  u."brain_level" as "brainLevel",
-                  u."xp",
-                  u."brain_coins" as "brainCoins",
-                  coalesce(sum(da."total_xp"), 0) as "weeklyXp"
-                from "user" u
-                join "daily_activity" da on da."user_id" = u."id"
-                where da."date" >= ${weekStartKey} and da."date" < ${weekEndKey}
-                group by u."id"
-                order by "weeklyXp" desc, u."brain_level" desc, u."xp" desc, u."brain_coins" desc, u."updated_at" desc
-                limit ${topN}`
-            : await tx<
-                Array<{
-                  id: string;
-                  name: string;
-                  image: string | null;
-                  brainLevel: number | null;
-                  xp: number | null;
-                  brainCoins: number | null;
-                }>
-              >`select "id", "name", "image", "brain_level" as "brainLevel", "xp", "brain_coins" as "brainCoins"
-                from "user"
-                order by "brain_level" desc, "xp" desc, "brain_coins" desc, "updated_at" desc
-                limit ${topN}`;
+            ? await tx
+                .select({
+                  id: user.id,
+                  name: user.name,
+                  image: user.image,
+                  brainLevel: user.brainLevel,
+                  xp: user.xp,
+                  brainCoins: user.brainCoins,
+                  updatedAt: user.updatedAt,
+                  weeklyXp: weeklyXpExpr.as("weeklyXp"),
+                })
+                .from(user)
+                .innerJoin(dailyActivity, eq(dailyActivity.userId, user.id))
+                .where(and(gte(dailyActivity.date, weekStartKey), lt(dailyActivity.date, weekEndKey)))
+                .groupBy(user.id)
+                .orderBy(desc(weeklyXpExpr), desc(user.brainLevel), desc(user.xp), desc(user.brainCoins), desc(user.updatedAt))
+                .limit(topN)
+            : await tx
+                .select({
+                  id: user.id,
+                  name: user.name,
+                  image: user.image,
+                  brainLevel: user.brainLevel,
+                  xp: user.xp,
+                  brainCoins: user.brainCoins,
+                  updatedAt: user.updatedAt,
+                })
+                .from(user)
+                .orderBy(desc(user.brainLevel), desc(user.xp), desc(user.brainCoins), desc(user.updatedAt))
+                .limit(topN);
 
         const computedAt = new Date();
         const payload = {
@@ -176,8 +173,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
           })),
         };
 
-        const txDb = drizzle(tx, { schema });
-        await txDb
+        await tx
           .insert(leaderboardSnapshots)
           .values({ kind, computedAt, payload: payload as Record<string, unknown> })
           .onConflictDoUpdate({
