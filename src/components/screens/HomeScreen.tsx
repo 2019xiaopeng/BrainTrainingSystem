@@ -92,10 +92,10 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
       </div>
 
       {/* View Tab Switcher: 自由训练 / 闯关模式 */}
-      <div className="flex gap-2 bg-zen-100 rounded-xl p-1">
+      <div className="flex gap-1 bg-zen-100 rounded-lg p-1 w-fit mx-auto">
         <button
           onClick={() => setHomeView('training')}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
             homeView === 'training'
               ? 'bg-white text-sage-700 shadow-sm'
               : 'text-zen-500 hover:text-zen-700'
@@ -105,7 +105,7 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
         </button>
         <button
           onClick={() => setHomeView('campaign')}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
             homeView === 'campaign'
               ? 'bg-white text-sage-700 shadow-sm'
               : 'text-zen-500 hover:text-zen-700'

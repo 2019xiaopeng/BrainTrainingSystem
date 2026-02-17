@@ -779,6 +779,9 @@ export const useGameStore = create<GameStore>()(
                     'invalid_body',
                     'missing_summary',
                     'invalid_mode',
+                    'invalid_campaign_level',
+                    'banned',
+                    'user_not_found',
                   ]);
 
                   if (nonRetryable.has(error)) {

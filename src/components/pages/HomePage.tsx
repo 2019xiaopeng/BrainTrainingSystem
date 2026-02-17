@@ -1,10 +1,26 @@
 import { useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
 import { HomeScreen } from '../screens/HomeScreen';
-import { HOUSE_SPEED_MAP, MOUSE_DIFFICULTY_MAP } from '../../types/game';
-import type { GameMode, MouseGameConfig, HouseGameConfig, MouseDifficultyLevel, HouseSpeed } from '../../types/game';
+import type { GameMode, MouseGameConfig, HouseGameConfig, MouseDifficultyLevel, MouseGridPreset, HouseSpeed } from '../../types/game';
+import { MOUSE_DIFFICULTY_MAP, HOUSE_SPEED_MAP } from '../../types/game';
+
+/** Reverse-map numPushes → difficulty string */
+const pushesToDifficulty = (numPushes: number): MouseDifficultyLevel => {
+  for (const [key, val] of Object.entries(MOUSE_DIFFICULTY_MAP)) {
+    if (val.pushes === numPushes) return key as MouseDifficultyLevel;
+  }
+  return 'easy';
+};
+
+/** Reverse-map delayRange → speed string */
+const delayRangeToSpeed = (delayRange: [number, number]): HouseSpeed => {
+  for (const [key, val] of Object.entries(HOUSE_SPEED_MAP)) {
+    if (val.delayRange[0] === delayRange[0] && val.delayRange[1] === delayRange[1]) return key as HouseSpeed;
+  }
+  return 'easy';
+};
 
 /**
  * HomePage - 首页路由页
@@ -12,11 +28,8 @@ import type { GameMode, MouseGameConfig, HouseGameConfig, MouseDifficultyLevel, 
  */
 export function HomePage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { t } = useTranslation();
   const { setNextConfig, updateGameConfig, userProfile, nextConfig, recalculateEnergy, consumeEnergy } = useGameStore();
-  const params = new URLSearchParams(location.search);
-  const initialHomeView = params.get('view') === 'campaign' ? 'campaign' : 'training';
 
   const handleStart = useCallback(
     (nLevel: number, rounds: number, mode: GameMode, gridSize: number, mouseConfig?: MouseGameConfig, houseConfig?: HouseGameConfig) => {
@@ -29,44 +42,23 @@ export function HomePage() {
         return;
       }
       
-      // 保存配置到 store，TrainPage 会读取
+      // 保存配置到 store（转换为 store 格式，TrainPage 会读取 store 格式的 key）
       if (mode === 'mouse' && mouseConfig) {
-        const difficulty =
-          (Object.keys(MOUSE_DIFFICULTY_MAP) as MouseDifficultyLevel[]).find(
-            (k) => MOUSE_DIFFICULTY_MAP[k].pushes === mouseConfig.numPushes
-          ) ?? 'easy';
-
         updateGameConfig('mouse', {
           count: mouseConfig.numMice,
-          grid: [mouseConfig.cols, mouseConfig.rows],
-          difficulty,
+          grid: [mouseConfig.cols, mouseConfig.rows] as MouseGridPreset,
+          difficulty: pushesToDifficulty(mouseConfig.numPushes),
           rounds: mouseConfig.totalRounds,
         });
       }
-
       if (mode === 'house' && houseConfig) {
-        const speed =
-          (Object.keys(HOUSE_SPEED_MAP) as HouseSpeed[]).find((k) => {
-            const [min, max] = HOUSE_SPEED_MAP[k].delayRange;
-            return min === houseConfig.delayRange[0] && max === houseConfig.delayRange[1];
-          }) ?? 'easy';
-
         updateGameConfig('house', {
           initialPeople: houseConfig.initialPeople,
           eventCount: houseConfig.eventCount,
-          speed,
+          speed: delayRangeToSpeed(houseConfig.delayRange),
           rounds: houseConfig.totalRounds,
         });
       }
-
-      if (mode === 'numeric') {
-        updateGameConfig('numeric', { nLevel, rounds });
-      }
-
-      if (mode === 'spatial') {
-        updateGameConfig('spatial', { nLevel, rounds, gridSize });
-      }
-
       setNextConfig({ nLevel, totalRounds: rounds, mode, gridSize });
       navigate(`/train/${mode}`);
     },
@@ -76,7 +68,6 @@ export function HomePage() {
   return (
     <HomeScreen
       initialMode={nextConfig.mode}
-      initialHomeView={initialHomeView}
       userProfile={userProfile}
       onStart={handleStart}
     />
