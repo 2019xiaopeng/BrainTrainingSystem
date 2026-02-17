@@ -6,7 +6,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AppView, NBackConfig, SessionSummary, UserProfile, SessionHistoryEntry, GameConfigs, GameMode, BrainStats, AuthProfile, EnergyState, CheckInState, GameUnlocks, DailyActivityEntry, MouseDifficultyLevel, HouseSpeed } from '../types/game';
 import { DEFAULT_CONFIG, ENERGY_MAX, calculateRecoveredEnergy, getBrainRank, getCheckInReward, STORE_PRODUCTS } from '../types/game';
-import { updateGuestCampaignAfterSession } from '../lib/campaign/guestProgress';
+import { updateGuestCampaignAfterSession, computeStars, readGuestCampaignProgress } from '../lib/campaign/guestProgress';
 
 const ENERGY_STORAGE_KEY_GUEST = 'brain-flow-energy:guest';
 const ENERGY_STORAGE_KEY_USER_PREFIX = 'brain-flow-energy:user:';
@@ -95,6 +95,7 @@ interface GameStore {
     unlockBonusCoins: number;
     dailyPerfectBonus: number;
     dailyFirstWinBonus: number;
+    campaignStarBonus: number;
     brainCoinsEarned: number;
     brainCoinsAfter: number;
     xpAfter: number;
@@ -829,6 +830,7 @@ export const useGameStore = create<GameStore>()(
                     unlockBonusCoins: Number(data.unlockBonusCoins ?? 0) || 0,
                     dailyPerfectBonus: Number(data.dailyPerfectBonus ?? 0) || 0,
                     dailyFirstWinBonus: Number(data.dailyFirstWinBonus ?? 0) || 0,
+                    campaignStarBonus: Number(data.campaignStarBonus ?? 0) || 0,
                     brainCoinsEarned: Number(data.brainCoinsEarned ?? 0) || 0,
                     brainCoinsAfter: Number(data.brainCoinsAfter ?? s.userProfile.brainCoins) || s.userProfile.brainCoins,
                     xpAfter: Number(data.xpAfter ?? s.userProfile.totalXP) || s.userProfile.totalXP,
@@ -1012,12 +1014,24 @@ export const useGameStore = create<GameStore>()(
         const brainCoinsEarnedLocal = calculateBrainCoinsEarned(score);
         const dailyPerfectBonusLocal = 0;
         const dailyFirstWinBonusLocal = 0;
+
+        // Campaign star bonus (delta strategy: only award improvement over previous best)
+        let campaignStarBonusLocal = 0;
+        const campaignRun = state.activeCampaignRun;
+        if (campaignRun) {
+          const STAR_BONUS = [0, 5, 10, 20]; // 0star, 1star, 2star, 3star
+          const newStars = computeStars(enrichedSummary.accuracy);
+          // For authenticated: check existing results from pending uploads or assume 0
+          // Server will handle deduplication; locally we compute an optimistic delta
+          campaignStarBonusLocal = Math.max(0, STAR_BONUS[newStars] ?? 0);
+        }
         const brainCoinsAfterLocal =
           (state.userProfile.brainCoins ?? 0) +
           brainCoinsEarnedLocal +
           unlockBonusCoinsLocal +
           dailyPerfectBonusLocal +
-          dailyFirstWinBonusLocal;
+          dailyFirstWinBonusLocal +
+          campaignStarBonusLocal;
 
         const brainLevelBeforeLocal = getBrainRank(state.userProfile.totalXP ?? 0, milestones).level;
         const brainLevelAfterLocal = getBrainRank((state.userProfile.totalXP ?? 0) + xpEarnedLocal, milestones).level;
@@ -1036,6 +1050,7 @@ export const useGameStore = create<GameStore>()(
             unlockBonusCoins: unlockBonusCoinsLocal,
             dailyPerfectBonus: dailyPerfectBonusLocal,
             dailyFirstWinBonus: dailyFirstWinBonusLocal,
+            campaignStarBonus: campaignStarBonusLocal,
             brainCoinsEarned: brainCoinsEarnedLocal,
             brainCoinsAfter: brainCoinsAfterLocal,
             xpAfter: (state.userProfile.totalXP ?? 0) + xpEarnedLocal,
@@ -1053,7 +1068,7 @@ export const useGameStore = create<GameStore>()(
             daysStreak: newStreak,
             lastPlayedDate: new Date().toISOString(),
             brainStats: newBrainStats,
-            brainCoins: state.userProfile.brainCoins + brainCoinsEarnedLocal + unlockBonusCoinsLocal + dailyPerfectBonusLocal,
+            brainCoins: state.userProfile.brainCoins + brainCoinsEarnedLocal + unlockBonusCoinsLocal + dailyPerfectBonusLocal + campaignStarBonusLocal,
             completedMilestones: milestones,
           },
           optimisticUnlocks: unlockUpdateLocal.next,

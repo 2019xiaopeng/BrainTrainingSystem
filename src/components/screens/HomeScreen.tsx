@@ -5,6 +5,7 @@ import type { UserProfile, GameMode, MouseDifficultyLevel, MouseGridPreset, Hous
 import { getBrainRank, MOUSE_GRID_PRESETS, MOUSE_DIFFICULTY_MAP, buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
 import type { MouseGameConfig, HouseGameConfig } from '../../types/game';
 import { CampaignMapView } from '../campaign/CampaignMapView';
+import { useCampaignUnlocks } from '../../hooks/useCampaignUnlocks';
 
 const GUEST_DEFAULTS = {
   numeric: { nLevel: 1, rounds: 10 },
@@ -37,8 +38,6 @@ interface HomeScreenProps {
 export function HomeScreen({ initialMode, initialHomeView, userProfile, onStart }: HomeScreenProps) {
   const { t } = useTranslation();
   const { gameConfigs } = useGameStore();
-  const cloudUnlocks = useGameStore((s) => s.cloudUnlocks);
-  const optimisticUnlocks = useGameStore((s) => s.optimisticUnlocks);
   const setActiveCampaignRun = useGameStore((s) => s.setActiveCampaignRun);
   const lastCampaignUpdate = useGameStore((s) => s.lastCampaignUpdate);
   const [mode, setMode] = useState<GameMode>(initialMode);
@@ -46,13 +45,13 @@ export function HomeScreen({ initialMode, initialHomeView, userProfile, onStart 
   const isGuest = (userProfile.auth?.status ?? 'guest') === 'guest';
   const brainLevel = getBrainRank(userProfile.totalXP ?? 0, userProfile.completedMilestones || []).level;
   const [showCampaignLoginHint, setShowCampaignLoginHint] = useState(false);
-  const [campaignStoryOpenNonce, setCampaignStoryOpenNonce] = useState(0);
 
-  const effectiveUnlocks = !isGuest ? (cloudUnlocks ?? optimisticUnlocks) : null;
-  const numericUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.numeric : null;
-  const spatialUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.spatial : null;
-  const mouseUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.mouse : null;
-  const houseUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.house : null;
+  const campaignUnlocks = useCampaignUnlocks(isGuest, lastCampaignUpdate);
+  const effectiveUnlocks = campaignUnlocks;
+  const numericUnlocks = effectiveUnlocks ? effectiveUnlocks.numeric : null;
+  const spatialUnlocks = effectiveUnlocks ? effectiveUnlocks.spatial : null;
+  const mouseUnlocks = effectiveUnlocks ? effectiveUnlocks.mouse : null;
+  const houseUnlocks = effectiveUnlocks ? effectiveUnlocks.house : null;
 
   // Separate config state for numeric mode (use saved config or defaults)
   const [numericNLevel, setNumericNLevel] = useState(() => (isGuest ? GUEST_DEFAULTS.numeric.nLevel : gameConfigs.numeric.nLevel));
@@ -179,7 +178,6 @@ export function HomeScreen({ initialMode, initialHomeView, userProfile, onStart 
   const maxMice = mouseGrid[0] * mouseGrid[1] - 1;
   const effectiveMouseCount = Math.min(mouseCount, maxMice);
   const isUnlocked =
-    isGuest ? true :
     mode === 'numeric'
       ? nLevel <= numericMaxNUnlocked && numericAllowedRounds.includes(numericRounds)
       : mode === 'spatial'
@@ -245,15 +243,7 @@ export function HomeScreen({ initialMode, initialHomeView, userProfile, onStart 
           >
             闯关地图
           </button>
-          {homeView === 'campaign' && !isGuest ? (
-            <button
-              className="px-3 py-2 rounded-lg text-sm font-medium text-zen-500 hover:text-zen-700 hover:bg-white/70 transition"
-              onClick={() => setCampaignStoryOpenNonce((n) => n + 1)}
-              title="查看当前章节简介"
-            >
-              查看详情
-            </button>
-          ) : null}
+
         </div>
       </div>
 
@@ -305,11 +295,9 @@ export function HomeScreen({ initialMode, initialHomeView, userProfile, onStart 
       {homeView === 'campaign' ? (
         <CampaignMapView
           userProfile={userProfile}
-          unlocks={effectiveUnlocks}
           onStart={onStart}
           onSetActiveCampaignRun={setActiveCampaignRun}
           lastCampaignUpdate={lastCampaignUpdate}
-          storyOpenNonce={campaignStoryOpenNonce}
         />
       ) : (
         <>
@@ -390,7 +378,7 @@ export function HomeScreen({ initialMode, initialHomeView, userProfile, onStart 
           </div>
         )}
 
-        <div className={`space-y-4 ${isGuest ? 'pointer-events-none opacity-60' : ''}`}>
+        <div className="space-y-4">
         {/* ===== N-Back 模式配置 ===== */}
         {isNBackMode && (
           <>

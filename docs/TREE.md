@@ -20,56 +20,91 @@
 
 ## 后端（api/）
 
+共 7 个 Vercel Serverless Functions（Hobby 限制 12 个）：
+
 ```
 api/
-├─ auth.ts               # better-auth 入口（Vercel Function）
+├─ auth/
+│  └─ [[...path]].ts     # better-auth 入口（catch-all）
+├─ admin/
+│  └─ [...path].ts       # 管理后台 API（ban/审计/用户管理）
+├─ campaign.ts            # 闯关元数据 + 进度（10章50关）
 ├─ game/
 │  └─ session.ts          # 训练结算写入（XP/体力/解锁/每日奖励/历史）
+├─ leaderboard/
+│  └─ [...path].ts       # 排行榜（coins + level，含 /me 查询）
 ├─ store/
 │  └─ buy.ts              # 商城购买（扣币/加体力/道具）
 └─ user/
-   ├─ profile.ts          # 读取档案（含聚合统计/历史/解锁/热力图）
-   └─ checkin.ts          # 每日签到（streak/奖励/补签卡）
-└─ _lib/
-   ├─ auth.ts            # better-auth 配置（adapter/providers/trustedOrigins）
-   └─ db/
-      ├─ index.ts        # drizzle 连接
-      └─ schema/
-         ├─ index.ts     # schema 汇总
-         ├─ auth/        # better-auth 表：user/session/account/verification
-         └─ game.ts      # game_sessions / user_unlocks / daily_activity
+   └─ [...path].ts       # 用户 API（profile/checkin/display-name/email）
+```
+
+```
+server/_lib/
+├─ admin.ts              # ban 状态检查
+├─ auth.ts               # better-auth 配置（adapter/providers/trustedOrigins）
+├─ http.ts               # RequestLike/ResponseLike 类型 + isRecord
+├─ session.ts            # requireSessionUser
+├─ db/
+│  ├─ index.ts           # drizzle 连接
+│  └─ schema/
+│     ├─ index.ts        # schema 汇总
+│     ├─ auth/           # better-auth 表：user/session/account/verification
+│     ├─ game.ts         # game_sessions / user_unlocks / daily_activity
+│     ├─ economy.ts      # products / orders
+│     ├─ meta.ts         # feature_flags / leaderboard_snapshots
+│     ├─ admin.ts        # audit_logs
+│     └─ campaign.ts     # campaign_episodes / campaign_levels / user_campaign_state / user_campaign_level_results
+└─ email/
+   └─ resend.ts          # Resend 邮件发送
 ```
 
 定位后端问题常用入口：
 
-- 认证路由是否工作：`/api/auth/*` → [api/auth.ts](file:///f:/N-Back/api/auth.ts)
-- trustedOrigins / baseURL： [api/_lib/auth.ts](file:///f:/N-Back/api/_lib/auth.ts)
-- 数据库连接： [api/_lib/db/index.ts](file:///f:/N-Back/api/_lib/db/index.ts)
-- 训练结算（XP/解锁/每日奖励）： [session.ts](file:///f:/N-Back/api/game/session.ts)
-- 档案聚合（totalScore/maxNLevel/streak/history）： [profile.ts](file:///f:/N-Back/api/user/profile.ts)
-- 签到（check_in_last_date/check_in_streak）： [checkin.ts](file:///f:/N-Back/api/user/checkin.ts)
+- 认证路由：`/api/auth/*` → `api/auth/[[...path]].ts`
+- 训练结算（XP/解锁/每日奖励）：`api/game/session.ts`
+- 档案聚合（统计/历史/解锁/热力图）：`api/user/[...path].ts` → profile 路由
+- 签到（streak/奖励/补签卡）：`api/user/[...path].ts` → checkin 路由
+- 排行榜（coins/level）：`api/leaderboard/[...path].ts`
+- 闯关（10章50关/进度）：`api/campaign.ts`
 
 ## 前端（src/）
 
 ```
 src/
-├─ App.tsx               # 路由入口
+├─ App.tsx               # 路由入口（/, /train/:mode, /result, /profile, /store, /instruction）
 ├─ layouts/
 │  └─ MainLayout.tsx      # 三栏布局（Desktop）+ Mobile 单列 + 底部导航
 ├─ contexts/
-│  └─ AuthContext.tsx    # 监听 session → 写入 store（游客/登录态切换）
+│  ├─ AuthContext.tsx     # 监听 session → 写入 store（游客/登录态切换）
+│  └─ ThemeContext.tsx    # 固定浅色主题
 ├─ lib/
-│  └─ auth/client.ts     # better-auth client（同域 /api/auth）
+│  ├─ auth/client.ts     # better-auth client（同域 /api/auth）
+│  ├─ campaign/
+│  │  ├─ unlocking.ts    # 闯关解锁逻辑（isLevelReachable / isEpisodeUnlocked / deriveUnlocksFromCampaign）
+│  │  └─ guestProgress.ts # 游客本地 campaign 进度
+│  └─ utils.ts           # cn() 工具
+├─ hooks/
+│  ├─ useNBack.ts        # N-Back 引擎（numeric + spatial）
+│  ├─ useMouseGame.ts    # 鼠标心流引擎
+│  ├─ useHouseGame.ts    # 人来人往引擎
+│  ├─ useCampaignUnlocks.ts # 从闯关进度派生自由训练解锁
+│  └─ useSoundEffects.ts # 音效
 ├─ store/
-│  └─ gameStore.ts       # Zustand：游戏/体力/签到/商城/游客拦截核心逻辑
+│  └─ gameStore.ts       # Zustand：游戏/体力/签到/商城/campaignStarBonus
 ├─ components/
+│  ├─ campaign/          # 闯关地图（CampaignMapView / CampaignMapNode）
 │  ├─ pages/             # 路由页封装（signin/signup/home/train/result）
-│  ├─ screens/           # 主要屏幕（Home/Game/Result/Profile/Store）
-│  │  └─ RankScreen.tsx   # 移动端 Rank 页（承载右栏的 History/Leaderboard）
+│  ├─ screens/           # 主要屏幕（Home/Game/Result/Profile/Store/Instruction）
 │  ├─ layout/            # Sidebar、RightPanel、MobileNav
-│  └─ profile/           # 档案页组件（热力图/雷达/段位等）
+│  ├─ leaderboard/       # 排行榜组件（LeaderboardWidget）
+│  ├─ economy/           # EnergyBar、CheckInWidget
+│  ├─ profile/           # 档案页组件（热力图/雷达/段位等）
+│  ├─ game/              # 游戏组件（StatusBar/StimulusCard/NumericKeypad/SpatialGrid）
+│  └─ ui/                # 原子组件（Card）
 └─ types/
-   └─ game.ts            # 领域模型：体力、档案、里程碑、配置等
+   ├─ game.ts            # 领域模型：体力、档案、里程碑、配置、GameUnlocks
+   └─ campaign.ts        # 闯关类型：Episode、Level、CampaignState
 ```
 
 定位前端问题常用入口：

@@ -55,7 +55,9 @@ function createFilledGrid(cols: number, rows: number, numMice: number): GridCell
 
 /**
  * Generate push operations ensuring at least ⌈N/2⌉ mice survive.
- * Uses smart retry logic to avoid pushing too many mice off.
+ * Uses smart retry logic with progressive relaxation — NEVER returns empty.
+ * If we can't preserve the ideal number, we relax survival to ≥1 mouse,
+ * and guarantee at least half the push ops involve simple row/col shifts.
  */
 function generatePushOps(
   initialGrid: GridCell[],
@@ -64,33 +66,63 @@ function generatePushOps(
   numPushes: number,
   targetMice: number,
 ): PushOperation[] {
-  const minSurvivingMice = Math.ceil(targetMice / 2);
+  const idealSurvival = Math.ceil(targetMice / 2);
   const MAX_ATTEMPTS = 100;
 
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const ops: PushOperation[] = [];
-    const sides: PushOperation['side'][] = ['left', 'right', 'top', 'bottom'];
-    let currentGrid = initialGrid.map((c) => ({ ...c }));
+  // Try with ideal survival first, then relax
+  for (let minSurviving = idealSurvival; minSurviving >= 1; minSurviving--) {
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      const ops: PushOperation[] = [];
+      const sides: PushOperation['side'][] = ['left', 'right', 'top', 'bottom'];
+      let currentGrid = initialGrid.map((c) => ({ ...c }));
 
-    // Generate random pushes
-    for (let i = 0; i < numPushes; i++) {
-      const side = sides[Math.floor(Math.random() * sides.length)];
-      const maxLine = (side === 'left' || side === 'right') ? rows : cols;
-      const lineIndex = Math.floor(Math.random() * maxLine);
-      ops.push({ side, lineIndex });
-      currentGrid = applyPush(currentGrid, cols, rows, { side, lineIndex });
-    }
+      // Ensure at least half the pushes target rows/cols that have mice
+      // (so visible movement happens rather than empty row shifts)
+      const mousePositions = initialGrid
+        .map((c, i) => c.content === 'mouse' ? i : -1)
+        .filter((i) => i >= 0);
 
-    // Check survival rate
-    const survivingMice = currentGrid.filter((c) => c.content === 'mouse').length;
-    if (survivingMice >= minSurvivingMice) {
-      return ops;
+      for (let i = 0; i < numPushes; i++) {
+        let side: PushOperation['side'];
+        let lineIndex: number;
+
+        if (i < Math.ceil(numPushes / 2) && mousePositions.length > 0) {
+          // Target a row or column containing a mouse
+          const mouseIdx = mousePositions[Math.floor(Math.random() * mousePositions.length)];
+          const mouseRow = Math.floor(mouseIdx / cols);
+          const mouseCol = mouseIdx % cols;
+          if (Math.random() < 0.5) {
+            side = Math.random() < 0.5 ? 'left' : 'right';
+            lineIndex = mouseRow;
+          } else {
+            side = Math.random() < 0.5 ? 'top' : 'bottom';
+            lineIndex = mouseCol;
+          }
+        } else {
+          side = sides[Math.floor(Math.random() * sides.length)];
+          const maxLine = (side === 'left' || side === 'right') ? rows : cols;
+          lineIndex = Math.floor(Math.random() * maxLine);
+        }
+
+        ops.push({ side, lineIndex });
+        currentGrid = applyPush(currentGrid, cols, rows, { side, lineIndex });
+      }
+
+      // Check survival rate
+      const survivingMice = currentGrid.filter((c) => c.content === 'mouse').length;
+      if (survivingMice >= minSurviving) {
+        return ops;
+      }
     }
   }
 
-  // Fallback: return empty array (no pushes)
-  console.warn(`Could not find push sequence preserving ${minSurvivingMice} mice, using no pushes`);
-  return [];
+  // Ultimate fallback: return simple diagonal pushes that guarantee movement
+  // This path should never be reached, but ensures we never return empty.
+  const fallbackOps: PushOperation[] = [];
+  for (let i = 0; i < Math.max(1, numPushes); i++) {
+    fallbackOps.push({ side: i % 2 === 0 ? 'left' : 'top', lineIndex: i % Math.min(rows, cols) });
+  }
+  return fallbackOps;
 }
 
 /** Apply all pushes sequentially and return the final grid */

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { CampaignMapNode } from "./CampaignMapNode";
 import type { CampaignEpisode, CampaignLevel, CampaignProgress, CampaignProgressState } from "../../types/campaign";
-import type { GameMode, GameUnlocks, HouseGameConfig, HouseSpeed, MouseDifficultyLevel, MouseGameConfig, MouseGridPreset, UserProfile } from "../../types/game";
+import type { GameMode, HouseGameConfig, HouseSpeed, MouseDifficultyLevel, MouseGameConfig, MouseGridPreset, UserProfile } from "../../types/game";
 import { buildHouseGameConfig, buildMouseGameConfig } from "../../types/game";
-import { isLevelConfigUnlocked } from "../../lib/campaign/unlocking";
+import { isLevelReachable, isEpisodeUnlocked } from "../../lib/campaign/unlocking";
 import { readGuestCampaignProgress, writeGuestCampaignProgress } from "../../lib/campaign/guestProgress";
 
 type NodeStatus = "locked" | "unlocked" | "completed";
@@ -135,7 +135,6 @@ const buildStartArgs = (level: CampaignLevel): { mode: GameMode; nLevel: number;
 
 export function CampaignMapView(props: {
   userProfile: UserProfile;
-  unlocks: GameUnlocks | null;
   onStart: (nLevel: number, rounds: number, mode: GameMode, gridSize: number, mouseConfig?: MouseGameConfig, houseConfig?: HouseGameConfig) => void;
   onSetActiveCampaignRun: (run: null | { levelId: number; episodeId: number; orderInEpisode: number; minAccuracy: number; nextEpisodeId: number; nextLevelId: number }) => void;
   lastCampaignUpdate?: unknown;
@@ -193,7 +192,6 @@ export function CampaignMapView(props: {
     if (isGuest) {
       const p = readGuestCampaignProgress();
       setProgress(p);
-      setActiveEpisodeId(p.state.currentEpisodeId);
       return;
     }
     const resp = await fetch("/api/campaign/progress", { credentials: "include" }).catch(() => null);
@@ -201,7 +199,6 @@ export function CampaignMapView(props: {
     const parsed = normalizeProgress(json);
     if (parsed) {
       setProgress(parsed);
-      setActiveEpisodeId(parsed.state.currentEpisodeId);
     }
   };
 
@@ -231,13 +228,25 @@ export function CampaignMapView(props: {
   }, [props.storyOpenNonce, episodes.length]);
 
   const theme = useMemo(() => {
-    const idx = Math.max(1, Math.min(5, activeEpisodeId));
-    if (idx === 2) return { accent: "#14b8a6", soft: "#99f6e4", path: "#0d9488", bg: "from-teal-50 to-white" };
-    if (idx === 3) return { accent: "#f59e0b", soft: "#fde68a", path: "#d97706", bg: "from-amber-50 to-white" };
-    if (idx === 4) return { accent: "#a855f7", soft: "#e9d5ff", path: "#7e22ce", bg: "from-purple-50 to-white" };
-    if (idx === 5) return { accent: "#0ea5e9", soft: "#bae6fd", path: "#0284c7", bg: "from-sky-50 to-white" };
-    return { accent: "#10b981", soft: "#a7f3d0", path: "#059669", bg: "from-sage-50 to-white" };
+    const palettes: Record<number, { accent: string; soft: string; path: string; bg: string }> = {
+      1: { accent: "#10b981", soft: "#a7f3d0", path: "#059669", bg: "from-sage-50 to-white" },
+      2: { accent: "#14b8a6", soft: "#99f6e4", path: "#0d9488", bg: "from-teal-50 to-white" },
+      3: { accent: "#f59e0b", soft: "#fde68a", path: "#d97706", bg: "from-amber-50 to-white" },
+      4: { accent: "#a855f7", soft: "#e9d5ff", path: "#7e22ce", bg: "from-purple-50 to-white" },
+      5: { accent: "#0ea5e9", soft: "#bae6fd", path: "#0284c7", bg: "from-sky-50 to-white" },
+      6: { accent: "#ef4444", soft: "#fecaca", path: "#dc2626", bg: "from-red-50 to-white" },
+      7: { accent: "#8b5cf6", soft: "#ddd6fe", path: "#6d28d9", bg: "from-violet-50 to-white" },
+      8: { accent: "#06b6d4", soft: "#a5f3fc", path: "#0891b2", bg: "from-cyan-50 to-white" },
+      9: { accent: "#f97316", soft: "#fed7aa", path: "#ea580c", bg: "from-orange-50 to-white" },
+      10: { accent: "#ec4899", soft: "#fbcfe8", path: "#db2777", bg: "from-pink-50 to-white" },
+    };
+    return palettes[activeEpisodeId] ?? palettes[1];
   }, [activeEpisodeId]);
+
+  // Compute which episodes are navigable (unlocked)
+  const unlockedEpisodeIds = useMemo(() => {
+    return episodes.filter((ep) => isEpisodeUnlocked(ep.id, episodes, allLevels, progress.results)).map((ep) => ep.id);
+  }, [episodes, allLevels, progress.results]);
 
   const jitteredPos = (lvl: CampaignLevel) => {
     const seed = (lvl.id * 9301 + activeEpisodeId * 49297) % 233280;
@@ -291,14 +300,9 @@ export function CampaignMapView(props: {
     const stars = result?.bestStars ?? 0;
     if (stars > 0) return { status: "completed", stars };
 
-    const isCurrent = level.id === progress.state.currentLevelId;
-    const unlockedByPath = isCurrent;
-
-    const unlockedByConfig = isLevelConfigUnlocked(props.unlocks, level);
-    if (!unlockedByConfig) return { status: "locked", stars: 0, lockedHint: "需要先在解锁树中解锁该配置" };
-
-    if (unlockedByPath) return { status: "unlocked", stars: 0 };
-    return { status: "locked", stars: 0, lockedHint: "先通关当前关卡以解锁" };
+    const reachable = isLevelReachable(level, allLevels, progress.results);
+    if (reachable) return { status: "unlocked", stars: 0 };
+    return { status: "locked", stars: 0, lockedHint: "先通关前置关卡以解锁" };
   };
 
   const selectedLevel = selectedLevelId ? levelsById.get(selectedLevelId) ?? null : null;
@@ -347,15 +351,21 @@ export function CampaignMapView(props: {
             </button>
             <button
               className="w-9 h-9 rounded-full bg-zen-50 border border-zen-200 text-zen-500 hover:bg-zen-100 disabled:opacity-40"
-              onClick={() => setActiveEpisodeId((e) => Math.max(1, e - 1))}
-              disabled={activeEpisodeId <= 1}
+              onClick={() => {
+                const curIdx = unlockedEpisodeIds.indexOf(activeEpisodeId);
+                if (curIdx > 0) setActiveEpisodeId(unlockedEpisodeIds[curIdx - 1]);
+              }}
+              disabled={unlockedEpisodeIds.indexOf(activeEpisodeId) <= 0}
             >
               ◀
             </button>
             <button
               className="w-9 h-9 rounded-full bg-zen-50 border border-zen-200 text-zen-500 hover:bg-zen-100 disabled:opacity-40"
-              onClick={() => setActiveEpisodeId((e) => Math.min(episodes.length || 1, e + 1))}
-              disabled={activeEpisodeId >= (episodes.length || 1)}
+              onClick={() => {
+                const curIdx = unlockedEpisodeIds.indexOf(activeEpisodeId);
+                if (curIdx >= 0 && curIdx < unlockedEpisodeIds.length - 1) setActiveEpisodeId(unlockedEpisodeIds[curIdx + 1]);
+              }}
+              disabled={unlockedEpisodeIds.indexOf(activeEpisodeId) >= unlockedEpisodeIds.length - 1}
             >
               ▶
             </button>

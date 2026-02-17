@@ -95,9 +95,20 @@
     - [x] XP calculation formula: `20 * (nCoeff + modeCoeff) * accuracy%`
     - [x] Dynamic brain stats update per session
 - **Phase 6: Backend Services**
-    - [ ] **Auth System**: Supabase Auth + WeChat/Google OAuth + Account Linking.
+    - [x] **Auth System**: better-auth + Email/Password + Account management
     - [ ] **Payment Gateway**: Adapter pattern for Stripe/WeChat Pay.
-    - [ ] **Cloud Sync**: PostgreSQL schema migration & Edge Functions.
+    - [x] **Cloud Sync**: PostgreSQL + Drizzle ORM migrations (8 migrations)
+    - [x] **Leaderboard**: Coins & Level boards with snapshot caching + advisory locks
+    - [x] **Admin**: Ban/audit system with admin catch-all API
+- **Phase 7: Campaign v2** (LATEST)
+    - [x] Campaign redesign: 10 episodes / 50 levels, N-Back up to 5
+    - [x] Campaign-based free training unlock (deriveUnlocksFromCampaign)
+    - [x] Episode unlock: all levels 3★ required for next chapter
+    - [x] Campaign star bonus economy integration (1★→5, 2★→10, 3★→20 coins)
+    - [x] Campaign UI fixes: no auto-return, hide locked episodes, progression-based nodes
+    - [x] Mouse game movement fix (generatePushOps progressive relaxation)
+    - [x] API consolidation: 11 → 7 serverless functions (Vercel Hobby limit 12)
+    - [x] DB cleanup: dropped unused `games` + `level_configs` tables (migration 0008)
 
 ## 6. Common Commands (Anticipated)
 *Commands to be available after initialization:*
@@ -137,7 +148,7 @@
 - Debug panel showing N-back target (for testing).
 
 ## 9. Component Architecture
-**Current Structure** (as of Phase 5 — Profile & Dashboard upgrade):
+**Current Structure** (as of Phase 7 — Campaign v2):
 
 ```
 src/
@@ -150,6 +161,7 @@ src/
 │       ├── zh.json                  # Chinese translations (~200 keys)
 │       └── en.json                  # English translations (~200 keys)
 ├── contexts/
+│   ├── AuthContext.tsx              # Session monitor → Zustand (guest/auth switch)
 │   └── ThemeContext.tsx             # Fixed light theme provider (toggle removed)
 ├── layouts/
 │   └── MainLayout.tsx               # Responsive 3-column layout + <Outlet/>
@@ -158,9 +170,14 @@ src/
 ├── components/
 │   ├── ui/
 │   │   └── Card.tsx                 # Reusable base card component (cn() utility, padding variants)
+│   ├── campaign/
+│   │   ├── CampaignMapView.tsx      # 10-episode campaign map (progression-based nodes, locked episode filtering)
+│   │   └── CampaignMapNode.tsx      # Individual campaign level node
 │   ├── economy/
 │   │   ├── EnergyBar.tsx            # Energy bar with recovery countdown timer
 │   │   └── CheckInWidget.tsx        # Daily check-in widget with streak display + reward animation
+│   ├── leaderboard/
+│   │   └── LeaderboardWidget.tsx    # Coins/Level leaderboard with tabs + scope selector
 │   ├── layout/
 │   │   ├── LayoutShell.tsx          # (Legacy) single-column layout wrapper
 │   │   ├── Sidebar.tsx              # Desktop left sidebar (EnergyBar + BrainRank + mini radar + nav + lang)
@@ -176,7 +193,7 @@ src/
 │   │   ├── TrainPage.tsx            # Route wrapper: engine start + GameScreen/MouseGameScreen
 │   │   └── ResultPage.tsx           # Route wrapper: ResultScreen + navigate
 │   ├── screens/
-│   │   ├── HomeScreen.tsx           # Config UI (mode/param selection, 4 game modes, full i18n)
+│   │   ├── HomeScreen.tsx           # Config UI (mode/param selection, campaign-derived unlocks, 4 game modes)
 │   │   ├── GameScreen.tsx           # N-Back game (numeric + spatial, i18n)
 │   │   ├── MouseGameScreen.tsx      # Mouse game (independent engine, i18n)
 │   │   ├── HouseGameScreen.tsx      # House game (people counting, SVG + Framer Motion, i18n)
@@ -187,16 +204,21 @@ src/
 │   └── game/
 │       ├── AnswerCountdown.tsx      # SVG circular countdown
 │       ├── NumericKeypad.tsx        # 0-9 input keypad
-│       ├── SpatialGrid.tsx          # NxN grid (legacy, not actively used)
+│       ├── SpatialGrid.tsx          # NxN grid (configurable 3×3/4×4/5×5 with phased interaction)
 │       ├── StatusBar.tsx            # Game top bar (quit/pause/progress)
 │       └── StimulusCard.tsx         # Equation display card
 ├── hooks/
 │   ├── useNBack.ts               # Core N-Back engine (numeric + spatial)
-│   ├── useMouseGame.ts           # Mouse game engine
+│   ├── useMouseGame.ts           # Mouse game engine (fixed generatePushOps with progressive relaxation)
 │   ├── useHouseGame.ts           # House game engine (people counting)
+│   ├── useCampaignUnlocks.ts    # Derive GameUnlocks from campaign progress (guest + auth)
 │   └── useSoundEffects.ts        # Audio hook (click/correct/wrong)
 ├── lib/
-│   └── utils.ts                  # cn() utility (clsx + twMerge)
+│   ├── utils.ts                  # cn() utility (clsx + twMerge)
+│   ├── auth/client.ts            # better-auth client
+│   └── campaign/
+│       ├── unlocking.ts          # isLevelReachable / isEpisodeUnlocked / deriveUnlocksFromCampaign
+│       └── guestProgress.ts     # Guest localStorage campaign progress
 ├── store/
 │   ├── gameStore.ts              # Zustand global store v3 (persisted) — includes economy actions
 │   └── mockData.ts               # [LEGACY] Old mock data — use mocks/userData.ts instead
