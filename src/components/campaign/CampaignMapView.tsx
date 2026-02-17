@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CampaignMapNode } from "./CampaignMapNode";
 import type { CampaignEpisode, CampaignLevel, CampaignProgress, CampaignProgressState } from "../../types/campaign";
 import type { GameMode, HouseGameConfig, HouseSpeed, MouseDifficultyLevel, MouseGameConfig, MouseGridPreset, UserProfile } from "../../types/game";
@@ -83,22 +84,9 @@ const minAccuracyForLevel = (level: CampaignLevel) => {
   return Math.max(0, Math.min(100, clampInt(raw.minAccuracy, level.boss ? 90 : 60)));
 };
 
-const formatModeLabel = (mode: GameMode) => {
-  if (mode === "numeric") return "数字心流";
-  if (mode === "spatial") return "空间心流";
-  if (mode === "mouse") return "魔鬼老鼠";
-  return "人来人往";
-};
+// formatModeLabel and formatLevelParams moved inside component for i18n access
 
-const formatLevelParams = (level: CampaignLevel) => {
-  const cfg = level.config as Record<string, unknown>;
-  if (level.gameMode === "numeric") return `N=${clampInt(cfg.nLevel, 1)} · Rounds=${clampInt(cfg.rounds, 10)}`;
-  if (level.gameMode === "spatial")
-    return `${clampInt(cfg.gridSize, 3)}×${clampInt(cfg.gridSize, 3)} · N=${clampInt(cfg.nLevel, 1)} · Rounds=${clampInt(cfg.rounds, 10)}`;
-  if (level.gameMode === "mouse")
-    return `${clampInt(cfg.count, 3)}鼠 · ${String((cfg.grid as unknown[] | undefined)?.[0] ?? 4)}×${String((cfg.grid as unknown[] | undefined)?.[1] ?? 3)} · ${String(cfg.difficulty ?? "easy")} · ${clampInt(cfg.rounds, 3)}轮`;
-  return `${String(cfg.speed ?? "easy")} · 初始${clampInt(cfg.initialPeople, 3)} · 事件${clampInt(cfg.eventCount, 6)} · ${clampInt(cfg.rounds, 3)}轮`;
-};
+// (moved inside component)
 
 const buildStartArgs = (level: CampaignLevel): { mode: GameMode; nLevel: number; rounds: number; gridSize: number; mouseConfig?: MouseGameConfig; houseConfig?: HouseGameConfig } => {
   const cfg = level.config as Record<string, unknown>;
@@ -140,13 +128,44 @@ export function CampaignMapView(props: {
   lastCampaignUpdate?: unknown;
   storyOpenNonce?: number;
 }) {
+  const { t } = useTranslation();
   const isGuest = (props.userProfile.auth?.status ?? "guest") === "guest";
 
   const [meta, setMeta] = useState<{ episodes: CampaignEpisode[]; levels: CampaignLevel[] } | null>(null);
   const [progress, setProgress] = useState<CampaignProgress>(defaultProgress);
+  const [progressLoaded, setProgressLoaded] = useState(false);
   const [activeEpisodeId, setActiveEpisodeId] = useState<number>(1);
   const [selectedLevelId, setSelectedLevelId] = useState<number | null>(null);
   const [showStory, setShowStory] = useState(false);
+  const storyShownForRef = useRef<Set<number>>(new Set());
+
+  const formatModeLabel = (mode: GameMode) => {
+    if (mode === "numeric") return t("campaign.modeNumeric");
+    if (mode === "spatial") return t("campaign.modeSpatial");
+    if (mode === "mouse") return t("campaign.modeMouse");
+    return t("campaign.modeHouse");
+  };
+
+  const formatLevelParams = (level: CampaignLevel) => {
+    const cfg = level.config as Record<string, unknown>;
+    if (level.gameMode === "numeric") return t("campaign.paramsNumeric", { n: clampInt(cfg.nLevel, 1), rounds: clampInt(cfg.rounds, 10) });
+    if (level.gameMode === "spatial")
+      return t("campaign.paramsSpatial", { grid: clampInt(cfg.gridSize, 3), n: clampInt(cfg.nLevel, 1), rounds: clampInt(cfg.rounds, 10) });
+    if (level.gameMode === "mouse")
+      return t("campaign.paramsMouse", {
+        count: clampInt(cfg.count, 3),
+        cols: String((cfg.grid as unknown[] | undefined)?.[0] ?? 4),
+        rows: String((cfg.grid as unknown[] | undefined)?.[1] ?? 3),
+        difficulty: t(`difficulty.${String(cfg.difficulty ?? "easy")}`),
+        rounds: clampInt(cfg.rounds, 3),
+      });
+    return t("campaign.paramsHouse", {
+      speed: t(`speed.${String(cfg.speed ?? "easy")}`),
+      initial: clampInt(cfg.initialPeople, 3),
+      events: clampInt(cfg.eventCount, 6),
+      rounds: clampInt(cfg.rounds, 3),
+    });
+  };
 
   const episodes = meta?.episodes ?? [];
   const allLevels = meta?.levels ?? [];
@@ -192,6 +211,7 @@ export function CampaignMapView(props: {
     if (isGuest) {
       const p = readGuestCampaignProgress();
       setProgress(p);
+      setProgressLoaded(true);
       return;
     }
     const resp = await fetch("/api/campaign/progress", { credentials: "include" }).catch(() => null);
@@ -200,6 +220,7 @@ export function CampaignMapView(props: {
     if (parsed) {
       setProgress(parsed);
     }
+    setProgressLoaded(true);
   };
 
   useEffect(() => {
@@ -212,14 +233,13 @@ export function CampaignMapView(props: {
   }, [props.lastCampaignUpdate]);
 
   useEffect(() => {
-    if (!episodes.length) return;
+    if (!episodes.length || !progressLoaded) return;
     const viewed = new Set(progress.state.viewedEpisodeStoryIds ?? []);
-    if (!viewed.has(activeEpisodeId)) {
+    if (!viewed.has(activeEpisodeId) && !storyShownForRef.current.has(activeEpisodeId)) {
+      storyShownForRef.current.add(activeEpisodeId);
       setShowStory(true);
-    } else {
-      setShowStory(false);
     }
-  }, [episodes.length, activeEpisodeId, progress.state.viewedEpisodeStoryIds]);
+  }, [episodes.length, activeEpisodeId, progressLoaded, progress.state.viewedEpisodeStoryIds]);
 
   useEffect(() => {
     if (!props.storyOpenNonce) return;
@@ -302,7 +322,7 @@ export function CampaignMapView(props: {
 
     const reachable = isLevelReachable(level, allLevels, progress.results);
     if (reachable) return { status: "unlocked", stars: 0 };
-    return { status: "locked", stars: 0, lockedHint: "先通关前置关卡以解锁" };
+    return { status: "locked", stars: 0, lockedHint: t("campaign.lockedHint") };
   };
 
   const selectedLevel = selectedLevelId ? levelsById.get(selectedLevelId) ?? null : null;
@@ -338,7 +358,7 @@ export function CampaignMapView(props: {
       <div className="bg-white rounded-xl p-4 shadow-sm border border-zen-200">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-sm font-semibold text-zen-500">第 {activeEpisodeId} 章</div>
+            <div className="text-sm font-semibold text-zen-500">{t('campaign.chapter', { n: activeEpisodeId })}</div>
             <div className="text-xl font-semibold text-zen-800 truncate">{episode?.title ?? ""}</div>
             <div className="text-xs text-zen-400 mt-1 truncate">{episode?.description ?? ""}</div>
           </div>
@@ -347,7 +367,7 @@ export function CampaignMapView(props: {
               className="h-9 px-3 rounded-full bg-white border border-zen-200 text-zen-600 text-sm font-medium hover:bg-zen-50"
               onClick={() => setShowStory(true)}
             >
-              章节简介
+              {t('campaign.storyButton')}
             </button>
             <button
               className="w-9 h-9 rounded-full bg-zen-50 border border-zen-200 text-zen-500 hover:bg-zen-100 disabled:opacity-40"
@@ -427,7 +447,7 @@ export function CampaignMapView(props: {
             </div>
             <div className="p-5 space-y-3">
               <div className="text-sm text-zen-600">
-                通关条件：准确率 ≥ {minAccuracyForLevel(selectedLevel)}%
+                {t('campaign.passCondition', { accuracy: minAccuracyForLevel(selectedLevel) })}
               </div>
               {selectedStatus.status === "locked" && selectedStatus.lockedHint ? (
                 <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">{selectedStatus.lockedHint}</div>
@@ -437,10 +457,10 @@ export function CampaignMapView(props: {
                 onClick={() => void startSelected()}
                 disabled={selectedStatus.status === "locked"}
               >
-                开始训练
+                {t('campaign.startTraining')}
               </button>
               <button className="w-full py-2 text-sm text-zen-400 hover:text-zen-600" onClick={() => setSelectedLevelId(null)}>
-                取消
+                {t('campaign.cancel')}
               </button>
             </div>
           </div>
@@ -450,12 +470,12 @@ export function CampaignMapView(props: {
       {showStory && episode && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur" onClick={() => void closeStory()}>
           <div className="w-full max-w-lg rounded-2xl bg-zen-900 text-white border border-zen-700 shadow-2xl p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="text-xs font-semibold text-sage-300 tracking-widest">接收到新讯息</div>
+            <div className="text-xs font-semibold text-sage-300 tracking-widest">{t('campaign.newMessage')}</div>
             <div className="text-2xl font-bold mt-2">{episode.title}</div>
             <div className="w-10 h-1 bg-sage-400 rounded-full mt-4" />
             <div className="mt-4 text-zen-100/90 whitespace-pre-line leading-relaxed">{episode.storyText}</div>
             <button className="mt-6 w-full py-3 rounded-xl bg-sage-500 hover:bg-sage-600 text-white font-semibold" onClick={() => void closeStory()}>
-              确认接入
+              {t('campaign.confirmEnter')}
             </button>
           </div>
         </div>

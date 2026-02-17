@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 export type CampaignNodeStatus = "locked" | "unlocked" | "completed";
 
@@ -14,6 +15,7 @@ interface CampaignMapNodeProps {
 }
 
 export function CampaignMapNode({ id, x, y, status, stars, isBoss, onClick, lockedHint }: CampaignMapNodeProps) {
+  const { t } = useTranslation();
   const isLocked = status === "locked";
   const isCompleted = status === "completed";
   const isUnlocked = status === "unlocked";
@@ -57,7 +59,7 @@ export function CampaignMapNode({ id, x, y, status, stars, isBoss, onClick, lock
 
         {isBoss && !isLocked && (
           <div className="absolute -top-2 px-2 py-0.5 rounded-md bg-zen-800 text-white text-[10px] font-bold border border-zen-700">
-            核心
+            {t('campaign.bossLabel')}
           </div>
         )}
       </div>
