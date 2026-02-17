@@ -1,455 +1,456 @@
-{
-  "app": {
-    "title": "Brain Flow",
-    "subtitle": "Brain Training System",
-    "backHome": "Back to Home"
-  },
-  "common": {
-    "cancel": "Cancel",
-    "gotIt": "Got it",
-    "loading": "Loading…"
-  },
-  "home": {
-    "profile": "Profile",
-    "streak": "🔥 {{days}} day streak",
-    "maxLevel": "Max Level",
-    "totalScore": "Total Score",
-    "streakDays": "Streak Days",
-    "gameMode": "Game Mode",
-    "numeric": "Numeric Flow",
-    "numericDesc": "Delayed recall math",
-    "spatial": "Spatial Flow",
-    "spatialDesc": "Grid memory",
-    "mouse": "Devilish Mice",
-    "mouseDesc": "Track shifting mice",
-    "house": "House Flow",
-    "houseDesc": "Dynamic head count",
-    "config": "Training Config",
-    "nLevel": "N Level (recall):",
-    "rounds": "Rounds:",
-    "gridSize": "Grid Size:",
-    "configError": "Config Error",
-    "configErrorMsg": "N must be less than rounds! N={{n}}, rounds={{rounds}}",
-    "lockedConfigErrorMsg": "Some options are locked. Clear easier levels to unlock them.",
-    "mouseCount": "🐭 Mice Count",
-    "mouseGrid": "📐 Grid Size",
-    "mouseDifficulty": "💪 Difficulty",
-    "mouseRounds": "Rounds:",
-    "howToPlay": "🧠 How to Play",
-    "numericHelp": "Equations appear one by one. Remember each answer and input the answer from {{n}} rounds ago.",
-    "spatialHelp": "A position highlights on a {{grid}} grid. Remember each position and click the one from {{n}} rounds ago.",
-    "mouseHelp": "{{mice}} mice and {{cats}} cats on a {{grid}} grid. After memorizing, cats push {{pushes}} times from edges. Find where the mice end up.",
-    "houseHelp": "The house starts with {{initial}} people. There will be {{events}} enter/leave events. Remember the final head count. Speed: {{speed}}",
-    "startMouse": "Start Devilish Mice {{difficulty}} ({{rounds}} rounds)",
-    "startNBack": "Start {{n}}-Back {{mode}} Training ({{rounds}} rounds)",
-    "startHouse": "Start House Flow {{speed}} ({{rounds}} rounds)",
-    "modeNumeric": "Numeric",
-    "modeSpatial": "Spatial",
-    "houseInitial": "🏠 Initial People",
-    "houseEvents": "📊 Events",
-    "houseSpeed": "⚡ Speed",
-    "houseRounds": "Rounds:"
-  },
-  "game": {
-    "quit": "← Quit",
-    "resume": "▶ Resume",
-    "pause": "⏸ Pause",
-    "round": "Round {{current}}/{{total}}",
-    "memoryDone": "✅ Memory Phase Complete",
-    "memoryDoneMsg": "{{n}} items shown",
-    "readyToAnswer": "Ready to start answering?",
-    "startAnswer": "Start Answering",
-    "memoryPhase": "Memory Phase",
-    "currentQuestion": "Current (remember this)",
-    "clickNBack": "Click position from {{n}} rounds ago",
-    "submitted": "Submitted",
-    "selectPosition": "Select a position",
-    "confirmAnswer": "Confirm",
-    "answerRemaining": "Answer remaining questions",
-    "inputNBack": "Input answer from {{n}} rounds ago",
-    "correct": "✓ Correct",
-    "wrong": "✗ Wrong",
-    "yourAnswer": "Your answer: {{user}} · Correct: {{correct}}",
-    "score": "Score: {{correct}} / {{total}}",
-    "paused": "Paused",
-    "warmupHint": "Remember the answer (warmup)",
-    "enterAnswer": "Enter answer",
-    "rememberAnswer": "Remember this answer",
-    "delete": "← Delete",
-    "confirm": "✓ Confirm",
-    "observePosition": "Observe position...",
-    "canClick": "✓ Click now",
-    "noClickNeeded": "Memory phase - no click needed"
-  },
-  "mouse": {
-    "remember": "👀 Remember the mice!",
-    "miceCount": "{{n}} mice total",
-    "doorsClosed": "🚪 Doors closed...",
-    "rememberWhere": "Remember where they are",
-    "catsComing": "🐱 Cats incoming!",
-    "catsPushing": "Cats are pushing...",
-    "whereAreMice": "🐭 Where are the mice?",
-    "findMice": "Find the remaining mice",
-    "perfect": "🎉 Perfect!",
-    "found": "Found {{found}} / {{total}} mice",
-    "tryHarder": "😿 Try harder!",
-    "selected": "{{n}} positions selected",
-    "clickToSelect": "Click to select mouse positions",
-    "confirmAnswer": "Confirm ✓",
-    "foundShort": "🐭 Found {{found}}/{{total}}",
-    "wrongSelect": "Wrong {{n}}",
-    "foundMice": "Found mice: {{found}} / {{total}}",
-    "accuracy": "Accuracy: {{pct}}%",
-    "grid": "Grid",
-    "push": "Push"
-  },
-  "house": {
-    "watching": "👀 Watch carefully!",
-    "howMany": "🏠 How many people are inside?",
-    "enterCount": "Enter the number of people",
-    "roundLabel": "Round {{current}}/{{total}}",
-    "correctAnswer": "Correct! There are {{n}} people",
-    "wrongAnswer": "There should be {{n}} people",
-    "perfect": "🎉 Perfect!",
-    "tryHarder": "😿 Try harder!",
-    "score": "Correct {{correct}} / {{total}} rounds",
-    "eventProgress": "Event {{current}} / {{total}}"
-  },
-  "result": {
-    "title": "Training Complete",
-    "syncing": "Syncing to cloud...",
-    "syncFailed": "Cloud sync failed",
-    "rewardsTitle": "Rewards",
-    "xp": "XP",
-    "brainCoins": "Coins",
-    "energy": "Energy",
-    "dailyPerfectBonus": "Daily Perfect +{{coins}} Coins",
-    "dailyFirstWinBonus": "First win today +{{coins}} Coins",
-    "levelUpTitle": "Level Up!",
-    "levelUpDesc": "LV{{before}} → LV{{after}}",
-    "newRecord": "🏆 New Record!",
-    "newLevel": "⭐ New Level Unlocked!",
-    "newUnlock": "⭐ Unlocked!",
-    "unlocksTitle": "Unlocks",
-    "accuracy": "Accuracy",
-    "points": "pts",
-    "difficulty": "Difficulty",
-    "avgReaction": "Avg Reaction Time",
-    "correct": "Correct",
-    "wrong": "Wrong",
-    "timeout": "Timeout",
-    "duration": "Duration: {{time}}s · {{rounds}} rounds",
-    "playAgain": "Play Again",
-    "backHome": "← Back to Home"
-  },
-  "unlock": {
-    "numeric": "Unlocked: Numeric {{n}}-Back ({{rounds}} rounds)",
-    "spatialRounds": "Unlocked: Spatial {{n}}-Back ({{rounds}} rounds)",
-    "spatialN": "Unlocked: Spatial {{grid}} to {{n}}-Back",
-    "spatialGrid": "Unlocked: Spatial {{grid}} grid",
-    "mouseDifficulty": "Unlocked: Mouse {{difficulty}}",
-    "mouseMice": "Unlocked: {{count}} mice",
-    "mouseRounds": "Unlocked: {{rounds}} rounds (Mouse)",
-    "houseSpeed": "Unlocked: House {{speed}}",
-    "houseEvents": "Unlocked: {{events}} events (House)",
-    "houseRounds": "Unlocked: {{rounds}} rounds (House)",
-    "houseInitial": "Unlocked: Initial {{count}} (House)"
-  },
-  "profile": {
-    "title": "Profile",
-    "stats": "Statistics",
-    "history": "Training History",
-    "noHistory": "No training history yet",
-    "startFirst": "Complete your first session to see history here",
-    "level": "Level",
-    "accuracyLabel": "Accuracy",
-    "scoreLabel": "Score",
-    "brainRadar": "Brain Radar",
-    "noRadarData": "Complete training to unlock radar chart",
-    "activityHeatmap": "📅 Activity Heatmap (365 days)",
-    "brainPoints": "Brain Points",
-    "mockDataHint": "Demo data · Your real stats will appear after training",
-    "nextRank": "Next: {{rank}}",
-    "xpToNext": "{{xp}} XP to next rank",
-    "maxRank": "Maximum Rank Reached",
-    "milestoneRequired": "Required Milestones",
-    "milestoneOneOf": "Complete One of These",
-    "required": "Required",
-    "oneOf": "One of",
-    "radar": {
-      "memory": "Memory",
-      "focus": "Focus",
-      "math": "Math",
-      "observation": "Observation",
-      "loadCapacity": "Load Cap.",
-      "speed": "Speed"
-    },
-    "heatmap": {
-      "sessions": "{{count}} sessions",
-      "activeDays": "{{count}} active days",
-      "less": "Less",
-      "more": "More",
-      "sessionLabel": "sessions",
-      "weekdays": {
-        "mon": "Mon",
-        "wed": "Wed",
-        "fri": "Fri"
-      }
-    },
-    "auth": {
-      "guest": "Guest Mode",
-      "authenticated": "Signed In",
-      "linkAccounts": "Link Accounts",
-      "linkGoogle": "Link Google",
-      "guestWarning": "Guest data is stored locally only. Link an account to sync.",
-      "guestLockHint": "You can try training, but stats, check-in, history and settings require an account",
-      "goSignup": "Sign up",
-      "goSignin": "Sign in"
-    }
-  },
-  "nav": {
-    "home": "Home",
-    "train": "Train",
-    "rank": "Rank",
-    "profile": "Profile",
-    "settings": "Settings",
-    "store": "Store",
-    "instruction": "Help"
-  },
-  "settings": {
-    "tabs": {
-      "profile": "Profile",
-      "security": "Security",
-      "accounts": "Accounts",
-      "notifications": "Notifications",
-      "help": "Help"
-    },
-    "accounts": {
-      "hint": "Linking helps sign-in and account recovery",
-      "loginRequired": "Sign in to link accounts"
-    },
-    "general": {
-      "title": "General",
-      "language": "Language",
-      "sound": "Sound Effects",
-      "soundHint": "In-game sound effects",
-      "haptics": "Haptics",
-      "hapticsHint": "Vibration feedback"
-    },
-    "about": {
-      "title": "About",
-      "version": "Version",
-      "privacy": "Privacy Policy",
-      "terms": "Terms of Service",
-      "feedback": "Feedback",
-      "clearCache": "Clear Cache",
-      "clearCacheHint": "Clear local cache and refresh if you encounter issues",
-      "clearCacheConfirm": "Are you sure? This will reset local settings.",
-      "cacheCleared": "Cache cleared"
-    },
-    "emailVerified": "Verified",
-    "emailNotVerified": "Unverified",
-    "profile": {
-      "displayName": "Display name",
-      "renameHint": "Consume 1 rename card to change your display name",
-      "rename": "Rename",
-      "renamePlaceholder": "2-20 chars",
-      "renameNeedCard": "No rename card, ",
-      "goStore": "Go to store",
-      "renameNoCard": "No rename card. Please purchase first.",
-      "renameInvalid": "Name length must be 2-20",
-      "renameFailed": "Update failed. Please try again.",
-      "renameNetworkError": "Network error. Please try again.",
-      "renameConfirm": "Confirm",
-      "avatar": "Avatar",
-      "avatarHint": "Avatar upload/selection is coming soon"
-    },
-    "security": {
-      "title": "Account security",
-      "changePassword": "Change password",
-      "changeEmail": "Change email",
-      "verifyEmail": "Verify email",
-      "guestHint": "Sign in to change password, verify email, and link accounts",
-      "changeEmailHint": "We will send a code to the new email",
-      "emailPlaceholder": "New email address",
-      "otpPlaceholder": "Verification code (6 digits)",
-      "sendCode": "Send code",
-      "confirmChangeEmail": "Confirm",
-      "emailInvalid": "Invalid email",
-      "emailInUse": "Email is already in use",
-      "otpInvalid": "Invalid or expired code",
-      "changeEmailFailed": "Failed to change email. Please try again.",
-      "changeEmailNetworkError": "Network error. Please try again.",
-      "signOut": "Sign out"
-    },
-    "notifications": {
-      "weeklyReport": "Email notifications",
-      "weeklyReportHint": "Weekly report / premium insights (local toggle for now)"
-    }
-  },
-  "rank": {
-    "tabs": {
-      "coins": "Score",
-      "level": "Level",
-      "all": "All-time",
-      "week": "Weekly"
-    },
-    "errors": {
-      "maintenance": "Leaderboard is under maintenance",
-      "loginRequired": "Sign in to view the leaderboard",
-      "weeklyDisabled": "Weekly leaderboard is disabled",
-      "loadFailed": "Load failed. Please try again."
-    },
-    "metrics": {
-      "coins": "Brain Points",
-      "score": "Total Score",
-      "xp": "XP {{xp}}",
-      "weeklyXp": "Weekly XP {{xp}}",
-      "level": "Lv {{level}}"
-    },
-    "empty": "No data",
-    "myRank": "Your rank: #{{rank}}",
-    "avgReaction": "Avg {{seconds}}s"
-  },
-  "sidebar": {
-    "leaderboard": "Leaderboard",
-    "history": "History",
-    "recentSessions": "Recent Sessions",
-    "noSessions": "No sessions yet",
-    "leaderboardHint": "📊 Resets weekly · Accuracy ≥ 90% to rank",
-    "leaderboardComingSoon": "Leaderboard coming soon",
-    "leaderboardLoginRequired": "Sign in to participate"
-  },
-  "energy": {
-    "in": "",
-    "recoverIn": "Next +1 in {{time}}",
-    "insufficient": "Insufficient energy! Please wait or purchase Energy Potion."
-  },
-  "time": {
-    "h": "h",
-    "m": "m",
-    "s": "s"
-  },
-  "checkin": {
-    "title": "Daily Check-in",
-    "streak": "{{days}} day streak",
-    "done": "Checked in today",
-    "claim": "Claim Reward",
-    "claiming": "Checking in…",
-    "points": "Brain Points"
-  },
-  "store": {
-    "title": "Brain Store",
-    "subtitle": "Redeem items with Brain Points",
-    "points": "BP",
-    "purchaseSuccess": "Purchase successful!",
-    "notEnoughPoints": "Not enough Brain Points",
-    "alreadyOwned": "Already owned",
-    "owned": "Owned",
-    "permanent": "Permanent",
-    "consumable": "Consumable",
-    "earnHint": "\ud83d\udca1 Complete training to earn Brain Points",
-    "energyPotion1": "Energy Potion +1",
-    "energyPotion1Desc": "Instantly restore 1 energy",
-    "energyPotion5": "Energy Potion +5",
-    "energyPotion5Desc": "Instantly restore 5 energy (full)",
-    "streakSaver": "Streak Shield",
-    "streakSaverDesc": "Protect your streak from one missed day",
-    "renameCard": "Rename Card",
-    "renameCardDesc": "Consume 1 rename card to change your display name",
-    "premiumReport": "Premium Analysis",
-    "premiumReportDesc": "Unlock detailed six-dimension cognitive analysis and training recommendations"
-  },
-  "instruction": {
-    "title": "Help & Instructions",
-    "subtitle": "Understand N-Back training and the system",
-    "nback": {
-      "title": "N-Back Mechanism",
-      "intro": "N-Back is a classic working memory training method. You need to recall information from N rounds ago and respond in the current round. The higher the N, the greater the challenge.",
-      "example": "1-Back Example (Numeric Flow)",
-      "round": "Round",
-      "remember": "Remember answer",
-      "input": "Input",
-      "exampleHint": "1-Back = recall 1 round ago;  2-Back = recall 2 rounds ago, and so on"
-    },
-    "modes": {
-      "numeric": "Delayed recall of equation answers, training working memory and math",
-      "spatial": "Remember highlighted grid positions, training spatial memory and observation",
-      "mouse": "Track final mouse positions after cats push them around",
-      "house": "Track enter/leave (including concurrent), report final head count"
-    },
-    "rank": {
-      "title": "Brain Rank LV1-LV7",
-      "desc": "Accumulate XP through training to advance ranks. Each session earns XP based on N-level, accuracy, and rounds.",
-      "initial": "Starting rank",
-      "xpRequired": "Requires {{xp}} XP",
-      "formula": "💡 XP = 20 × (N coefficient + mode coefficient) × accuracy%",
-      "milestone": {
-        "numeric_2back": "Numeric 2-Back > 90%",
-        "numeric_3back": "Numeric 3-Back > 85%",
-        "numeric_5back": "Numeric 5-Back > 80%",
-        "numeric_7back": "Numeric 7-Back > 90%",
-        "numeric_9back": "Numeric 9-Back",
-        "numeric_11back": "Numeric 11-Back",
-        "spatial_3x3": "Spatial 3x3",
-        "spatial_4x4": "Spatial 4x4",
-        "spatial_3x3_2back": "Spatial 3x3(2-Back) > 90%",
-        "spatial_4x4_2back": "Spatial 4x4(2-Back) > 85%",
-        "spatial_5x5": "Spatial 5x5",
-        "spatial_5x5_3back": "Spatial 5x5(3-Back) > 80%",
-        "mouse_4mice": "Mouse (4-Mice) > 90%",
-        "mouse_7mice": "Mouse (7-Mice) > 85%",
-        "mouse_9mice": "Mouse (9-Mice)",
-        "house_normal_10": "House (Normal, 12 Events) > 90%",
-        "house_normal_12": "House (Normal, 12 Events) > 90%",
-        "house_fast_15": "House (Fast, 15 Events) > 90%",
-        "house_double": "House (Disabled)"
-      }
-    },
-    "radar": {
-      "title": "Six-Dimension Brain Radar",
-      "desc": "The radar chart displays your overall cognitive ability across six dimensions. Each dimension is driven by different training modes and performance metrics.",
-      "memory": {
-        "name": "Memory",
-        "desc": "Based on your highest N-Back level achieved, reflecting working memory capacity"
-      },
-      "focus": {
-        "name": "Focus",
-        "desc": "Based on average accuracy from your last 20 sessions"
-      },
-      "math": {
-        "name": "Math",
-        "desc": "Performance in Numeric Flow mode, reflecting mental math speed and accuracy"
-      },
-      "observation": {
-        "name": "Observation",
-        "desc": "Performance in Spatial Flow and Devilish Mice modes"
-      },
-      "loadCapacity": {
-        "name": "Load Capacity",
-        "desc": "Combined performance in House Flow and high-level N-Back"
-      },
-      "reaction": {
-        "name": "Reaction",
-        "desc": "Based on average reaction time (faster = higher)"
-      }
-    },
-    "energy": {
-      "title": "Energy System",
-      "desc1": "Each training session costs 1 energy. Maximum energy is 5.",
-      "desc2": "Energy recovers 1 point every 4 hours automatically.",
-      "desc3": "You can also purchase Energy Potions in the store for instant recovery."
-    }
-  },
-  "difficulty": {
-    "easy": "Easy",
-    "medium": "Medium",
-    "hard": "Hard",
-    "hell": "Hell"
-  },
-  "speed": {
-    "easy": "Slow",
-    "normal": "Normal",
-    "fast": "Fast"
-  }
+﻿{
+    "app":  {
+                "title":  "Brain Flow",
+                "subtitle":  "Brain Training System",
+                "backHome":  "Back to Home"
+            },
+    "common":  {
+                   "cancel":  "Cancel",
+                   "gotIt":  "Got it",
+                   "loading":  "Loading…",
+                   "total":  "Total"
+               },
+    "home":  {
+                 "profile":  "Profile",
+                 "streak":  "🔥 {{days}} day streak",
+                 "maxLevel":  "Max Level",
+                 "totalScore":  "Total Score",
+                 "streakDays":  "Streak Days",
+                 "gameMode":  "Game Mode",
+                 "numeric":  "Numeric Flow",
+                 "numericDesc":  "Delayed recall math",
+                 "spatial":  "Spatial Flow",
+                 "spatialDesc":  "Grid memory",
+                 "mouse":  "Devilish Mice",
+                 "mouseDesc":  "Track shifting mice",
+                 "house":  "House Flow",
+                 "houseDesc":  "Dynamic head count",
+                 "config":  "Training Config",
+                 "nLevel":  "N Level (recall):",
+                 "rounds":  "Rounds:",
+                 "gridSize":  "Grid Size:",
+                 "configError":  "Config Error",
+                 "configErrorMsg":  "N must be less than rounds! N={{n}}, rounds={{rounds}}",
+                 "lockedConfigErrorMsg":  "Some options are locked. Clear easier levels to unlock them.",
+                 "mouseCount":  "🐭 Mice Count",
+                 "mouseGrid":  "📐 Grid Size",
+                 "mouseDifficulty":  "💪 Difficulty",
+                 "mouseRounds":  "Rounds:",
+                 "howToPlay":  "🧠 How to Play",
+                 "numericHelp":  "Equations appear one by one. Remember each answer and input the answer from {{n}} rounds ago.",
+                 "spatialHelp":  "A position highlights on a {{grid}} grid. Remember each position and click the one from {{n}} rounds ago.",
+                 "mouseHelp":  "{{mice}} mice and {{cats}} cats on a {{grid}} grid. After memorizing, cats push {{pushes}} times from edges. Find where the mice end up.",
+                 "houseHelp":  "The house starts with {{initial}} people. There will be {{events}} enter/leave events. Remember the final head count. Speed: {{speed}}",
+                 "startMouse":  "Start Devilish Mice {{difficulty}} ({{rounds}} rounds)",
+                 "startNBack":  "Start {{n}}-Back {{mode}} Training ({{rounds}} rounds)",
+                 "startHouse":  "Start House Flow {{speed}} ({{rounds}} rounds)",
+                 "modeNumeric":  "Numeric",
+                 "modeSpatial":  "Spatial",
+                 "houseInitial":  "🏠 Initial People",
+                 "houseEvents":  "📊 Events",
+                 "houseSpeed":  "⚡ Speed",
+                 "houseRounds":  "Rounds:"
+             },
+    "game":  {
+                 "quit":  "← Quit",
+                 "resume":  "▶ Resume",
+                 "pause":  "⏸ Pause",
+                 "round":  "Round {{current}}/{{total}}",
+                 "memoryDone":  "✅ Memory Phase Complete",
+                 "memoryDoneMsg":  "{{n}} items shown",
+                 "readyToAnswer":  "Ready to start answering?",
+                 "startAnswer":  "Start Answering",
+                 "memoryPhase":  "Memory Phase",
+                 "currentQuestion":  "Current (remember this)",
+                 "clickNBack":  "Click position from {{n}} rounds ago",
+                 "submitted":  "Submitted",
+                 "selectPosition":  "Select a position",
+                 "confirmAnswer":  "Confirm",
+                 "answerRemaining":  "Answer remaining questions",
+                 "inputNBack":  "Input answer from {{n}} rounds ago",
+                 "correct":  "✓ Correct",
+                 "wrong":  "✗ Wrong",
+                 "yourAnswer":  "Your answer: {{user}} · Correct: {{correct}}",
+                 "score":  "Score: {{correct}} / {{total}}",
+                 "paused":  "Paused",
+                 "warmupHint":  "Remember the answer (warmup)",
+                 "enterAnswer":  "Enter answer",
+                 "rememberAnswer":  "Remember this answer",
+                 "delete":  "← Delete",
+                 "confirm":  "✓ Confirm",
+                 "observePosition":  "Observe position...",
+                 "canClick":  "✓ Click now",
+                 "noClickNeeded":  "Memory phase - no click needed"
+             },
+    "mouse":  {
+                  "remember":  "👀 Remember the mice!",
+                  "miceCount":  "{{n}} mice total",
+                  "doorsClosed":  "🚪 Doors closed...",
+                  "rememberWhere":  "Remember where they are",
+                  "catsComing":  "🐱 Cats incoming!",
+                  "catsPushing":  "Cats are pushing...",
+                  "whereAreMice":  "🐭 Where are the mice?",
+                  "findMice":  "Find the remaining mice",
+                  "perfect":  "🎉 Perfect!",
+                  "found":  "Found {{found}} / {{total}} mice",
+                  "tryHarder":  "😿 Try harder!",
+                  "selected":  "{{n}} positions selected",
+                  "clickToSelect":  "Click to select mouse positions",
+                  "confirmAnswer":  "Confirm ✓",
+                  "foundShort":  "🐭 Found {{found}}/{{total}}",
+                  "wrongSelect":  "Wrong {{n}}",
+                  "foundMice":  "Found mice: {{found}} / {{total}}",
+                  "accuracy":  "Accuracy: {{pct}}%",
+                  "grid":  "Grid",
+                  "push":  "Push"
+              },
+    "house":  {
+                  "watching":  "👀 Watch carefully!",
+                  "howMany":  "🏠 How many people are inside?",
+                  "enterCount":  "Enter the number of people",
+                  "roundLabel":  "Round {{current}}/{{total}}",
+                  "correctAnswer":  "Correct! There are {{n}} people",
+                  "wrongAnswer":  "There should be {{n}} people",
+                  "perfect":  "🎉 Perfect!",
+                  "tryHarder":  "😿 Try harder!",
+                  "score":  "Correct {{correct}} / {{total}} rounds",
+                  "eventProgress":  "Event {{current}} / {{total}}"
+              },
+    "result":  {
+                   "title":  "Training Complete",
+                   "syncing":  "Syncing to cloud...",
+                   "syncFailed":  "Cloud sync failed",
+                   "rewardsTitle":  "Rewards",
+                   "xp":  "XP",
+                   "brainCoins":  "Coins",
+                   "energy":  "Energy",
+                   "dailyPerfectBonus":  "Daily Perfect +{{coins}} Coins",
+                   "dailyFirstWinBonus":  "First win today +{{coins}} Coins",
+                   "levelUpTitle":  "Level Up!",
+                   "levelUpDesc":  "LV{{before}} → LV{{after}}",
+                   "newRecord":  "🏆 New Record!",
+                   "newLevel":  "⭐ New Level Unlocked!",
+                   "newUnlock":  "⭐ Unlocked!",
+                   "unlocksTitle":  "Unlocks",
+                   "accuracy":  "Accuracy",
+                   "points":  "pts",
+                   "difficulty":  "Difficulty",
+                   "avgReaction":  "Avg Reaction Time",
+                   "correct":  "Correct",
+                   "wrong":  "Wrong",
+                   "timeout":  "Timeout",
+                   "duration":  "Duration: {{time}}s · {{rounds}} rounds",
+                   "playAgain":  "Play Again",
+                   "backHome":  "← Back to Home"
+               },
+    "unlock":  {
+                   "numeric":  "Unlocked: Numeric {{n}}-Back ({{rounds}} rounds)",
+                   "spatialRounds":  "Unlocked: Spatial {{n}}-Back ({{rounds}} rounds)",
+                   "spatialN":  "Unlocked: Spatial {{grid}} to {{n}}-Back",
+                   "spatialGrid":  "Unlocked: Spatial {{grid}} grid",
+                   "mouseDifficulty":  "Unlocked: Mouse {{difficulty}}",
+                   "mouseMice":  "Unlocked: {{count}} mice",
+                   "mouseRounds":  "Unlocked: {{rounds}} rounds (Mouse)",
+                   "houseSpeed":  "Unlocked: House {{speed}}",
+                   "houseEvents":  "Unlocked: {{events}} events (House)",
+                   "houseRounds":  "Unlocked: {{rounds}} rounds (House)",
+                   "houseInitial":  "Unlocked: Initial {{count}} (House)"
+               },
+    "profile":  {
+                    "title":  "Profile",
+                    "stats":  "Statistics",
+                    "history":  "Training History",
+                    "noHistory":  "No training history yet",
+                    "startFirst":  "Complete your first session to see history here",
+                    "level":  "Level",
+                    "accuracyLabel":  "Accuracy",
+                    "scoreLabel":  "Score",
+                    "brainRadar":  "Brain Radar",
+                    "noRadarData":  "Complete training to unlock radar chart",
+                    "activityHeatmap":  "📅 Activity Heatmap (365 days)",
+                    "brainPoints":  "Brain Points",
+                    "mockDataHint":  "Demo data · Your real stats will appear after training",
+                    "nextRank":  "Next: {{rank}}",
+                    "xpToNext":  "{{xp}} XP to next rank",
+                    "maxRank":  "Maximum Rank Reached",
+                    "milestoneRequired":  "Required Milestones",
+                    "milestoneOneOf":  "Complete One of These",
+                    "required":  "Required",
+                    "oneOf":  "One of",
+                    "radar":  {
+                                  "memory":  "Memory",
+                                  "focus":  "Focus",
+                                  "math":  "Math",
+                                  "observation":  "Observation",
+                                  "loadCapacity":  "Load Cap.",
+                                  "speed":  "Speed"
+                              },
+                    "heatmap":  {
+                                    "sessions":  "{{count}} sessions",
+                                    "activeDays":  "{{count}} active days",
+                                    "less":  "Less",
+                                    "more":  "More",
+                                    "sessionLabel":  "sessions",
+                                    "weekdays":  {
+                                                     "mon":  "Mon",
+                                                     "wed":  "Wed",
+                                                     "fri":  "Fri"
+                                                 }
+                                },
+                    "auth":  {
+                                 "guest":  "Guest Mode",
+                                 "authenticated":  "Signed In",
+                                 "linkAccounts":  "Link Accounts",
+                                 "linkGoogle":  "Link Google",
+                                 "guestWarning":  "Guest data is stored locally only. Link an account to sync.",
+                                 "guestLockHint":  "You can try training, but stats, check-in, history and settings require an account",
+                                 "goSignup":  "Sign up",
+                                 "goSignin":  "Sign in"
+                             }
+                },
+    "nav":  {
+                "home":  "Home",
+                "train":  "Train",
+                "rank":  "Rank",
+                "profile":  "Profile",
+                "settings":  "Settings",
+                "store":  "Store",
+                "instruction":  "Help"
+            },
+    "settings":  {
+                     "tabs":  {
+                                  "profile":  "Profile",
+                                  "security":  "Security",
+                                  "accounts":  "Accounts",
+                                  "notifications":  "Notifications",
+                                  "help":  "Help"
+                              },
+                     "accounts":  {
+                                      "hint":  "Linking helps sign-in and account recovery",
+                                      "loginRequired":  "Sign in to link accounts"
+                                  },
+                     "general":  {
+                                     "title":  "General",
+                                     "language":  "Language",
+                                     "sound":  "Sound Effects",
+                                     "soundHint":  "In-game sound effects",
+                                     "haptics":  "Haptics",
+                                     "hapticsHint":  "Vibration feedback"
+                                 },
+                     "about":  {
+                                   "title":  "About",
+                                   "version":  "Version",
+                                   "privacy":  "Privacy Policy",
+                                   "terms":  "Terms of Service",
+                                   "feedback":  "Feedback",
+                                   "clearCache":  "Clear Cache",
+                                   "clearCacheHint":  "Clear local cache and refresh if you encounter issues",
+                                   "clearCacheConfirm":  "Are you sure? This will reset local settings.",
+                                   "cacheCleared":  "Cache cleared"
+                               },
+                     "emailVerified":  "Verified",
+                     "emailNotVerified":  "Unverified",
+                     "profile":  {
+                                     "displayName":  "Display name",
+                                     "renameHint":  "Consume 1 rename card to change your display name",
+                                     "rename":  "Rename",
+                                     "renamePlaceholder":  "2-20 chars",
+                                     "renameNeedCard":  "No rename card, ",
+                                     "goStore":  "Go to store",
+                                     "renameNoCard":  "No rename card. Please purchase first.",
+                                     "renameInvalid":  "Name length must be 2-20",
+                                     "renameFailed":  "Update failed. Please try again.",
+                                     "renameNetworkError":  "Network error. Please try again.",
+                                     "renameConfirm":  "Confirm",
+                                     "avatar":  "Avatar",
+                                     "avatarHint":  "Avatar upload/selection is coming soon"
+                                 },
+                     "security":  {
+                                      "title":  "Account security",
+                                      "changePassword":  "Change password",
+                                      "changeEmail":  "Change email",
+                                      "verifyEmail":  "Verify email",
+                                      "guestHint":  "Sign in to change password, verify email, and link accounts",
+                                      "changeEmailHint":  "We will send a code to the new email",
+                                      "emailPlaceholder":  "New email address",
+                                      "otpPlaceholder":  "Verification code (6 digits)",
+                                      "sendCode":  "Send code",
+                                      "confirmChangeEmail":  "Confirm",
+                                      "emailInvalid":  "Invalid email",
+                                      "emailInUse":  "Email is already in use",
+                                      "otpInvalid":  "Invalid or expired code",
+                                      "changeEmailFailed":  "Failed to change email. Please try again.",
+                                      "changeEmailNetworkError":  "Network error. Please try again.",
+                                      "signOut":  "Sign out"
+                                  },
+                     "notifications":  {
+                                           "weeklyReport":  "Email notifications",
+                                           "weeklyReportHint":  "Weekly report / premium insights (local toggle for now)"
+                                       }
+                 },
+    "rank":  {
+                 "tabs":  {
+                              "coins":  "Score",
+                              "level":  "Level",
+                              "all":  "All-time",
+                              "week":  "Weekly"
+                          },
+                 "errors":  {
+                                "maintenance":  "Leaderboard is under maintenance",
+                                "loginRequired":  "Sign in to view the leaderboard",
+                                "weeklyDisabled":  "Weekly leaderboard is disabled",
+                                "loadFailed":  "Load failed. Please try again."
+                            },
+                 "metrics":  {
+                                 "coins":  "Brain Points",
+                                 "score":  "Total Score",
+                                 "xp":  "XP {{xp}}",
+                                 "weeklyXp":  "Weekly XP {{xp}}",
+                                 "level":  "Lv {{level}}"
+                             },
+                 "empty":  "No data",
+                 "myRank":  "Your rank: #{{rank}}",
+                 "avgReaction":  "Avg {{seconds}}s"
+             },
+    "sidebar":  {
+                    "leaderboard":  "Leaderboard",
+                    "history":  "History",
+                    "recentSessions":  "Recent Sessions",
+                    "noSessions":  "No sessions yet",
+                    "leaderboardHint":  "📊 Resets weekly · Accuracy ≥ 90% to rank",
+                    "leaderboardComingSoon":  "Leaderboard coming soon",
+                    "leaderboardLoginRequired":  "Sign in to participate"
+                },
+    "energy":  {
+                   "in":  "",
+                   "recoverIn":  "Next +1 in {{time}}",
+                   "insufficient":  "Insufficient energy! Please wait or purchase Energy Potion."
+               },
+    "time":  {
+                 "h":  "h",
+                 "m":  "m",
+                 "s":  "s"
+             },
+    "checkin":  {
+                    "title":  "Daily Check-in",
+                    "streak":  "{{days}} day streak",
+                    "done":  "Checked in today",
+                    "claim":  "Claim Reward",
+                    "claiming":  "Checking in…",
+                    "points":  "Brain Points"
+                },
+    "store":  {
+                  "title":  "Brain Store",
+                  "subtitle":  "Redeem items with Brain Points",
+                  "points":  "BP",
+                  "purchaseSuccess":  "Purchase successful!",
+                  "notEnoughPoints":  "Not enough Brain Points",
+                  "alreadyOwned":  "Already owned",
+                  "owned":  "Owned",
+                  "permanent":  "Permanent",
+                  "consumable":  "Consumable",
+                  "earnHint":  "💡 Complete training to earn Brain Points",
+                  "energyPotion1":  "Energy Potion +1",
+                  "energyPotion1Desc":  "Instantly restore 1 energy",
+                  "energyPotion5":  "Energy Potion +5",
+                  "energyPotion5Desc":  "Instantly restore 5 energy (full)",
+                  "streakSaver":  "Streak Shield",
+                  "streakSaverDesc":  "Protect your streak from one missed day",
+                  "renameCard":  "Rename Card",
+                  "renameCardDesc":  "Consume 1 rename card to change your display name",
+                  "premiumReport":  "Premium Analysis",
+                  "premiumReportDesc":  "Unlock detailed six-dimension cognitive analysis and training recommendations"
+              },
+    "instruction":  {
+                        "title":  "Help \u0026 Instructions",
+                        "subtitle":  "Understand N-Back training and the system",
+                        "nback":  {
+                                      "title":  "N-Back Mechanism",
+                                      "intro":  "N-Back is a classic working memory training method. You need to recall information from N rounds ago and respond in the current round. The higher the N, the greater the challenge.",
+                                      "example":  "1-Back Example (Numeric Flow)",
+                                      "round":  "Round",
+                                      "remember":  "Remember answer",
+                                      "input":  "Input",
+                                      "exampleHint":  "1-Back = recall 1 round ago;  2-Back = recall 2 rounds ago, and so on"
+                                  },
+                        "modes":  {
+                                      "numeric":  "Delayed recall of equation answers, training working memory and math",
+                                      "spatial":  "Remember highlighted grid positions, training spatial memory and observation",
+                                      "mouse":  "Track final mouse positions after cats push them around",
+                                      "house":  "Track enter/leave (including concurrent), report final head count"
+                                  },
+                        "rank":  {
+                                     "title":  "Brain Rank LV1-LV7",
+                                     "desc":  "Accumulate XP through training to advance ranks. Each session earns XP based on N-level, accuracy, and rounds.",
+                                     "initial":  "Starting rank",
+                                     "xpRequired":  "Requires {{xp}} XP",
+                                     "formula":  "💡 XP = 20 × (N coefficient + mode coefficient) × accuracy%",
+                                     "milestone":  {
+                                                       "numeric_2back":  "Numeric 2-Back \u003e 90%",
+                                                       "numeric_3back":  "Numeric 3-Back \u003e 85%",
+                                                       "numeric_5back":  "Numeric 5-Back \u003e 80%",
+                                                       "numeric_7back":  "Numeric 7-Back \u003e 90%",
+                                                       "numeric_9back":  "Numeric 9-Back",
+                                                       "numeric_11back":  "Numeric 11-Back",
+                                                       "spatial_3x3":  "Spatial 3x3",
+                                                       "spatial_4x4":  "Spatial 4x4",
+                                                       "spatial_3x3_2back":  "Spatial 3x3(2-Back) \u003e 90%",
+                                                       "spatial_4x4_2back":  "Spatial 4x4(2-Back) \u003e 85%",
+                                                       "spatial_5x5":  "Spatial 5x5",
+                                                       "spatial_5x5_3back":  "Spatial 5x5(3-Back) \u003e 80%",
+                                                       "mouse_4mice":  "Mouse (4-Mice) \u003e 90%",
+                                                       "mouse_7mice":  "Mouse (7-Mice) \u003e 85%",
+                                                       "mouse_9mice":  "Mouse (9-Mice)",
+                                                       "house_normal_10":  "House (Normal, 12 Events) \u003e 90%",
+                                                       "house_normal_12":  "House (Normal, 12 Events) \u003e 90%",
+                                                       "house_fast_15":  "House (Fast, 15 Events) \u003e 90%",
+                                                       "house_double":  "House (Disabled)"
+                                                   }
+                                 },
+                        "radar":  {
+                                      "title":  "Six-Dimension Brain Radar",
+                                      "desc":  "The radar chart displays your overall cognitive ability across six dimensions. Each dimension is driven by different training modes and performance metrics.",
+                                      "memory":  {
+                                                     "name":  "Memory",
+                                                     "desc":  "Based on your highest N-Back level achieved, reflecting working memory capacity"
+                                                 },
+                                      "focus":  {
+                                                    "name":  "Focus",
+                                                    "desc":  "Based on average accuracy from your last 20 sessions"
+                                                },
+                                      "math":  {
+                                                   "name":  "Math",
+                                                   "desc":  "Performance in Numeric Flow mode, reflecting mental math speed and accuracy"
+                                               },
+                                      "observation":  {
+                                                          "name":  "Observation",
+                                                          "desc":  "Performance in Spatial Flow and Devilish Mice modes"
+                                                      },
+                                      "loadCapacity":  {
+                                                           "name":  "Load Capacity",
+                                                           "desc":  "Combined performance in House Flow and high-level N-Back"
+                                                       },
+                                      "reaction":  {
+                                                       "name":  "Reaction",
+                                                       "desc":  "Based on average reaction time (faster = higher)"
+                                                   }
+                                  },
+                        "energy":  {
+                                       "title":  "Energy System",
+                                       "desc1":  "Each training session costs 1 energy. Maximum energy is 5.",
+                                       "desc2":  "Energy recovers 1 point every 4 hours automatically.",
+                                       "desc3":  "You can also purchase Energy Potions in the store for instant recovery."
+                                   }
+                    },
+    "difficulty":  {
+                       "easy":  "Easy",
+                       "medium":  "Medium",
+                       "hard":  "Hard",
+                       "hell":  "Hell"
+                   },
+    "speed":  {
+                  "easy":  "Slow",
+                  "normal":  "Normal",
+                  "fast":  "Fast"
+              }
 }
