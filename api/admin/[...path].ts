@@ -49,6 +49,15 @@ const toCsvCell = (v: unknown): string => {
 export default async function handler(req: RequestLike, res: ResponseLike) {
   setNoStore(res);
 
+  try {
+    return await handleAdmin(req, res);
+  } catch (err) {
+    console.error("[admin] unhandled error:", err);
+    try { res.status(500).json({ error: "internal_server_error" }); } catch { /* already sent */ }
+  }
+}
+
+async function handleAdmin(req: RequestLike, res: ResponseLike) {
   let admin;
   try {
     admin = await requireAdmin(req);
