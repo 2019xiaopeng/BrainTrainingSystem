@@ -4,7 +4,7 @@
     { "source": "/api/campaign/progress", "destination": "/api/campaign?op=progress" },
     { "source": "/api/leaderboard/coins/me", "destination": "/api/leaderboard/coins?op=me" },
     { "source": "/api/leaderboard/level/me", "destination": "/api/leaderboard/level?op=me" },
+    { "source": "/api/auth/:path*", "destination": "/api/auth/[[...path]]" },
     { "source": "/:path((?!api/).*)", "destination": "/index.html" }
   ]
 }
-
