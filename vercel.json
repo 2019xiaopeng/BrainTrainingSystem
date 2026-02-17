@@ -1,6 +1,5 @@
 {
   "rewrites": [
-    { "source": "/api/auth/(.*)", "destination": "https://brain-training-system-git-v4-dev-qcbs-projects.vercel.app/api/auth/$1" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
