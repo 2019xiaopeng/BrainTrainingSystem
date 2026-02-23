@@ -286,7 +286,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
                           : 'bg-red-500 shadow-lg scale-105';
                       } else if (isSelected && !isAnswered) {
                         // 已选择但未提交：高亮边框
-                        cellClass += 'bg-teal-100 border-2 border-teal-500 ring-2 ring-teal-300 active:scale-95 cursor-pointer';
+                        cellClass += 'bg-teal-100 border-2 border-teal-500 ring-2 ring-teal-300';
                       } else if (isAnswered) {
                         // 已提交：禁用状态
                         cellClass += 'bg-zen-100 cursor-not-allowed';
@@ -298,15 +298,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
                       return (
                         <button
                           key={i}
-                          onClick={() => {
-                            if (isAnswered) return;
-                            if (lastClickedIndex === i) {
-                              // Double click to confirm
-                              engine.submitAnswer(i);
-                            } else {
-                              handleCellClick(i);
-                            }
-                          }}
+                          onClick={() => handleCellClick(i)}
                           disabled={isAnswered}
                           className={cellClass}
                         />
@@ -371,7 +363,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
                       ? 'bg-green-500 shadow-lg' 
                       : 'bg-red-500 shadow-lg';
                   } else if (isSelected && !isAnswered) {
-                    cellClass += 'bg-teal-100 border-2 border-teal-500 ring-2 ring-teal-300 active:scale-95 cursor-pointer';
+                    cellClass += 'bg-teal-100 border-2 border-teal-500 ring-2 ring-teal-300';
                   } else if (isAnswered) {
                     cellClass += 'bg-zen-100 cursor-not-allowed';
                   } else {
@@ -379,22 +371,14 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
                   }
                   
                   return (
-                        <button
-                          key={i}
-                          onClick={() => {
-                            if (isAnswered) return;
-                            if (lastClickedIndex === i) {
-                              // Double click to confirm
-                              engine.submitAnswer(i);
-                            } else {
-                              handleCellClick(i);
-                            }
-                          }}
-                          disabled={isAnswered || engine.phase === 'paused'}
-                          className={cellClass}
-                        />
-                      );
-                    })}
+                    <button
+                      key={i}
+                      onClick={() => !isAnswered && handleCellClick(i)}
+                      disabled={isAnswered || engine.phase === 'paused'}
+                      className={cellClass}
+                    />
+                  );
+                })}
               </div>
               
               {/* 确认按钮 */}
