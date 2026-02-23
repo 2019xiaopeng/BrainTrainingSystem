@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AppView, NBackConfig, SessionSummary, UserProfile, SessionHistoryEntry, GameConfigs, GameMode, BrainStats, AuthProfile, EnergyState, CheckInState, GameUnlocks, DailyActivityEntry, MouseDifficultyLevel, HouseSpeed } from '../types/game';
 import { DEFAULT_CONFIG, ENERGY_MAX, calculateRecoveredEnergy, getBrainRank, getCheckInReward, STORE_PRODUCTS } from '../types/game';
+import { updateGuestCampaignAfterSession, computeStars } from '../lib/campaign/guestProgress';
 
 const ENERGY_STORAGE_KEY_GUEST = 'brain-flow-energy:guest';
 const ENERGY_STORAGE_KEY_USER_PREFIX = 'brain-flow-energy:user:';
@@ -117,6 +118,17 @@ interface GameStore {
   cloudDailyActivity: DailyActivityEntry[] | null;
   /** Pending cloud uploads for sessions */
   pendingSessionUploads: { id: string; body: unknown; attempts: number; nextRetryAt: number }[];
+  /** Active campaign run context (set when starting from campaign map) */
+  activeCampaignRun: null | {
+    levelId: number;
+    episodeId: number;
+    orderInEpisode: number;
+    minAccuracy: number;
+    nextEpisodeId: number;
+    nextLevelId: number;
+  };
+  /** Last server-confirmed campaign update (used for UI refresh) */
+  lastCampaignUpdate: unknown | null;
 
   // Actions
   setView: (view: AppView) => void;
@@ -127,6 +139,7 @@ interface GameStore {
   saveSession: (summary: SessionSummary) => void;
   kickoffSessionSync: () => void;
   updateGameConfig: (mode: GameMode, config: Partial<GameConfigs[GameMode]>) => void;
+  setActiveCampaignRun: (run: GameStore["activeCampaignRun"]) => void;
   goToGame: () => void;
   goToResult: (summary: SessionSummary) => void;
   goHome: () => void;
@@ -537,6 +550,8 @@ export const useGameStore = create<GameStore>()(
       optimisticUnlocks: null,
       cloudDailyActivity: null,
       pendingSessionUploads: [],
+      activeCampaignRun: null,
+      lastCampaignUpdate: null,
 
       setView: (view) => set({ currentView: view }),
 
@@ -795,6 +810,7 @@ export const useGameStore = create<GameStore>()(
                     energy: mergeEnergyState(s.userProfile.energy, (data as { energy?: unknown } | null)?.energy),
                   },
                   lastUnlocks: Array.isArray(data.newlyUnlocked) ? data.newlyUnlocked : s.lastUnlocks,
+                  lastCampaignUpdate: (data as { campaign?: unknown } | null)?.campaign ?? s.lastCampaignUpdate,
                   lastRewards: {
                     xpEarned: Number(data.xpEarned ?? 0) || 0,
                     unlockBonusCoins: Number(data.unlockBonusCoins ?? 0) || 0,
@@ -881,6 +897,20 @@ export const useGameStore = create<GameStore>()(
         };
 
         if (state.userProfile.auth?.status === 'guest') {
+          // Handle campaign progress for guest users
+          const run = state.activeCampaignRun;
+          if (run) {
+            const updated = updateGuestCampaignAfterSession({
+              levelId: run.levelId,
+              accuracy: summary.accuracy,
+              score,
+              minAccuracy: run.minAccuracy,
+              episodeId: run.episodeId,
+              orderInEpisode: run.orderInEpisode,
+              getNextLevelId: () => ({ nextEpisodeId: run.nextEpisodeId, nextLevelId: run.nextLevelId }),
+            });
+            set({ lastCampaignUpdate: { levelId: run.levelId, stars: updated.stars, passed: updated.passed } });
+          }
           set({ lastSummary: enrichedSummary });
           return;
         }
@@ -1036,6 +1066,7 @@ export const useGameStore = create<GameStore>()(
                   score: enrichedSummary.score,
                 },
                 modeDetails,
+                ...(s.activeCampaignRun ? { campaignLevelId: s.activeCampaignRun.levelId } : {}),
               },
               attempts: 0,
               nextRetryAt: 0,
@@ -1053,7 +1084,9 @@ export const useGameStore = create<GameStore>()(
           lastSummary: summary,
         }),
 
-      goHome: () => set({ currentView: 'home', lastSummary: null, lastUnlocks: [] }),
+      setActiveCampaignRun: (run) => set({ activeCampaignRun: run }),
+
+      goHome: () => set({ currentView: 'home', lastSummary: null, lastUnlocks: [], activeCampaignRun: null }),
 
       // ---- Economy Actions ----
 

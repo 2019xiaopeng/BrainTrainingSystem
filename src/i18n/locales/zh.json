@@ -10,6 +10,8 @@
     "loading": "加载中…"
   },
   "home": {
+    "freeTraining": "自由训练",
+    "campaignMode": "闯关模式",
     "profile": "个人档案",
     "streak": "🔥 {{days}} 天连续",
     "maxLevel": "最高等级",
@@ -451,5 +453,24 @@
     "easy": "慢速",
     "normal": "正常",
     "fast": "快速"
+  },
+  "campaign": {
+    "chapter": "第 {{n}} 章",
+    "storyButton": "📖 查看剧情",
+    "modeNumeric": "数字心流",
+    "modeSpatial": "空间心流",
+    "modeMouse": "鼠标心流",
+    "modeHouse": "人来人往",
+    "paramsNumeric": "{{n}}-Back · {{rounds}} 轮",
+    "paramsSpatial": "{{grid}}×{{grid}} · {{n}}-Back · {{rounds}} 轮",
+    "paramsMouse": "{{mice}} 鼠 · {{grid}} · {{rounds}} 轮",
+    "paramsHouse": "初始 {{initial}} 人 · {{events}} 事件 · {{rounds}} 轮",
+    "passCondition": "通过条件: 正确率 ≥ {{accuracy}}%",
+    "startTraining": "开始训练",
+    "cancel": "取消",
+    "lockedHint": "通过前面的关卡即可解锁",
+    "bossLabel": "BOSS",
+    "newMessage": "新篇章",
+    "confirmEnter": "进入冒险"
   }
 }
