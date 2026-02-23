@@ -472,5 +472,29 @@
     "bossLabel": "BOSS",
     "newMessage": "新篇章",
     "confirmEnter": "进入冒险"
+  },
+  "campaignResult": {
+    "passed": "通关成功！",
+    "failed": "未能通关",
+    "failGap": "还差 {{gap}}% 达到通关线",
+    "firstClear": "🎉 首次通关",
+    "newBestStars": "⭐ 星级提升 {{prev}}★ → {{now}}★",
+    "passThreshold": "通关线: ≥{{min}}%",
+    "rewards": "奖励结算",
+    "xpEarned": "经验值",
+    "baseCoins": "基础奖励",
+    "starBonus": "星级奖励",
+    "firstClearBonus": "首通奖励",
+    "dailyFirstWin": "每日首胜",
+    "dailyPerfect": "完美满分",
+    "unlockBonus": "解锁奖励",
+    "totalCoins": "合计",
+    "hintTo2Star": "提示: 正确率≥{{target}}% 可获得 2★",
+    "hintTo3Star": "提示: 正确率≥{{target}}% 可获得 3★",
+    "nextLevel": "下一关 →",
+    "retryFailed": "再试一次",
+    "retryForStars": "重试冲更高星",
+    "playAgain": "再来一局",
+    "backToMap": "返回闯关地图"
   }
 }

@@ -909,7 +909,27 @@ export const useGameStore = create<GameStore>()(
               orderInEpisode: run.orderInEpisode,
               getNextLevelId: () => ({ nextEpisodeId: run.nextEpisodeId, nextLevelId: run.nextLevelId }),
             });
-            set({ lastCampaignUpdate: { levelId: run.levelId, stars: updated.stars, passed: updated.passed } });
+            const stars = computeStars(summary.accuracy);
+            const passed = summary.accuracy >= run.minAccuracy;
+            const prevBestStars = updated.prevBestStars ?? 0;
+            const STAR_BONUS: Record<number, number> = { 0: 0, 1: 5, 2: 10, 3: 20 };
+            const starBonusCoins = Math.max(0, (STAR_BONUS[Math.max(prevBestStars, stars)] ?? 0) - (STAR_BONUS[prevBestStars] ?? 0));
+            const isFirstClear = updated.isFirstClear ?? false;
+            const firstClearBonus = isFirstClear ? 10 : 0;
+
+            set({
+              lastCampaignUpdate: {
+                levelId: run.levelId,
+                stars,
+                prevBestStars,
+                passed,
+                isFirstClear,
+                starBonusCoins,
+                firstClearBonus,
+                nextLevelId: passed ? run.nextLevelId : null,
+                nextEpisodeId: passed ? run.nextEpisodeId : null,
+              },
+            });
           }
           set({ lastSummary: enrichedSummary });
           return;

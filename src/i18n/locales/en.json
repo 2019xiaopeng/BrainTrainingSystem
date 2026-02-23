@@ -472,5 +472,29 @@
     "bossLabel": "BOSS",
     "newMessage": "New Chapter",
     "confirmEnter": "Enter Adventure"
+  },
+  "campaignResult": {
+    "passed": "Level Cleared!",
+    "failed": "Not Passed",
+    "failGap": "Need {{gap}}% more to pass",
+    "firstClear": "🎉 First Clear",
+    "newBestStars": "⭐ Stars Improved {{prev}}★ → {{now}}★",
+    "passThreshold": "Pass threshold: ≥{{min}}%",
+    "rewards": "Rewards",
+    "xpEarned": "Experience",
+    "baseCoins": "Base Reward",
+    "starBonus": "Star Bonus",
+    "firstClearBonus": "First Clear Bonus",
+    "dailyFirstWin": "Daily First Win",
+    "dailyPerfect": "Daily Perfect",
+    "unlockBonus": "Unlock Bonus",
+    "totalCoins": "Total",
+    "hintTo2Star": "Tip: Reach ≥{{target}}% accuracy for 2★",
+    "hintTo3Star": "Tip: Reach ≥{{target}}% accuracy for 3★",
+    "nextLevel": "Next Level →",
+    "retryFailed": "Try Again",
+    "retryForStars": "Retry for Higher Stars",
+    "playAgain": "Play Again",
+    "backToMap": "Back to Map"
   }
 }

@@ -68,9 +68,11 @@ export const updateGuestCampaignAfterSession = (params: {
 
   const resultsById = new Map(prev.results.map((r) => [r.levelId, r]));
   const existing = resultsById.get(params.levelId);
+  const prevBestStars = existing?.bestStars ?? 0;
+  const isFirstClear = !existing?.clearedAt && passed;
   const nextResult: CampaignLevelResult = {
     levelId: params.levelId,
-    bestStars: Math.max(existing?.bestStars ?? 0, stars),
+    bestStars: Math.max(prevBestStars, stars),
     bestAccuracy: Math.max(existing?.bestAccuracy ?? 0, Math.round(params.accuracy)),
     bestScore: existing?.bestScore == null ? params.score : Math.max(existing.bestScore ?? 0, params.score),
     clearedAt: passed ? (existing?.clearedAt ?? Date.now()) : (existing?.clearedAt ?? null),
@@ -87,6 +89,6 @@ export const updateGuestCampaignAfterSession = (params: {
 
   const nextProgress: CampaignProgress = { state: nextState, results: Array.from(resultsById.values()) };
   writeGuestCampaignProgress(nextProgress);
-  return { progress: nextProgress, stars, passed };
+  return { progress: nextProgress, stars, passed, prevBestStars, isFirstClear };
 };
 
