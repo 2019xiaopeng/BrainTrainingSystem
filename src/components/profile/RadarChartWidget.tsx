@@ -29,7 +29,7 @@ export function RadarChartWidget({ stats, compact = false }: RadarChartWidgetPro
     { dimension: t('profile.radar.math'), value: stats.math, fullMark: 100 },
     { dimension: t('profile.radar.observation'), value: stats.observation, fullMark: 100 },
     { dimension: t('profile.radar.loadCapacity'), value: stats.loadCapacity, fullMark: 100 },
-    { dimension: t('profile.radar.speed'), value: stats.speed, fullMark: 100 },
+    { dimension: t('profile.radar.speed'), value: stats.reaction, fullMark: 100 },
   ];
 
   // Morandi palette colors (Zen light theme)

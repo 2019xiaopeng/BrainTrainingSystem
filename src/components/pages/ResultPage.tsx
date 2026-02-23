@@ -85,6 +85,7 @@ export function ResultPage() {
       sessionHistory={sessionHistory}
       userProfile={userProfile}
       unlockIds={lastUnlocks}
+      rewards={lastRewards}
       onPlayAgain={handlePlayAgain}
       onBackHome={handleBackHome}
     />
