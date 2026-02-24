@@ -156,13 +156,18 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
     }
   }, [inputValue, engine]);
 
-  // Spatial mode: handle grid cell click (只选择，不提交)
+  // Spatial mode: handle grid cell click (点击选择，再次点击确认提交)
   const handleCellClick = useCallback(
     (gridIndex: number) => {
       if (engine.phase !== 'answering' || engine.hasAnsweredThisRound) return;
-      setLastClickedIndex(gridIndex);
+      if (lastClickedIndex === gridIndex) {
+        // 再次点击已选中的方块 = 确认提交
+        engine.submitAnswer(gridIndex);
+      } else {
+        setLastClickedIndex(gridIndex);
+      }
     },
-    [engine]
+    [engine, lastClickedIndex]
   );
 
   const lastResult: RoundResult | undefined = results[results.length - 1];

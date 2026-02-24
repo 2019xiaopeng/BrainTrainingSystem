@@ -139,6 +139,7 @@
     "avgReaction": "Avg Reaction Time",
     "correct": "Correct",
     "wrong": "Wrong",
+    "missed": "Missed",
     "timeout": "Timeout",
     "duration": "Duration: {{time}}s · {{rounds}} rounds",
     "playAgain": "Play Again",

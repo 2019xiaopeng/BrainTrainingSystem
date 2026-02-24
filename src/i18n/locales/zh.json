@@ -139,6 +139,7 @@
     "avgReaction": "平均反应时间",
     "correct": "正确",
     "wrong": "错误",
+    "missed": "未答",
     "timeout": "超时",
     "duration": "用时: {{time}}秒 · 共 {{rounds}} 题",
     "playAgain": "再来一局",

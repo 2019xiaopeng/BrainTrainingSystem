@@ -867,7 +867,6 @@ export const useGameStore = create<GameStore>()(
 
       updateGameConfig: (mode, config) =>
         set((state) => {
-          if (state.userProfile.auth?.status === 'guest') return state;
           const current = state.gameConfigs[mode];
           let changed = false;
           for (const [k, v] of Object.entries(config)) {
