@@ -463,7 +463,7 @@
     "modeHouse": "人来人往",
     "paramsNumeric": "{{n}}-Back · {{rounds}} 轮",
     "paramsSpatial": "{{grid}}×{{grid}} · {{n}}-Back · {{rounds}} 轮",
-    "paramsMouse": "{{mice}} 鼠 · {{grid}} · {{rounds}} 轮",
+    "paramsMouse": "{{count}} 鼠 · {{cols}}×{{rows}} · {{rounds}} 轮",
     "paramsHouse": "初始 {{initial}} 人 · {{events}} 事件 · {{rounds}} 轮",
     "passCondition": "通过条件: 正确率 ≥ {{accuracy}}%",
     "startTraining": "开始训练",

@@ -574,19 +574,23 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
             ? (isRecord(modeDetails.house) ? modeDetails.house : null)
             : null;
 
-      const isUnlocked =
-        mode === "numeric"
-          ? isUnlockedNumeric(unlocks.numeric, config)
-          : mode === "spatial"
-            ? isUnlockedSpatial(unlocks.spatial, config)
-            : mode === "mouse"
-              ? isUnlockedMouse(unlocks.mouse, details)
-              : isUnlockedHouse(unlocks.house, details);
+      // Skip unlock check for campaign sessions — campaign levels define their own difficulty
+      const campaignLevelId = isRecord(body) ? clampInt((body as Record<string, unknown>).campaignLevelId, 0) : 0;
+      if (campaignLevelId === 0) {
+        const isUnlocked =
+          mode === "numeric"
+            ? isUnlockedNumeric(unlocks.numeric, config)
+            : mode === "spatial"
+              ? isUnlockedSpatial(unlocks.spatial, config)
+              : mode === "mouse"
+                ? isUnlockedMouse(unlocks.mouse, details)
+                : isUnlockedHouse(unlocks.house, details);
 
-      if (!isUnlocked) {
-        const err = new Error("locked") as Error & { code?: string };
-        err.code = "locked";
-        throw err;
+        if (!isUnlocked) {
+          const err = new Error("locked") as Error & { code?: string };
+          err.code = "locked";
+          throw err;
+        }
       }
 
       let dailyPerfectBonus = 0;
@@ -756,8 +760,6 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         nextLevelId: number | null;
         nextEpisodeId: number | null;
       } | null = null;
-
-      const campaignLevelId = isRecord(body) ? clampInt((body as Record<string, unknown>).campaignLevelId, 0) : 0;
 
       if (campaignLevelId > 0) {
         // 1. Fetch level config to get minAccuracy

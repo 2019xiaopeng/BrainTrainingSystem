@@ -947,6 +947,29 @@ export const useGameStore = create<GameStore>()(
 
         const newHistory = [...state.sessionHistory, historyEntry].slice(-50);
 
+        // Optimistic campaign update for authenticated users (same logic as guest path)
+        const run = state.activeCampaignRun;
+        if (run) {
+          const stars = computeStars(summary.accuracy);
+          const passed = summary.accuracy >= run.minAccuracy;
+          const STAR_BONUS: Record<number, number> = { 0: 0, 1: 5, 2: 10, 3: 20 };
+          // We don't have prevBestStars from server here, so assume 0 for optimistic display.
+          // Server response will overwrite with accurate campaign data.
+          set({
+            lastCampaignUpdate: {
+              levelId: run.levelId,
+              stars,
+              prevBestStars: 0,
+              passed,
+              isFirstClear: passed,
+              starBonusCoins: STAR_BONUS[stars] ?? 0,
+              firstClearBonus: passed ? 10 : 0,
+              nextLevelId: passed ? run.nextLevelId : null,
+              nextEpisodeId: passed ? run.nextEpisodeId : null,
+            },
+          });
+        }
+
         const streakChange = calculateStreak(state.userProfile.lastPlayedDate);
         const newStreak =
           streakChange === 0 ? state.userProfile.daysStreak :

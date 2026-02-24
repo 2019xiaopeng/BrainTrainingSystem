@@ -463,7 +463,7 @@
     "modeHouse": "House Flow",
     "paramsNumeric": "{{n}}-Back · {{rounds}} rounds",
     "paramsSpatial": "{{grid}}×{{grid}} · {{n}}-Back · {{rounds}} rounds",
-    "paramsMouse": "{{mice}} mice · {{grid}} · {{rounds}} rounds",
+    "paramsMouse": "{{count}} mice · {{cols}}×{{rows}} · {{rounds}} rounds",
     "paramsHouse": "Start {{initial}} · {{events}} events · {{rounds}} rounds",
     "passCondition": "Pass condition: Accuracy ≥ {{accuracy}}%",
     "startTraining": "Start Training",
