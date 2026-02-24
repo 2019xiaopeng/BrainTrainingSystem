@@ -35,4 +35,28 @@
   ::-webkit-scrollbar-thumb {
     @apply bg-zen-300 rounded-full hover:bg-zen-400 transition-colors;
   }
+
+  .zen-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #c8beb0 #efebe4;
+  }
+
+  .zen-scrollbar::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .zen-scrollbar::-webkit-scrollbar-track {
+    background: #efebe4;
+    border-radius: 9999px;
+  }
+
+  .zen-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #c2b8a8 0%, #b6ab9a 100%);
+    border-radius: 9999px;
+    border: 2px solid #efebe4;
+  }
+
+  .zen-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #b6ab9a 0%, #a79a88 100%);
+  }
 }

@@ -268,6 +268,18 @@ export function CampaignMapView(props: {
     return episodes.filter((ep) => isEpisodeUnlocked(ep.id, episodes, allLevels, progress.results)).map((ep) => ep.id);
   }, [episodes, allLevels, progress.results]);
 
+  useEffect(() => {
+    if (!progressLoaded || episodes.length === 0) return;
+    const unlockedSet = new Set(unlockedEpisodeIds);
+    const currentEpisodeId = progress.state.currentEpisodeId;
+    const fallbackEpisodeId = unlockedEpisodeIds[unlockedEpisodeIds.length - 1] ?? episodes[0]?.id ?? 1;
+    const targetEpisodeId = unlockedSet.has(currentEpisodeId) ? currentEpisodeId : fallbackEpisodeId;
+
+    if (targetEpisodeId !== activeEpisodeId) {
+      setActiveEpisodeId(targetEpisodeId);
+    }
+  }, [progressLoaded, episodes, unlockedEpisodeIds, progress.state.currentEpisodeId, activeEpisodeId]);
+
   const jitteredPos = useMemo(() => {
     const cache = new Map<number, { x: number; y: number }>();
     return (lvl: CampaignLevel) => {

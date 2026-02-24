@@ -15,18 +15,18 @@ export function MainLayout() {
   return (
     <div className="min-h-screen bg-zen-50 text-zen-800 transition-colors duration-300">
       {/* Desktop 三栏布局 —— 始终保持三栏，游戏中也不隐藏 */}
-      <div className="hidden lg:flex min-h-screen">
-        <aside className="w-[250px] flex-shrink-0 border-r border-zen-200/50 overflow-y-auto">
+      <div className="hidden lg:flex h-screen overflow-hidden">
+        <aside className="w-[250px] h-screen flex-shrink-0 border-r border-zen-200/50 overflow-hidden">
           <Sidebar />
         </aside>
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 h-screen overflow-y-auto overflow-x-hidden zen-scrollbar">
           <div className="mx-auto max-w-2xl p-6 animate-fade-in">
             <Outlet />
           </div>
         </main>
 
-        <aside className="w-[300px] flex-shrink-0 border-l border-zen-200/50 overflow-y-auto">
+        <aside className="w-[300px] h-screen flex-shrink-0 border-l border-zen-200/50 overflow-hidden">
           <RightPanel />
         </aside>
       </div>
