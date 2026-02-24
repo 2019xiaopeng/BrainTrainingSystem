@@ -1,6 +1,6 @@
 import { and, desc, eq, gte } from "drizzle-orm";
 import { db } from "../_lib/db/index.js";
-import { dailyActivity, gameSessions, user, userUnlocks } from "../_lib/db/schema/index.js";
+import { dailyActivity, gameSessions, user, userUnlocks, campaignEpisodes, campaignLevels, userCampaignLevelResults, userCampaignState } from "../_lib/db/schema/index.js";
 import { getBanStatus } from "../_lib/admin.js";
 import { requireSessionUser } from "../_lib/session.js";
 import type { RequestLike, ResponseLike } from "../_lib/http.js";
@@ -13,6 +13,18 @@ const DAILY_PERFECT_BONUS_COINS = 30;
 const UNLOCK_BONUS_COINS_PER_UNLOCK = 20;
 const COINS_PER_SCORE = 0.05;
 const MAX_COINS_PER_SESSION = 20;
+
+/** Campaign star bonus coins by star count (delta approach) */
+const CAMPAIGN_STAR_BONUS: Record<number, number> = { 0: 0, 1: 5, 2: 10, 3: 20 };
+const CAMPAIGN_FIRST_CLEAR_BONUS = 10;
+
+/** Fixed-threshold star calculation matching guestProgress.ts */
+const computeStars = (accuracy: number): number => {
+  if (accuracy >= 90) return 3;
+  if (accuracy >= 80) return 2;
+  if (accuracy >= 60) return 1;
+  return 0;
+};
 
 const recoverEnergy = (current: number, lastUpdated: Date | null) => {
   const now = Date.now();
@@ -674,7 +686,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
       const brainCoinsBefore = clampInt(u.brainCoins ?? 0, 0);
       const unlockBonusCoins = unlockUpdate.newlyUnlocked.length * UNLOCK_BONUS_COINS_PER_UNLOCK;
-      const brainCoinsAfter = brainCoinsBefore + brainCoinsEarned + unlockBonusCoins + dailyPerfectBonus + dailyFirstWinBonus;
+      let brainCoinsAfter = brainCoinsBefore + brainCoinsEarned + unlockBonusCoins + dailyPerfectBonus + dailyFirstWinBonus;
 
       await tx
         .update(user)
@@ -732,6 +744,212 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       if (mode === "mouse") unlocks.mouse = unlockUpdate.next as Unlocks["mouse"];
       if (mode === "house") unlocks.house = unlockUpdate.next as Unlocks["house"];
 
+      // ---- Campaign result processing ----
+      let campaign: {
+        levelId: number;
+        stars: number;
+        prevBestStars: number;
+        passed: boolean;
+        isFirstClear: boolean;
+        starBonusCoins: number;
+        firstClearBonus: number;
+        nextLevelId: number | null;
+        nextEpisodeId: number | null;
+      } | null = null;
+
+      const campaignLevelId = isRecord(body) ? clampInt((body as Record<string, unknown>).campaignLevelId, 0) : 0;
+
+      if (campaignLevelId > 0) {
+        // 1. Fetch level config to get minAccuracy
+        const levelRows = await tx
+          .select({
+            id: campaignLevels.id,
+            episodeId: campaignLevels.episodeId,
+            orderInEpisode: campaignLevels.orderInEpisode,
+            passRule: campaignLevels.passRule,
+            boss: campaignLevels.boss,
+          })
+          .from(campaignLevels)
+          .where(eq(campaignLevels.id, campaignLevelId))
+          .limit(1);
+
+        const level = levelRows[0];
+        if (level) {
+          const passRuleRaw = isRecord(level.passRule) ? level.passRule : {};
+          const minAccuracy = Math.max(0, Math.min(100, clampInt(passRuleRaw.minAccuracy, level.boss ? 90 : 60)));
+
+          // 2. Compute stars and pass status
+          const stars = computeStars(accuracy);
+          const passed = accuracy >= minAccuracy;
+
+          // 3. Read existing best result
+          const prevRows = await tx
+            .select({
+              bestStars: userCampaignLevelResults.bestStars,
+              bestAccuracy: userCampaignLevelResults.bestAccuracy,
+              bestScore: userCampaignLevelResults.bestScore,
+              clearedAt: userCampaignLevelResults.clearedAt,
+            })
+            .from(userCampaignLevelResults)
+            .where(
+              and(
+                eq(userCampaignLevelResults.userId, sessionUser.id),
+                eq(userCampaignLevelResults.levelId, campaignLevelId),
+              ),
+            )
+            .limit(1);
+
+          const prev = prevRows[0] ?? null;
+          const prevBestStars = prev ? clampInt(prev.bestStars, 0) : 0;
+          const isFirstClear = !prev?.clearedAt && passed;
+
+          // 4. Upsert level result (best-of approach)
+          const newBestStars = Math.max(prevBestStars, stars);
+          const newBestAccuracy = Math.max(prev ? clampInt(prev.bestAccuracy, 0) : 0, accuracyInt);
+          const newBestScore = Math.max(prev ? clampInt(prev.bestScore, 0) : 0, score);
+
+          if (!prev) {
+            await tx.insert(userCampaignLevelResults).values({
+              userId: sessionUser.id,
+              levelId: campaignLevelId,
+              bestStars: newBestStars,
+              bestAccuracy: newBestAccuracy,
+              bestScore: newBestScore,
+              clearedAt: passed ? now : null,
+              updatedAt: now,
+            });
+          } else if (newBestStars > prevBestStars || newBestAccuracy > clampInt(prev.bestAccuracy, 0) || newBestScore > clampInt(prev.bestScore, 0)) {
+            await tx
+              .update(userCampaignLevelResults)
+              .set({
+                bestStars: newBestStars,
+                bestAccuracy: newBestAccuracy,
+                bestScore: newBestScore,
+                clearedAt: prev.clearedAt ?? (passed ? now : null),
+                updatedAt: now,
+              })
+              .where(
+                and(
+                  eq(userCampaignLevelResults.userId, sessionUser.id),
+                  eq(userCampaignLevelResults.levelId, campaignLevelId),
+                ),
+              );
+          }
+
+          // 5. Star bonus coins (delta approach)
+          const starBonusCoins = Math.max(0, (CAMPAIGN_STAR_BONUS[newBestStars] ?? 0) - (CAMPAIGN_STAR_BONUS[prevBestStars] ?? 0));
+          const firstClearBonus = isFirstClear ? CAMPAIGN_FIRST_CLEAR_BONUS : 0;
+          const campaignExtraCoins = starBonusCoins + firstClearBonus;
+
+          if (campaignExtraCoins > 0) {
+            brainCoinsAfter += campaignExtraCoins;
+            await tx
+              .update(user)
+              .set({ brainCoins: brainCoinsAfter })
+              .where(eq(user.id, sessionUser.id));
+          }
+
+          // 6. Advance campaign state if passed and this is the current level
+          let nextLevelId: number | null = null;
+          let nextEpisodeId: number | null = null;
+
+          if (passed) {
+            const stateRows = await tx
+              .select({
+                currentLevelId: userCampaignState.currentLevelId,
+                currentEpisodeId: userCampaignState.currentEpisodeId,
+              })
+              .from(userCampaignState)
+              .where(eq(userCampaignState.userId, sessionUser.id))
+              .limit(1);
+
+            const state = stateRows[0];
+            if (state && state.currentLevelId === campaignLevelId) {
+              // Find next level: same episode next order, or first level of next episode
+              const nextInEpisode = await tx
+                .select({ id: campaignLevels.id, episodeId: campaignLevels.episodeId })
+                .from(campaignLevels)
+                .where(
+                  and(
+                    eq(campaignLevels.episodeId, level.episodeId),
+                    eq(campaignLevels.orderInEpisode, level.orderInEpisode + 1),
+                    eq(campaignLevels.isActive, true),
+                  ),
+                )
+                .limit(1);
+
+              if (nextInEpisode[0]) {
+                nextLevelId = nextInEpisode[0].id;
+                nextEpisodeId = nextInEpisode[0].episodeId;
+              } else {
+                // Try first level of next episode (by episode order)
+                const currentEpRows = await tx
+                  .select({ order: campaignEpisodes.order })
+                  .from(campaignEpisodes)
+                  .where(eq(campaignEpisodes.id, level.episodeId))
+                  .limit(1);
+
+                if (currentEpRows[0]) {
+                  const nextEpRows = await tx
+                    .select({ id: campaignEpisodes.id })
+                    .from(campaignEpisodes)
+                    .where(
+                      and(
+                        eq(campaignEpisodes.order, currentEpRows[0].order + 1),
+                        eq(campaignEpisodes.isActive, true),
+                      ),
+                    )
+                    .limit(1);
+
+                  if (nextEpRows[0]) {
+                    const firstOfNextEp = await tx
+                      .select({ id: campaignLevels.id, episodeId: campaignLevels.episodeId })
+                      .from(campaignLevels)
+                      .where(
+                        and(
+                          eq(campaignLevels.episodeId, nextEpRows[0].id),
+                          eq(campaignLevels.isActive, true),
+                        ),
+                      )
+                      .orderBy(campaignLevels.orderInEpisode)
+                      .limit(1);
+
+                    if (firstOfNextEp[0]) {
+                      nextLevelId = firstOfNextEp[0].id;
+                      nextEpisodeId = firstOfNextEp[0].episodeId;
+                    }
+                  }
+                }
+              }
+
+              // Advance state to next level
+              if (nextLevelId !== null && nextEpisodeId !== null) {
+                await tx
+                  .update(userCampaignState)
+                  .set({
+                    currentLevelId: nextLevelId,
+                    currentEpisodeId: nextEpisodeId,
+                    updatedAt: now,
+                  })
+                  .where(eq(userCampaignState.userId, sessionUser.id));
+              }
+            }
+          }
+
+          campaign = {
+            levelId: campaignLevelId,
+            stars,
+            prevBestStars,
+            passed,
+            isFirstClear,
+            starBonusCoins,
+            firstClearBonus,
+            nextLevelId,
+            nextEpisodeId,
+          };
+        }
+      }
+
       return {
         xpEarned,
         xpAfter,
@@ -753,6 +971,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
         },
         unlocks,
         newlyUnlocked: unlockUpdate.newlyUnlocked,
+        campaign,
       };
     });
 

@@ -87,7 +87,7 @@ function CoverBlock({ size, isSelected, isAnswering, onClick }: {
     >
       {isSelected ? (
         <div className="w-5 h-5 bg-sage-500 rounded-full flex items-center justify-center shadow-sm">
-          <span className="text-white text-xs font-bold leading-none">✓</span>
+          <span className="text-white text-[10px] font-bold leading-none">✓</span>
         </div>
       ) : (
         <div className="w-7 h-7 rounded-lg bg-zen-200/50 flex items-center justify-center">

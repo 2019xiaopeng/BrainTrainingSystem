@@ -34,7 +34,7 @@ export function InstructionScreen() {
 
           {/* Visual example */}
           <div className="bg-zen-50 rounded-xl p-4 border border-zen-200/50">
-            <h3 className="text-sm font-medium text-zen-500 mb-3">{t('instruction.nback.example')}</h3>
+            <h3 className="text-xs font-medium text-zen-500 mb-3">{t('instruction.nback.example')}</h3>
             <div className="space-y-2">
               {/* Timeline visual */}
               <div className="flex items-center gap-2 text-xs">
@@ -59,30 +59,30 @@ export function InstructionScreen() {
                 <div className="w-24 text-amber-600 font-medium">→ {t('instruction.nback.input')} 8</div>
               </div>
             </div>
-            <p className="text-xs text-zen-400 mt-2">{t('instruction.nback.exampleHint')}</p>
+            <p className="text-[10px] text-zen-400 mt-2">{t('instruction.nback.exampleHint')}</p>
           </div>
 
           {/* Game modes */}
           <div className="grid grid-cols-2 gap-3 mt-4">
             <div className="bg-white rounded-lg p-3 border border-zen-200/50">
               <div className="text-lg mb-1">🔢</div>
-              <div className="text-sm font-medium text-zen-700">{t('home.numeric')}</div>
-              <p className="text-xs text-zen-400 mt-1">{t('instruction.modes.numeric')}</p>
+              <div className="text-xs font-medium text-zen-700">{t('home.numeric')}</div>
+              <p className="text-[10px] text-zen-400 mt-1">{t('instruction.modes.numeric')}</p>
             </div>
             <div className="bg-white rounded-lg p-3 border border-zen-200/50">
               <div className="text-lg mb-1">🎯</div>
-              <div className="text-sm font-medium text-zen-700">{t('home.spatial')}</div>
-              <p className="text-xs text-zen-400 mt-1">{t('instruction.modes.spatial')}</p>
+              <div className="text-xs font-medium text-zen-700">{t('home.spatial')}</div>
+              <p className="text-[10px] text-zen-400 mt-1">{t('instruction.modes.spatial')}</p>
             </div>
             <div className="bg-white rounded-lg p-3 border border-zen-200/50">
               <div className="text-lg mb-1">🐭</div>
-              <div className="text-sm font-medium text-zen-700">{t('home.mouse')}</div>
-              <p className="text-xs text-zen-400 mt-1">{t('instruction.modes.mouse')}</p>
+              <div className="text-xs font-medium text-zen-700">{t('home.mouse')}</div>
+              <p className="text-[10px] text-zen-400 mt-1">{t('instruction.modes.mouse')}</p>
             </div>
             <div className="bg-white rounded-lg p-3 border border-zen-200/50">
               <div className="text-lg mb-1">🏠</div>
-              <div className="text-sm font-medium text-zen-700">{t('home.house')}</div>
-              <p className="text-xs text-zen-400 mt-1">{t('instruction.modes.house')}</p>
+              <div className="text-xs font-medium text-zen-700">{t('home.house')}</div>
+              <p className="text-[10px] text-zen-400 mt-1">{t('instruction.modes.house')}</p>
             </div>
           </div>
         </div>
@@ -115,19 +115,19 @@ export function InstructionScreen() {
                 <div className="text-sm font-medium text-zen-700">
                   {isZh ? rank.titleZh : rank.titleEn}
                 </div>
-                <div className="text-xs text-zen-400">
+                <div className="text-[10px] text-zen-400">
                   {rank.xpRequired === 0
                     ? t('instruction.rank.initial')
                     : t('instruction.rank.xpRequired', { xp: rank.xpRequired.toLocaleString() })
                   }
                 </div>
                 {rank.milestones && rank.milestones.length > 0 && (
-                  <div className="text-sm text-zen-500 mt-1 flex items-center gap-1">
+                  <div className="text-[9px] text-zen-500 mt-1 flex items-center gap-1">
                     <span className="opacity-60">🎯</span>
                     <span>
                       {rank.milestones.map((m, i) => (
                         <span key={m}>
-                          {i > 0 && (rank.milestoneLogic === 'OR' ? ' / ' : ', ')}
+                          {i > 0 && ', '}
                           {t(`instruction.rank.milestone.${m}`)}
                         </span>
                       ))}
@@ -139,7 +139,7 @@ export function InstructionScreen() {
           ))}
         </div>
 
-        <p className="text-xs text-zen-400 mt-3">
+        <p className="text-[10px] text-zen-400 mt-3">
           {t('instruction.rank.formula')}
         </p>
       </Card>
@@ -160,7 +160,7 @@ export function InstructionScreen() {
             { icon: Zap, key: 'math', color: 'text-amber-500 bg-amber-50' },
             { icon: Eye, key: 'observation', color: 'text-teal-500 bg-teal-50' },
             { icon: Database, key: 'loadCapacity', color: 'text-blue-500 bg-blue-50' },
-            { icon: Timer, key: 'reaction', color: 'text-red-500 bg-red-50' },
+            { icon: Timer, key: 'speed', color: 'text-red-500 bg-red-50' },
           ].map(({ icon: Icon, key, color }) => (
             <div key={key} className="flex items-start gap-3 p-3 rounded-lg bg-zen-50 border border-zen-200/30">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${color}`}>
@@ -170,7 +170,7 @@ export function InstructionScreen() {
                 <div className="text-sm font-medium text-zen-700">
                   {t(`instruction.radar.${key}.name`)}
                 </div>
-                <p className="text-xs text-zen-400 mt-0.5">
+                <p className="text-[10px] text-zen-400 mt-0.5">
                   {t(`instruction.radar.${key}.desc`)}
                 </p>
               </div>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useNBack } from '../../hooks/useNBack';
 import { useMouseGame } from '../../hooks/useMouseGame';
@@ -81,41 +81,14 @@ export function TrainPage() {
   // 渲染
   if (isHouseMode) {
     if (houseEngine.phase === 'idle' || houseEngine.phase === 'finished') return null;
-    return (
-      <StageFrame ratio="16 / 9">
-        <HouseGameScreen engine={houseEngine} onQuit={handleQuit} />
-      </StageFrame>
-    );
+    return <HouseGameScreen engine={houseEngine} onQuit={handleQuit} />;
   }
 
   if (isMouseMode) {
     if (mouseEngine.phase === 'idle' || mouseEngine.phase === 'finished') return null;
-    return (
-      <StageFrame ratio="16 / 9">
-        <MouseGameScreen engine={mouseEngine} onQuit={handleQuit} />
-      </StageFrame>
-    );
+    return <MouseGameScreen engine={mouseEngine} onQuit={handleQuit} />;
   }
 
   if (nbackEngine.phase === 'idle' || nbackEngine.phase === 'finished') return null;
-  return (
-    <StageFrame ratio="4 / 3">
-      <GameScreen engine={nbackEngine} onQuit={handleQuit} />
-    </StageFrame>
-  );
-}
-
-function StageFrame({ ratio, children }: { ratio: string; children: ReactNode }) {
-  const width =
-    ratio === '16 / 9'
-      ? 'min(100%, calc((100vh - 180px) * 16 / 9))'
-      : 'min(100%, calc((100vh - 180px) * 4 / 3))';
-
-  return (
-    <div className="w-full flex justify-center">
-      <div style={{ width }} className="min-w-0">
-        {children}
-      </div>
-    </div>
-  );
+  return <GameScreen engine={nbackEngine} onQuit={handleQuit} />;
 }
