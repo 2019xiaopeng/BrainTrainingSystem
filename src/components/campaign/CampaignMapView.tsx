@@ -248,17 +248,17 @@ export function CampaignMapView(props: {
   }, [props.storyOpenNonce, episodes.length]);
 
   const theme = useMemo(() => {
-    const palettes: Record<number, { accent: string; soft: string; path: string; bg: string }> = {
-      1: { accent: "#10b981", soft: "#a7f3d0", path: "#059669", bg: "from-sage-50 to-white" },
-      2: { accent: "#14b8a6", soft: "#99f6e4", path: "#0d9488", bg: "from-teal-50 to-white" },
-      3: { accent: "#f59e0b", soft: "#fde68a", path: "#d97706", bg: "from-amber-50 to-white" },
-      4: { accent: "#a855f7", soft: "#e9d5ff", path: "#7e22ce", bg: "from-purple-50 to-white" },
-      5: { accent: "#0ea5e9", soft: "#bae6fd", path: "#0284c7", bg: "from-sky-50 to-white" },
-      6: { accent: "#ef4444", soft: "#fecaca", path: "#dc2626", bg: "from-red-50 to-white" },
-      7: { accent: "#8b5cf6", soft: "#ddd6fe", path: "#6d28d9", bg: "from-violet-50 to-white" },
-      8: { accent: "#06b6d4", soft: "#a5f3fc", path: "#0891b2", bg: "from-cyan-50 to-white" },
-      9: { accent: "#f97316", soft: "#fed7aa", path: "#ea580c", bg: "from-orange-50 to-white" },
-      10: { accent: "#ec4899", soft: "#fbcfe8", path: "#db2777", bg: "from-pink-50 to-white" },
+    const palettes: Record<number, { accent: string; soft: string; path: string; bg: string; bgPattern: string }> = {
+      1:  { accent: "#7a9584", soft: "#a7d3b3", path: "#5c7a66", bg: "from-[#f5f2e9] to-[#fdfcf8]", bgPattern: "dots" },
+      2:  { accent: "#6b8c96", soft: "#99c4d0", path: "#4d737d", bg: "from-[#eef4f6] to-[#fdfcf8]", bgPattern: "grid" },
+      3:  { accent: "#8c7a96", soft: "#c4aed0", path: "#6d5c7a", bg: "from-[#f3eff6] to-[#fdfcf8]", bgPattern: "waves" },
+      4:  { accent: "#967a7a", soft: "#d0aeae", path: "#7a5c5c", bg: "from-[#f6efef] to-[#fdfcf8]", bgPattern: "cross" },
+      5:  { accent: "#7a8495", soft: "#aeb8c4", path: "#5c6677", bg: "from-[#eff1f4] to-[#fdfcf8]", bgPattern: "dots" },
+      6:  { accent: "#958a7a", soft: "#c4baae", path: "#776d5c", bg: "from-[#f4f1ec] to-[#fdfcf8]", bgPattern: "grid" },
+      7:  { accent: "#7a9595", soft: "#aecfc4", path: "#5c7a7a", bg: "from-[#eff5f5] to-[#fdfcf8]", bgPattern: "waves" },
+      8:  { accent: "#8a7a95", soft: "#bcaec4", path: "#6b5c7a", bg: "from-[#f2eff6] to-[#fdfcf8]", bgPattern: "cross" },
+      9:  { accent: "#957a8a", soft: "#c4aebc", path: "#7a5c6b", bg: "from-[#f5eff3] to-[#fdfcf8]", bgPattern: "dots" },
+      10: { accent: "#d4af37", soft: "#edd49c", path: "#b8931f", bg: "from-[#faf5e6] to-[#fdfcf8]", bgPattern: "grid" },
     };
     return palettes[activeEpisodeId] ?? palettes[1];
   }, [activeEpisodeId]);
@@ -315,6 +315,26 @@ export function CampaignMapView(props: {
     return d;
   }, [episodeLevels]);
 
+  // Active (progress) path — only covers cleared levels
+  const activeMapPath = useMemo(() => {
+    if (episodeLevels.length < 2) return "";
+    const sorted = [...episodeLevels].sort((a, b) => a.orderInEpisode - b.orderInEpisode);
+    let d = "";
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const curr = sorted[i];
+      const next = sorted[i + 1];
+      const currResult = resultsById.get(curr.id);
+      if (!currResult || currResult.bestStars < 1) break;
+      if (i === 0) d += `M ${curr.mapPosition.x} ${curr.mapPosition.y}`;
+      const cp1x = curr.mapPosition.x;
+      const cp1y = (curr.mapPosition.y + next.mapPosition.y) / 2;
+      const cp2x = next.mapPosition.x;
+      const cp2y = (curr.mapPosition.y + next.mapPosition.y) / 2;
+      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.mapPosition.x} ${next.mapPosition.y}`;
+    }
+    return d;
+  }, [episodeLevels, resultsById]);
+
   const getNodeStatus = (level: CampaignLevel): { status: NodeStatus; stars: number; lockedHint?: string } => {
     const result = resultsById.get(level.id);
     const stars = result?.bestStars ?? 0;
@@ -353,71 +373,140 @@ export function CampaignMapView(props: {
 
   const episode = episodes.find((e) => e.id === activeEpisodeId) ?? null;
 
+  // Episode total stars / max stars
+  const episodeStarStats = useMemo(() => {
+    const total = episodeLevels.reduce((sum, l) => sum + (resultsById.get(l.id)?.bestStars ?? 0), 0);
+    return { earned: total, max: episodeLevels.length * 3 };
+  }, [episodeLevels, resultsById]);
+
+  // Background pattern SVG per bgPattern type
+  const bgPatternSvg = useMemo(() => {
+    const pid = `pattern-${activeEpisodeId}`;
+    if (theme.bgPattern === "dots") {
+      return (
+        <pattern id={pid} width="20" height="20" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="2" r="1.5" fill="#e6e2d6" />
+        </pattern>
+      );
+    }
+    if (theme.bgPattern === "waves") {
+      return (
+        <pattern id={pid} width="60" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 0 10 Q 15 0 30 10 T 60 10" fill="none" stroke="#e6e2d6" strokeWidth="1" />
+        </pattern>
+      );
+    }
+    if (theme.bgPattern === "cross") {
+      return (
+        <pattern id={pid} width="30" height="30" patternUnits="userSpaceOnUse">
+          <path d="M 15 10 L 15 20 M 10 15 L 20 15" fill="none" stroke="#e6e2d6" strokeWidth="1" />
+        </pattern>
+      );
+    }
+    // default: grid
+    return (
+      <pattern id={pid} width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e6e2d6" strokeWidth="1" />
+      </pattern>
+    );
+  }, [activeEpisodeId, theme.bgPattern]);
+
   return (
-    <div className="space-y-6 pt-6">
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-zen-200">
+    <div className="space-y-5 pt-4">
+      {/* Episode Header — warm card */}
+      <div className="bg-[#fdfcf8] rounded-2xl p-5 shadow-sm border border-[#ece8dc]">
         <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-sm font-semibold text-zen-500">{t('campaign.chapter', { n: activeEpisodeId })}</div>
-            <div className="text-xl font-semibold text-zen-800 truncate">{episode?.title ?? ""}</div>
-            <div className="text-xs text-zen-400 mt-1 truncate">{episode?.description ?? ""}</div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-3 mb-1">
+              <button
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-[#ece8dc] hover:border-[#d6d3c4] shadow-sm text-[#a8a29e] hover:text-slate-700 disabled:opacity-30 transition-all"
+                onClick={() => {
+                  const curIdx = unlockedEpisodeIds.indexOf(activeEpisodeId);
+                  if (curIdx > 0) setActiveEpisodeId(unlockedEpisodeIds[curIdx - 1]);
+                }}
+                disabled={unlockedEpisodeIds.indexOf(activeEpisodeId) <= 0}
+              >
+                ◀
+              </button>
+              <h2 className="text-2xl font-bold text-slate-700 tracking-tight">{t('campaign.chapter', { n: activeEpisodeId })}</h2>
+              <button
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-[#ece8dc] hover:border-[#d6d3c4] shadow-sm text-[#a8a29e] hover:text-slate-700 disabled:opacity-30 transition-all"
+                onClick={() => {
+                  const curIdx = unlockedEpisodeIds.indexOf(activeEpisodeId);
+                  if (curIdx >= 0 && curIdx < unlockedEpisodeIds.length - 1) setActiveEpisodeId(unlockedEpisodeIds[curIdx + 1]);
+                }}
+                disabled={unlockedEpisodeIds.indexOf(activeEpisodeId) >= unlockedEpisodeIds.length - 1}
+              >
+                ▶
+              </button>
+              <button
+                className="ml-1 text-xs px-3 py-1.5 rounded-full border border-[#ece8dc] text-[#8c887e] hover:bg-white hover:shadow-sm hover:text-slate-700 transition-all"
+                onClick={() => setShowStory(true)}
+              >
+                {t('campaign.storyButton')}
+              </button>
+            </div>
+            <p className="text-[#8c887e] text-xs font-medium tracking-wide pl-12 border-l-2 ml-3" style={{ borderColor: theme.accent }}>
+              {episode?.title ?? ""}
+              {episode?.description ? ` — ${episode.description}` : ""}
+            </p>
           </div>
-          <div className="flex gap-2">
-            <button
-              className="h-9 px-3 rounded-full bg-white border border-zen-200 text-zen-600 text-sm font-medium hover:bg-zen-50"
-              onClick={() => setShowStory(true)}
-            >
-              {t('campaign.storyButton')}
-            </button>
-            <button
-              className="w-9 h-9 rounded-full bg-zen-50 border border-zen-200 text-zen-500 hover:bg-zen-100 disabled:opacity-40"
-              onClick={() => {
-                const curIdx = unlockedEpisodeIds.indexOf(activeEpisodeId);
-                if (curIdx > 0) setActiveEpisodeId(unlockedEpisodeIds[curIdx - 1]);
-              }}
-              disabled={unlockedEpisodeIds.indexOf(activeEpisodeId) <= 0}
-            >
-              ◀
-            </button>
-            <button
-              className="w-9 h-9 rounded-full bg-zen-50 border border-zen-200 text-zen-500 hover:bg-zen-100 disabled:opacity-40"
-              onClick={() => {
-                const curIdx = unlockedEpisodeIds.indexOf(activeEpisodeId);
-                if (curIdx >= 0 && curIdx < unlockedEpisodeIds.length - 1) setActiveEpisodeId(unlockedEpisodeIds[curIdx + 1]);
-              }}
-              disabled={unlockedEpisodeIds.indexOf(activeEpisodeId) >= unlockedEpisodeIds.length - 1}
-            >
-              ▶
-            </button>
+
+          {/* Episode star stats */}
+          <div className="bg-white px-4 py-2.5 rounded-2xl border border-[#ece8dc] shadow-sm flex items-center gap-2 flex-shrink-0">
+            <svg className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+            <span className="text-sm font-bold text-slate-700">{episodeStarStats.earned}/{episodeStarStats.max}</span>
           </div>
         </div>
       </div>
 
-      <div className={`relative w-full h-[760px] bg-gradient-to-br ${theme.bg} rounded-[2rem] border border-zen-200 shadow-sm overflow-hidden`}>
-        <div
-          className="absolute -top-24 -right-24 w-[520px] h-[520px] rounded-full blur-3xl opacity-40 pointer-events-none"
-          style={{ background: `radial-gradient(circle at 30% 30%, ${theme.soft} 0%, transparent 60%)` }}
-        />
-        <div
-          className="absolute -bottom-32 -left-24 w-[560px] h-[560px] rounded-full blur-3xl opacity-35 pointer-events-none"
-          style={{ background: `radial-gradient(circle at 70% 70%, ${theme.accent} 0%, transparent 62%)` }}
-        />
-        <div className="absolute inset-0 opacity-50 pointer-events-none">
+      {/* ===== CAMPAIGN MAP CONTAINER ===== */}
+      <div className={`relative w-full h-[850px] bg-gradient-to-br ${theme.bg} rounded-[2.5rem] border border-[#ece8dc] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] overflow-hidden group`}>
+
+        {/* 1. Background Pattern */}
+        <div className="absolute inset-0 opacity-40 pointer-events-none">
           <svg width="100%" height="100%">
-            <defs>
-              <pattern id={`grid-${activeEpisodeId}`} width="44" height="44" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e7e5e4" strokeWidth="1" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill={`url(#grid-${activeEpisodeId})`} />
+            <defs>{bgPatternSvg}</defs>
+            <rect width="100%" height="100%" fill={`url(#pattern-${activeEpisodeId})`} />
           </svg>
         </div>
 
-        <svg className="absolute inset-0 w-full h-full pointer-events-none">
-          <path d={mapPath} fill="none" stroke={theme.soft} strokeWidth="10" strokeLinecap="round" strokeOpacity="0.65" />
-          <path d={mapPath} fill="none" stroke={theme.path} strokeOpacity="0.55" strokeWidth="3" strokeLinecap="round" />
+        {/* 2. Topographic Contour Lines */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+          <svg width="100%" height="100%" viewBox="0 0 400 800" preserveAspectRatio="none">
+            <path d="M0,100 Q100,50 200,100 T400,100" fill="none" stroke={theme.accent} strokeWidth="2" />
+            <path d="M0,200 Q150,150 250,200 T400,180" fill="none" stroke={theme.accent} strokeWidth="2" />
+            <path d="M0,350 Q80,300 180,350 T400,400" fill="none" stroke={theme.accent} strokeWidth="2" />
+            <path d="M0,550 Q120,500 220,550 T400,600" fill="none" stroke={theme.accent} strokeWidth="2" />
+            <path d="M0,700 Q180,650 280,700 T400,750" fill="none" stroke={theme.accent} strokeWidth="2" />
+          </svg>
+        </div>
+
+        {/* 3. Floating Geometric Particles */}
+        <div className="absolute top-20 left-10 w-4 h-4 rounded-full border opacity-20 animate-[float_6s_ease-in-out_infinite]" style={{ borderColor: theme.accent }} />
+        <div className="absolute bottom-40 right-20 w-6 h-6 rotate-45 border border-[#d6d3c4] opacity-20 animate-[float_8s_ease-in-out_infinite_reverse]" />
+        <div className="absolute top-1/2 left-20 w-2 h-2 rounded-full opacity-10 animate-pulse" style={{ backgroundColor: theme.accent }} />
+        <div className="absolute top-1/3 right-16 w-3 h-3 rounded-full border opacity-15 animate-[float_7s_ease-in-out_infinite]" style={{ borderColor: theme.soft }} />
+
+        {/* 4. Connecting Lines — Base + Active */}
+        <svg className="absolute inset-0 w-full h-full z-0 pointer-events-none overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id={`pathGrad-${activeEpisodeId}`} x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" stopColor="#e2e8f0" stopOpacity="0.2" />
+              <stop offset="100%" stopColor={theme.accent} stopOpacity="0.8" />
+            </linearGradient>
+          </defs>
+          {/* Shadow / base line */}
+          <path d={mapPath} fill="none" stroke="#e6e2d6" strokeWidth="10" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          {/* Active signal line (progress) */}
+          {activeMapPath && (
+            <path d={activeMapPath} fill="none" stroke={theme.accent} strokeWidth="3" strokeLinecap="round" className="drop-shadow-sm" vectorEffect="non-scaling-stroke" />
+          )}
         </svg>
 
+        {/* 5. Map Nodes */}
         {episodeLevels.map((lvl) => {
           const st = getNodeStatus(lvl);
           const pos = jitteredPos(lvl);
@@ -430,36 +519,83 @@ export function CampaignMapView(props: {
               status={st.status}
               stars={st.stars}
               isBoss={lvl.boss}
+              themeColor={theme.accent}
               lockedHint={st.lockedHint}
               onClick={() => setSelectedLevelId(lvl.id)}
             />
           );
         })}
+
+        {/* Start marker */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#a8a29e] mb-1" />
+          <span className="text-[10px] font-bold text-[#a8a29e] uppercase tracking-widest">{t('campaign.startPoint')}</span>
+        </div>
       </div>
 
+      {/* ===== LEVEL DETAIL MODAL ===== */}
       {selectedLevel && selectedStatus && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm" onClick={() => setSelectedLevelId(null)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl border border-zen-200 overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="px-5 py-4 bg-gradient-to-br from-sage-500 to-sage-600 text-white">
-              <div className="text-xs font-semibold opacity-90">{formatModeLabel(selectedLevel.gameMode)}</div>
-              <div className="text-2xl font-bold mt-1">{selectedLevel.title}</div>
-              <div className="text-xs opacity-90 mt-1">{formatLevelParams(selectedLevel)}</div>
-            </div>
-            <div className="p-5 space-y-3">
-              <div className="text-sm text-zen-600">
-                {t('campaign.passCondition', { accuracy: minAccuracyForLevel(selectedLevel) })}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#57534e]/20 backdrop-blur-sm" onClick={() => setSelectedLevelId(null)}>
+          <div className="bg-[#fdfcf8] rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden border border-white/60" onClick={(e) => e.stopPropagation()}>
+            {/* Theme-colored gradient header */}
+            <div className="h-32 relative overflow-hidden flex items-end p-6" style={{ background: `linear-gradient(to bottom right, ${theme.accent}, ${theme.accent}dd)` }}>
+              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\"><path d=\"M40 0 L0 0 0 40\" fill=\"none\" stroke=\"white\" stroke-width=\"0.5\"/></svg>')" }} />
+              <div className="text-white relative z-10 w-full">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-[10px] font-mono opacity-90 mb-1 px-2 py-0.5 bg-white/10 rounded inline-block backdrop-blur-sm border border-white/10">
+                      {formatModeLabel(selectedLevel.gameMode)}
+                    </div>
+                    <h3 className="text-2xl font-bold tracking-tight">{selectedLevel.title}</h3>
+                    <div className="text-xs opacity-80 mt-1">{formatLevelParams(selectedLevel)}</div>
+                  </div>
+                  {selectedStatus.stars > 0 && (
+                    <div className="flex gap-0.5 mt-1">
+                      {[1, 2, 3].map((s) => (
+                        <svg key={s} className={`w-5 h-5 ${s <= selectedStatus.stars ? "text-yellow-300 fill-current" : "text-white/30 fill-current"}`} viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Pass condition */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white p-3 rounded-2xl border border-[#ece8dc] text-center shadow-sm">
+                  <div className="text-[10px] text-[#9ca3af] uppercase font-bold mb-0.5">{t('campaign.passThreshold')}</div>
+                  <div className="text-xl font-bold text-slate-700">{minAccuracyForLevel(selectedLevel)}%</div>
+                </div>
+                <div className="bg-white p-3 rounded-2xl border border-[#ece8dc] text-center shadow-sm">
+                  <div className="text-[10px] text-[#9ca3af] uppercase font-bold mb-0.5">{t('campaign.bestRecord')}</div>
+                  <div className="text-xl font-bold text-slate-700">
+                    {resultsById.get(selectedLevel.id)?.bestAccuracy ? `${resultsById.get(selectedLevel.id)!.bestAccuracy}%` : "—"}
+                  </div>
+                </div>
+              </div>
+
               {selectedStatus.status === "locked" && selectedStatus.lockedHint ? (
-                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">{selectedStatus.lockedHint}</div>
+                <div className="rounded-xl bg-amber-50 border border-[#fcd34d]/30 p-3 text-xs text-amber-800 font-semibold flex items-center gap-2">
+                  <span>🔒</span> {selectedStatus.lockedHint}
+                </div>
               ) : null}
+
               <button
-                className="w-full py-3 rounded-xl bg-sage-500 text-white font-medium hover:bg-sage-600 disabled:bg-zen-300 disabled:cursor-not-allowed"
+                className="w-full py-4 rounded-2xl text-white font-bold shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ backgroundColor: selectedStatus.status === "locked" ? "#d1ccc0" : theme.accent }}
                 onClick={() => void startSelected()}
                 disabled={selectedStatus.status === "locked"}
               >
-                {t('campaign.startTraining')}
+                <span>{t('campaign.startTraining')}</span>
+                <div className="flex items-center bg-white/10 px-2 py-0.5 rounded text-xs border border-white/10">
+                  <span className="text-yellow-300 mr-1">⚡</span>1
+                </div>
               </button>
-              <button className="w-full py-2 text-sm text-zen-400 hover:text-zen-600" onClick={() => setSelectedLevelId(null)}>
+
+              <button className="w-full py-2 text-sm text-[#9ca3af] hover:text-slate-600 font-medium" onClick={() => setSelectedLevelId(null)}>
                 {t('campaign.cancel')}
               </button>
             </div>
@@ -467,16 +603,29 @@ export function CampaignMapView(props: {
         </div>
       )}
 
+      {/* ===== STORY MODAL ===== */}
       {showStory && episode && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur" onClick={() => void closeStory()}>
-          <div className="w-full max-w-lg rounded-2xl bg-zen-900 text-white border border-zen-700 shadow-2xl p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="text-xs font-semibold text-sage-300 tracking-widest">{t('campaign.newMessage')}</div>
-            <div className="text-2xl font-bold mt-2">{episode.title}</div>
-            <div className="w-10 h-1 bg-sage-400 rounded-full mt-4" />
-            <div className="mt-4 text-zen-100/90 whitespace-pre-line leading-relaxed">{episode.storyText}</div>
-            <button className="mt-6 w-full py-3 rounded-xl bg-sage-500 hover:bg-sage-600 text-white font-semibold" onClick={() => void closeStory()}>
-              {t('campaign.confirmEnter')}
-            </button>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#292524]/90 backdrop-blur-md" onClick={() => void closeStory()}>
+          <div className="bg-[#1c1917] text-white rounded-[2rem] max-w-lg w-full p-8 border border-[#44403c] shadow-2xl relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Decorative glow */}
+            <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-[100px] opacity-10 pointer-events-none" style={{ backgroundColor: theme.accent }} />
+
+            <div className="relative z-10">
+              <div className="text-xs font-mono mb-4 uppercase tracking-widest flex items-center gap-2" style={{ color: theme.accent }}>
+                <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: theme.accent }} />
+                {t('campaign.newMessage')}
+              </div>
+              <div className="text-3xl font-bold tracking-tight">{episode.title}</div>
+              <div className="w-10 h-1 rounded-full mt-4" style={{ backgroundColor: theme.accent }} />
+              <div className="mt-4 text-[#d6d3d1] leading-relaxed whitespace-pre-line font-light text-lg">{episode.storyText}</div>
+              <button
+                className="mt-8 w-full py-4 text-white font-bold rounded-xl transition-colors"
+                style={{ backgroundColor: theme.accent, boxShadow: `0 0 20px ${theme.accent}4d` }}
+                onClick={() => void closeStory()}
+              >
+                {t('campaign.confirmEnter')}
+              </button>
+            </div>
           </div>
         </div>
       )}

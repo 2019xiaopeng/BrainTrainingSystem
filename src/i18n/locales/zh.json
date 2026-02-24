@@ -471,7 +471,10 @@
     "lockedHint": "通过前面的关卡即可解锁",
     "bossLabel": "BOSS",
     "newMessage": "新篇章",
-    "confirmEnter": "进入冒险"
+    "confirmEnter": "进入冒险",
+    "startPoint": "起点",
+    "passThreshold": "通关线",
+    "bestRecord": "最好成绩"
   },
   "campaignResult": {
     "passed": "通关成功！",

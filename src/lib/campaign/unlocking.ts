@@ -47,7 +47,8 @@ export const isEpisodeUnlocked = (
   if (!prevEp) return false;
   const prevLevels = allLevels.filter((l) => l.episodeId === prevEp.id);
   if (prevLevels.length === 0) return false;
-  return prevLevels.every((l) => (resultsMap.get(l.id)?.bestStars ?? 0) >= 3);
+  // Episode unlocked when all previous episode levels have been cleared (>=1 star)
+  return prevLevels.every((l) => (resultsMap.get(l.id)?.bestStars ?? 0) >= 1);
 };
 
 /**

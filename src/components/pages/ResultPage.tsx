@@ -33,7 +33,7 @@ export function ResultPage() {
     }
     // Clear campaign run so the map can set it again
     setActiveCampaignRun(null);
-    navigate('/', { replace: true });
+    navigate('/?view=campaign', { replace: true });
   }, [lastCampaignUpdate, activeCampaignRun, handleBackHome, setActiveCampaignRun, navigate]);
 
   const handleRetry = useCallback(() => {
@@ -44,7 +44,7 @@ export function ResultPage() {
 
   const handleBackToMap = useCallback(() => {
     setActiveCampaignRun(null);
-    navigate('/', { replace: true });
+    navigate('/?view=campaign', { replace: true });
   }, [setActiveCampaignRun, navigate]);
 
   if (!lastSummary) {

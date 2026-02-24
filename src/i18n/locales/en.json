@@ -471,7 +471,10 @@
     "lockedHint": "Complete previous levels to unlock",
     "bossLabel": "BOSS",
     "newMessage": "New Chapter",
-    "confirmEnter": "Enter Adventure"
+    "confirmEnter": "Enter Adventure",
+    "startPoint": "START",
+    "passThreshold": "Pass",
+    "bestRecord": "Best"
   },
   "campaignResult": {
     "passed": "Level Cleared!",
