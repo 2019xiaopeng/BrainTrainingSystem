@@ -268,17 +268,25 @@ export function CampaignMapView(props: {
     return episodes.filter((ep) => isEpisodeUnlocked(ep.id, episodes, allLevels, progress.results)).map((ep) => ep.id);
   }, [episodes, allLevels, progress.results]);
 
-  const jitteredPos = (lvl: CampaignLevel) => {
-    const seed = (lvl.id * 9301 + activeEpisodeId * 49297) % 233280;
-    const r1 = (seed / 233280) * 2 - 1;
-    const r2 = (((seed * 13) % 233280) / 233280) * 2 - 1;
-    const dx = Math.round(r1 * 6);
-    const dy = Math.round(r2 * 8);
-    return {
-      x: Math.max(8, Math.min(92, lvl.mapPosition.x + dx)),
-      y: Math.max(10, Math.min(90, lvl.mapPosition.y + dy)),
+  const jitteredPos = useMemo(() => {
+    const cache = new Map<number, { x: number; y: number }>();
+    return (lvl: CampaignLevel) => {
+      const key = lvl.id * 1000 + activeEpisodeId;
+      const cached = cache.get(key);
+      if (cached) return cached;
+      const seed = (lvl.id * 9301 + activeEpisodeId * 49297) % 233280;
+      const r1 = (seed / 233280) * 2 - 1;
+      const r2 = (((seed * 13) % 233280) / 233280) * 2 - 1;
+      const dx = Math.round(r1 * 6);
+      const dy = Math.round(r2 * 8);
+      const pos = {
+        x: Math.max(8, Math.min(92, lvl.mapPosition.x + dx)),
+        y: Math.max(10, Math.min(90, lvl.mapPosition.y + dy)),
+      };
+      cache.set(key, pos);
+      return pos;
     };
-  };
+  }, [activeEpisodeId]);
 
   const markEpisodeViewed = async (episodeId: number) => {
     if (isGuest) {
@@ -302,18 +310,19 @@ export function CampaignMapView(props: {
   const mapPath = useMemo(() => {
     if (episodeLevels.length < 2) return "";
     const sorted = [...episodeLevels].sort((a, b) => a.orderInEpisode - b.orderInEpisode);
-    let d = `M ${sorted[0].mapPosition.x} ${sorted[0].mapPosition.y}`;
+    const p0 = jitteredPos(sorted[0]);
+    let d = `M ${p0.x} ${p0.y}`;
     for (let i = 0; i < sorted.length - 1; i++) {
-      const curr = sorted[i];
-      const next = sorted[i + 1];
-      const cp1x = curr.mapPosition.x;
-      const cp1y = (curr.mapPosition.y + next.mapPosition.y) / 2;
-      const cp2x = next.mapPosition.x;
-      const cp2y = (curr.mapPosition.y + next.mapPosition.y) / 2;
-      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.mapPosition.x} ${next.mapPosition.y}`;
+      const currPos = jitteredPos(sorted[i]);
+      const nextPos = jitteredPos(sorted[i + 1]);
+      const cp1x = currPos.x;
+      const cp1y = (currPos.y + nextPos.y) / 2;
+      const cp2x = nextPos.x;
+      const cp2y = (currPos.y + nextPos.y) / 2;
+      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${nextPos.x} ${nextPos.y}`;
     }
     return d;
-  }, [episodeLevels]);
+  }, [episodeLevels, jitteredPos]);
 
   // Active (progress) path — only covers cleared levels
   const activeMapPath = useMemo(() => {
@@ -322,18 +331,19 @@ export function CampaignMapView(props: {
     let d = "";
     for (let i = 0; i < sorted.length - 1; i++) {
       const curr = sorted[i];
-      const next = sorted[i + 1];
       const currResult = resultsById.get(curr.id);
       if (!currResult || currResult.bestStars < 1) break;
-      if (i === 0) d += `M ${curr.mapPosition.x} ${curr.mapPosition.y}`;
-      const cp1x = curr.mapPosition.x;
-      const cp1y = (curr.mapPosition.y + next.mapPosition.y) / 2;
-      const cp2x = next.mapPosition.x;
-      const cp2y = (curr.mapPosition.y + next.mapPosition.y) / 2;
-      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.mapPosition.x} ${next.mapPosition.y}`;
+      const currPos = jitteredPos(curr);
+      const nextPos = jitteredPos(sorted[i + 1]);
+      if (i === 0) d += `M ${currPos.x} ${currPos.y}`;
+      const cp1x = currPos.x;
+      const cp1y = (currPos.y + nextPos.y) / 2;
+      const cp2x = nextPos.x;
+      const cp2y = (currPos.y + nextPos.y) / 2;
+      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${nextPos.x} ${nextPos.y}`;
     }
     return d;
-  }, [episodeLevels, resultsById]);
+  }, [episodeLevels, resultsById, jitteredPos]);
 
   const getNodeStatus = (level: CampaignLevel): { status: NodeStatus; stars: number; lockedHint?: string } => {
     const result = resultsById.get(level.id);

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 export type CampaignNodeStatus = "locked" | "unlocked" | "completed";
@@ -18,6 +18,27 @@ interface CampaignMapNodeProps {
 export function CampaignMapNode({ id, x, y, status, stars, isBoss, themeColor = "#7a9584", onClick, lockedHint }: CampaignMapNodeProps) {
   const { t } = useTranslation();
   const isLocked = status === "locked";
+  const [showLockedHint, setShowLockedHint] = useState(false);
+  const hintRef = useRef<HTMLDivElement>(null);
+
+  // Dismiss tooltip on outside click
+  useEffect(() => {
+    if (!showLockedHint) return;
+    const handler = (e: MouseEvent) => {
+      if (hintRef.current && !hintRef.current.contains(e.target as Node)) {
+        setShowLockedHint(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showLockedHint]);
+
+  // Auto-hide after 2.5s
+  useEffect(() => {
+    if (!showLockedHint) return;
+    const timer = setTimeout(() => setShowLockedHint(false), 2500);
+    return () => clearTimeout(timer);
+  }, [showLockedHint]);
   const isCompleted = status === "completed";
   const isUnlocked = status === "unlocked";
 
@@ -47,9 +68,15 @@ export function CampaignMapNode({ id, x, y, status, stars, isBoss, themeColor = 
 
   return (
     <div
-      className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 hover:scale-105 z-10 group"
+      className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 hover:scale-105 z-10"
       style={{ left: `${x}%`, top: `${y}%` }}
-      onClick={() => onClick(id)}
+      onClick={() => {
+        if (isLocked && lockedHint) {
+          setShowLockedHint((v) => !v);
+        } else {
+          onClick(id);
+        }
+      }}
       role="button"
       tabIndex={0}
     >
@@ -95,8 +122,11 @@ export function CampaignMapNode({ id, x, y, status, stars, isBoss, themeColor = 
         <div className="absolute top-full w-px h-6 bg-[#d6d3c4] opacity-60" />
       )}
 
-      {isLocked && lockedHint ? (
-        <div className="absolute top-full mt-3 px-3 py-2 rounded-xl text-[11px] bg-slate-800 text-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity max-w-[220px] text-center whitespace-nowrap">
+      {isLocked && lockedHint && showLockedHint ? (
+        <div
+          ref={hintRef}
+          className="absolute top-full mt-3 px-3 py-2 rounded-xl text-[11px] bg-slate-800 text-white shadow-lg max-w-[220px] text-center whitespace-nowrap animate-[fadeIn_0.15s_ease-out]"
+        >
           {lockedHint}
         </div>
       ) : null}
