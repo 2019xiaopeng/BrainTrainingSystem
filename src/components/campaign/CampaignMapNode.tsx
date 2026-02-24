@@ -42,8 +42,8 @@ export function CampaignMapNode({ id, x, y, status, stars, isBoss, themeColor = 
   const isCompleted = status === "completed";
   const isUnlocked = status === "unlocked";
 
-  const sizeClass = isBoss ? "w-20 h-20" : "w-14 h-14";
-  const fontSize = isBoss ? "text-2xl" : "text-lg";
+  const sizeClass = isBoss ? "w-14 h-14 sm:w-20 sm:h-20" : "w-10 h-10 sm:w-14 sm:h-14";
+  const fontSize = isBoss ? "text-lg sm:text-2xl" : "text-sm sm:text-lg";
 
   let containerClass = "bg-[#fdfcf8] border-2 border-[#e6e2d6] shadow-sm";
   let textClass = "text-[#d6d3c4]";
@@ -54,8 +54,8 @@ export function CampaignMapNode({ id, x, y, status, stars, isBoss, themeColor = 
     textClass = "font-bold";
     outerRing = (
       <>
-        <div className="absolute inset-[-8px] rounded-full border-2 opacity-30 animate-[ping_2s_ease-out_infinite]" style={{ borderColor: themeColor }} />
-        <div className="absolute inset-[-14px] rounded-full border opacity-10 animate-[pulse_3s_ease-in-out_infinite]" style={{ borderColor: themeColor }} />
+        <div className="absolute inset-[-5px] sm:inset-[-8px] rounded-full border-2 opacity-30 animate-[ping_2s_ease-out_infinite]" style={{ borderColor: themeColor }} />
+        <div className="absolute inset-[-9px] sm:inset-[-14px] rounded-full border opacity-10 animate-[pulse_3s_ease-in-out_infinite]" style={{ borderColor: themeColor }} />
       </>
     );
   } else if (isCompleted) {
@@ -101,16 +101,16 @@ export function CampaignMapNode({ id, x, y, status, stars, isBoss, themeColor = 
         )}
 
         {isBoss && !isLocked && (
-          <div className="absolute -top-3 bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm border border-slate-600 tracking-wider">
+          <div className="absolute -top-2.5 sm:-top-3 bg-slate-800 text-white text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-md shadow-sm border border-slate-600 tracking-wider">
             {t("campaign.bossLabel")}
           </div>
         )}
       </div>
 
       {!isLocked && stars > 0 && (
-        <div className="absolute -bottom-4 bg-white px-2 py-0.5 rounded-full shadow-md border border-[#ece8dc] flex gap-0.5 items-center z-30">
+        <div className="absolute -bottom-3 sm:-bottom-4 bg-white px-1.5 sm:px-2 py-0.5 rounded-full shadow-md border border-[#ece8dc] flex gap-0.5 items-center z-30">
           {[1, 2, 3].map((starIdx) => (
-            <svg key={starIdx} className={`w-3 h-3 ${starIdx <= stars ? "text-yellow-400 fill-current" : "text-[#e6e2d6] fill-current"}`} viewBox="0 0 20 20">
+            <svg key={starIdx} className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${starIdx <= stars ? "text-yellow-400 fill-current" : "text-[#e6e2d6] fill-current"}`} viewBox="0 0 20 20">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
           ))}
@@ -119,13 +119,13 @@ export function CampaignMapNode({ id, x, y, status, stars, isBoss, themeColor = 
 
       {/* Vertical connection line */}
       {!isLocked && (
-        <div className="absolute top-full w-px h-6 bg-[#d6d3c4] opacity-60" />
+        <div className="absolute top-full w-px h-4 sm:h-6 bg-[#d6d3c4] opacity-60" />
       )}
 
       {isLocked && lockedHint && showLockedHint ? (
         <div
           ref={hintRef}
-          className="absolute top-full mt-3 px-3 py-2 rounded-xl text-[11px] bg-slate-800 text-white shadow-lg max-w-[220px] text-center whitespace-nowrap animate-[fadeIn_0.15s_ease-out]"
+          className="absolute top-full mt-2 sm:mt-3 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-[10px] sm:text-[11px] bg-slate-800 text-white shadow-lg max-w-[180px] sm:max-w-[220px] text-center whitespace-nowrap animate-[fadeIn_0.15s_ease-out]"
         >
           {lockedHint}
         </div>

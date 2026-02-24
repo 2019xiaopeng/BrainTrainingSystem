@@ -422,14 +422,14 @@ export function CampaignMapView(props: {
   }, [activeEpisodeId, theme.bgPattern]);
 
   return (
-    <div className="space-y-5 pt-4">
+    <div className="space-y-3 sm:space-y-5 pt-2 sm:pt-4">
       {/* Episode Header — warm card */}
-      <div className="bg-[#fdfcf8] rounded-2xl p-5 shadow-sm border border-[#ece8dc]">
-        <div className="flex items-center justify-between gap-3">
+      <div className="bg-[#fdfcf8] rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm border border-[#ece8dc]">
+        <div className="flex items-center justify-between gap-2 sm:gap-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-3 mb-1">
+            <div className="flex items-center gap-1.5 sm:gap-3 mb-1">
               <button
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-[#ece8dc] hover:border-[#d6d3c4] shadow-sm text-[#a8a29e] hover:text-slate-700 disabled:opacity-30 transition-all"
+                className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white border border-[#ece8dc] hover:border-[#d6d3c4] shadow-sm text-[#a8a29e] hover:text-slate-700 disabled:opacity-30 transition-all text-xs sm:text-base"
                 onClick={() => {
                   const curIdx = unlockedEpisodeIds.indexOf(activeEpisodeId);
                   if (curIdx > 0) setActiveEpisodeId(unlockedEpisodeIds[curIdx - 1]);
@@ -438,9 +438,9 @@ export function CampaignMapView(props: {
               >
                 ◀
               </button>
-              <h2 className="text-2xl font-bold text-slate-700 tracking-tight">{t('campaign.chapter', { n: activeEpisodeId })}</h2>
+              <h2 className="text-base sm:text-2xl font-bold text-slate-700 tracking-tight">{t('campaign.chapter', { n: activeEpisodeId })}</h2>
               <button
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-[#ece8dc] hover:border-[#d6d3c4] shadow-sm text-[#a8a29e] hover:text-slate-700 disabled:opacity-30 transition-all"
+                className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white border border-[#ece8dc] hover:border-[#d6d3c4] shadow-sm text-[#a8a29e] hover:text-slate-700 disabled:opacity-30 transition-all text-xs sm:text-base"
                 onClick={() => {
                   const curIdx = unlockedEpisodeIds.indexOf(activeEpisodeId);
                   if (curIdx >= 0 && curIdx < unlockedEpisodeIds.length - 1) setActiveEpisodeId(unlockedEpisodeIds[curIdx + 1]);
@@ -450,30 +450,30 @@ export function CampaignMapView(props: {
                 ▶
               </button>
               <button
-                className="ml-1 text-xs px-3 py-1.5 rounded-full border border-[#ece8dc] text-[#8c887e] hover:bg-white hover:shadow-sm hover:text-slate-700 transition-all"
+                className="ml-0.5 sm:ml-1 text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border border-[#ece8dc] text-[#8c887e] hover:bg-white hover:shadow-sm hover:text-slate-700 transition-all"
                 onClick={() => setShowStory(true)}
               >
                 {t('campaign.storyButton')}
               </button>
             </div>
-            <p className="text-[#8c887e] text-xs font-medium tracking-wide pl-12 border-l-2 ml-3" style={{ borderColor: theme.accent }}>
+            <p className="text-[#8c887e] text-[10px] sm:text-xs font-medium tracking-wide pl-8 sm:pl-12 border-l-2 ml-2 sm:ml-3 truncate" style={{ borderColor: theme.accent }}>
               {episode?.title ?? ""}
               {episode?.description ? ` — ${episode.description}` : ""}
             </p>
           </div>
 
           {/* Episode star stats */}
-          <div className="bg-white px-4 py-2.5 rounded-2xl border border-[#ece8dc] shadow-sm flex items-center gap-2 flex-shrink-0">
-            <svg className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+          <div className="bg-white px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl border border-[#ece8dc] shadow-sm flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
-            <span className="text-sm font-bold text-slate-700">{episodeStarStats.earned}/{episodeStarStats.max}</span>
+            <span className="text-xs sm:text-sm font-bold text-slate-700">{episodeStarStats.earned}/{episodeStarStats.max}</span>
           </div>
         </div>
       </div>
 
       {/* ===== CAMPAIGN MAP CONTAINER ===== */}
-      <div className={`relative w-full h-[850px] bg-gradient-to-br ${theme.bg} rounded-[2.5rem] border border-[#ece8dc] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] overflow-hidden group`}>
+      <div className={`relative w-full h-[520px] sm:h-[700px] lg:h-[850px] bg-gradient-to-br ${theme.bg} rounded-2xl sm:rounded-[2.5rem] border border-[#ece8dc] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] overflow-hidden group`}>
 
         {/* 1. Background Pattern */}
         <div className="absolute inset-0 opacity-40 pointer-events-none">
@@ -537,32 +537,32 @@ export function CampaignMapView(props: {
         })}
 
         {/* Start marker */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#a8a29e] mb-1" />
-          <span className="text-[10px] font-bold text-[#a8a29e] uppercase tracking-widest">{t('campaign.startPoint')}</span>
+        <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40">
+          <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#a8a29e] mb-0.5 sm:mb-1" />
+          <span className="text-[8px] sm:text-[10px] font-bold text-[#a8a29e] uppercase tracking-widest">{t('campaign.startPoint')}</span>
         </div>
       </div>
 
       {/* ===== LEVEL DETAIL MODAL ===== */}
       {selectedLevel && selectedStatus && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#57534e]/20 backdrop-blur-sm" onClick={() => setSelectedLevelId(null)}>
-          <div className="bg-[#fdfcf8] rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden border border-white/60" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[#fdfcf8] rounded-2xl sm:rounded-[2rem] shadow-2xl w-full max-w-[320px] sm:max-w-sm overflow-hidden border border-white/60" onClick={(e) => e.stopPropagation()}>
             {/* Theme-colored gradient header */}
-            <div className="h-32 relative overflow-hidden flex items-end p-6" style={{ background: `linear-gradient(to bottom right, ${theme.accent}, ${theme.accent}dd)` }}>
+            <div className="h-24 sm:h-32 relative overflow-hidden flex items-end p-4 sm:p-6" style={{ background: `linear-gradient(to bottom right, ${theme.accent}, ${theme.accent}dd)` }}>
               <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\"><path d=\"M40 0 L0 0 0 40\" fill=\"none\" stroke=\"white\" stroke-width=\"0.5\"/></svg>')" }} />
               <div className="text-white relative z-10 w-full">
                 <div className="flex justify-between items-start">
                   <div>
-                    <div className="text-[10px] font-mono opacity-90 mb-1 px-2 py-0.5 bg-white/10 rounded inline-block backdrop-blur-sm border border-white/10">
+                    <div className="text-[9px] sm:text-[10px] font-mono opacity-90 mb-1 px-1.5 sm:px-2 py-0.5 bg-white/10 rounded inline-block backdrop-blur-sm border border-white/10">
                       {formatModeLabel(selectedLevel.gameMode)}
                     </div>
-                    <h3 className="text-2xl font-bold tracking-tight">{selectedLevel.title}</h3>
-                    <div className="text-xs opacity-80 mt-1">{formatLevelParams(selectedLevel)}</div>
+                    <h3 className="text-lg sm:text-2xl font-bold tracking-tight">{selectedLevel.title}</h3>
+                    <div className="text-[10px] sm:text-xs opacity-80 mt-0.5 sm:mt-1">{formatLevelParams(selectedLevel)}</div>
                   </div>
                   {selectedStatus.stars > 0 && (
                     <div className="flex gap-0.5 mt-1">
                       {[1, 2, 3].map((s) => (
-                        <svg key={s} className={`w-5 h-5 ${s <= selectedStatus.stars ? "text-yellow-300 fill-current" : "text-white/30 fill-current"}`} viewBox="0 0 20 20">
+                        <svg key={s} className={`w-4 h-4 sm:w-5 sm:h-5 ${s <= selectedStatus.stars ? "text-yellow-300 fill-current" : "text-white/30 fill-current"}`} viewBox="0 0 20 20">
                           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                         </svg>
                       ))}
@@ -572,16 +572,16 @@ export function CampaignMapView(props: {
               </div>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
               {/* Pass condition */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white p-3 rounded-2xl border border-[#ece8dc] text-center shadow-sm">
-                  <div className="text-[10px] text-[#9ca3af] uppercase font-bold mb-0.5">{t('campaign.passThreshold')}</div>
-                  <div className="text-xl font-bold text-slate-700">{minAccuracyForLevel(selectedLevel)}%</div>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                <div className="bg-white p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-[#ece8dc] text-center shadow-sm">
+                  <div className="text-[9px] sm:text-[10px] text-[#9ca3af] uppercase font-bold mb-0.5">{t('campaign.passThreshold')}</div>
+                  <div className="text-lg sm:text-xl font-bold text-slate-700">{minAccuracyForLevel(selectedLevel)}%</div>
                 </div>
-                <div className="bg-white p-3 rounded-2xl border border-[#ece8dc] text-center shadow-sm">
-                  <div className="text-[10px] text-[#9ca3af] uppercase font-bold mb-0.5">{t('campaign.bestRecord')}</div>
-                  <div className="text-xl font-bold text-slate-700">
+                <div className="bg-white p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-[#ece8dc] text-center shadow-sm">
+                  <div className="text-[9px] sm:text-[10px] text-[#9ca3af] uppercase font-bold mb-0.5">{t('campaign.bestRecord')}</div>
+                  <div className="text-lg sm:text-xl font-bold text-slate-700">
                     {resultsById.get(selectedLevel.id)?.bestAccuracy ? `${resultsById.get(selectedLevel.id)!.bestAccuracy}%` : "—"}
                   </div>
                 </div>
@@ -594,18 +594,18 @@ export function CampaignMapView(props: {
               ) : null}
 
               <button
-                className="w-full py-4 rounded-2xl text-white font-bold shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl text-white text-sm sm:text-base font-bold shadow-lg flex items-center justify-center gap-2 sm:gap-3 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ backgroundColor: selectedStatus.status === "locked" ? "#d1ccc0" : theme.accent }}
                 onClick={() => void startSelected()}
                 disabled={selectedStatus.status === "locked"}
               >
                 <span>{t('campaign.startTraining')}</span>
-                <div className="flex items-center bg-white/10 px-2 py-0.5 rounded text-xs border border-white/10">
+                <div className="flex items-center bg-white/10 px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs border border-white/10">
                   <span className="text-yellow-300 mr-1">⚡</span>1
                 </div>
               </button>
 
-              <button className="w-full py-2 text-sm text-[#9ca3af] hover:text-slate-600 font-medium" onClick={() => setSelectedLevelId(null)}>
+              <button className="w-full py-1.5 sm:py-2 text-xs sm:text-sm text-[#9ca3af] hover:text-slate-600 font-medium" onClick={() => setSelectedLevelId(null)}>
                 {t('campaign.cancel')}
               </button>
             </div>
@@ -616,20 +616,20 @@ export function CampaignMapView(props: {
       {/* ===== STORY MODAL ===== */}
       {showStory && episode && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#292524]/90 backdrop-blur-md" onClick={() => void closeStory()}>
-          <div className="bg-[#1c1917] text-white rounded-[2rem] max-w-lg w-full p-8 border border-[#44403c] shadow-2xl relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[#1c1917] text-white rounded-2xl sm:rounded-[2rem] max-w-lg w-full p-5 sm:p-8 border border-[#44403c] shadow-2xl relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
             {/* Decorative glow */}
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-[100px] opacity-10 pointer-events-none" style={{ backgroundColor: theme.accent }} />
+            <div className="absolute top-0 right-0 w-40 sm:w-64 h-40 sm:h-64 rounded-full blur-[100px] opacity-10 pointer-events-none" style={{ backgroundColor: theme.accent }} />
 
             <div className="relative z-10">
-              <div className="text-xs font-mono mb-4 uppercase tracking-widest flex items-center gap-2" style={{ color: theme.accent }}>
-                <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: theme.accent }} />
+              <div className="text-[10px] sm:text-xs font-mono mb-3 sm:mb-4 uppercase tracking-widest flex items-center gap-2" style={{ color: theme.accent }}>
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full animate-pulse" style={{ backgroundColor: theme.accent }} />
                 {t('campaign.newMessage')}
               </div>
-              <div className="text-3xl font-bold tracking-tight">{episode.title}</div>
-              <div className="w-10 h-1 rounded-full mt-4" style={{ backgroundColor: theme.accent }} />
-              <div className="mt-4 text-[#d6d3d1] leading-relaxed whitespace-pre-line font-light text-lg">{episode.storyText}</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight">{episode.title}</div>
+              <div className="w-8 sm:w-10 h-1 rounded-full mt-3 sm:mt-4" style={{ backgroundColor: theme.accent }} />
+              <div className="mt-3 sm:mt-4 text-[#d6d3d1] leading-relaxed whitespace-pre-line font-light text-sm sm:text-lg">{episode.storyText}</div>
               <button
-                className="mt-8 w-full py-4 text-white font-bold rounded-xl transition-colors"
+                className="mt-5 sm:mt-8 w-full py-3 sm:py-4 text-sm sm:text-base text-white font-bold rounded-xl transition-colors"
                 style={{ backgroundColor: theme.accent, boxShadow: `0 0 20px ${theme.accent}4d` }}
                 onClick={() => void closeStory()}
               >
