@@ -60,3 +60,15 @@
     background: linear-gradient(180deg, #b6ab9a 0%, #a79a88 100%);
   }
 }
+
+/* Reduced motion: static UI for motion-sensitive users and low-end devices */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
