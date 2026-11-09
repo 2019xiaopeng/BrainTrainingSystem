@@ -1,19 +1,17 @@
 {
   "app": {
     "title": "脑力心流",
-    "subtitle": "Brain Training System",
-    "backHome": "返回首页"
+    "subtitle": "Brain Training System"
   },
   "common": {
     "cancel": "取消",
-    "gotIt": "知道了",
-    "loading": "加载中…"
+    "loading": "加载中…",
+    "total": "共"
   },
   "home": {
     "freeTraining": "自由训练",
     "campaignMode": "闯关模式",
     "profile": "个人档案",
-    "streak": "🔥 {{days}} 天连续",
     "maxLevel": "最高等级",
     "totalScore": "累计得分",
     "streakDays": "连续天数",
@@ -45,8 +43,6 @@
     "startMouse": "开始 魔鬼老鼠 {{difficulty}} ({{rounds}} 轮)",
     "startNBack": "开始 {{n}}-Back {{mode}}训练 ({{rounds}} 题)",
     "startHouse": "开始 人来人往 {{speed}} ({{rounds}} 轮)",
-    "modeNumeric": "数字",
-    "modeSpatial": "空间",
     "houseInitial": "🏠 初始人数",
     "houseEvents": "📊 事件次数",
     "houseSpeed": "⚡ 速度",
@@ -84,17 +80,6 @@
     "noClickNeeded": "记忆阶段 - 无需点击"
   },
   "mouse": {
-    "remember": "👀 记住老鼠的位置！",
-    "miceCount": "共 {{n}} 只老鼠",
-    "doorsClosed": "🚪 门关上了...",
-    "rememberWhere": "记住它们在哪里",
-    "catsComing": "🐱 猫来了！",
-    "catsPushing": "猫正在推挤老鼠...",
-    "whereAreMice": "🐭 老鼠在哪里？",
-    "findMice": "找出剩下的老鼠位置",
-    "perfect": "🎉 完美！",
-    "found": "找到 {{found}} / {{total}} 只老鼠",
-    "tryHarder": "😿 再接再厱！",
     "selected": "已选择 {{n}} 个位置",
     "clickToSelect": "请点击选择老鼠位置",
     "confirmAnswer": "确认答案 ✓",
@@ -112,16 +97,11 @@
     "roundLabel": "第 {{current}}/{{total}} 轮",
     "correctAnswer": "正确！房子里有 {{n}} 人",
     "wrongAnswer": "房子里应该有 {{n}} 人",
-    "perfect": "🎉 全部正确！",
-    "tryHarder": "😿 再接再厱！",
     "score": "正确 {{correct}} / {{total}} 轮",
     "eventProgress": "事件 {{current}} / {{total}}"
   },
   "result": {
     "title": "训练完成",
-    "syncing": "正在同步到云端...",
-    "syncFailed": "云端同步失败",
-    "rewardsTitle": "奖励结算",
     "xp": "经验值",
     "brainCoins": "脑力币",
     "energy": "体力",
@@ -132,7 +112,6 @@
     "newRecord": "🏆 新纪录！",
     "newLevel": "⭐ 新难度解锁！",
     "newUnlock": "⭐ 解锁成功！",
-    "unlocksTitle": "解锁提示",
     "accuracy": "准确率",
     "points": "分",
     "difficulty": "难度",
@@ -145,33 +124,14 @@
     "playAgain": "再来一局",
     "backHome": "← 返回首页"
   },
-  "unlock": {
-    "numeric": "解锁：数字心流 {{n}}-Back（{{rounds}}题）",
-    "spatialRounds": "解锁：空间心流 {{n}}-Back（{{rounds}}题）",
-    "spatialN": "解锁：空间心流 {{grid}} 升级到 {{n}}-Back",
-    "spatialGrid": "解锁：空间心流 {{grid}} 网格",
-    "mouseDifficulty": "解锁：魔鬼老鼠 {{difficulty}}",
-    "mouseMice": "解锁：魔鬼老鼠 {{count}} 只老鼠",
-    "mouseRounds": "解锁：魔鬼老鼠 {{rounds}} 轮挑战",
-    "houseSpeed": "解锁：人来人往 {{speed}}",
-    "houseEvents": "解锁：人来人往 {{events}} 次事件",
-    "houseRounds": "解锁：人来人往 {{rounds}} 轮挑战",
-    "houseInitial": "解锁：人来人往 初始人数 {{count}}"
-  },
   "profile": {
     "title": "个人档案",
-    "stats": "统计数据",
     "history": "训练历史",
     "noHistory": "暂无训练记录",
     "startFirst": "完成第一次训练后将在此显示历史",
-    "level": "等级",
-    "accuracyLabel": "准确率",
-    "scoreLabel": "得分",
     "brainRadar": "六维脑力雷达",
     "noRadarData": "完成训练后解锁雷达图",
     "activityHeatmap": "📅 训练热力图（365 天）",
-    "brainPoints": "脑力币",
-    "mockDataHint": "示例数据 · 完成训练后显示你的真实数据",
     "nextRank": "下一段位：{{rank}}",
     "xpToNext": "距离下一段位还需 {{xp}} XP",
     "maxRank": "已达最高段位",
@@ -200,24 +160,14 @@
       }
     },
     "auth": {
-      "guest": "游客模式",
-      "authenticated": "已登录",
-      "linkAccounts": "账号绑定",
-      "linkGoogle": "绑定 Google",
-      "guestWarning": "游客数据仅保存在本地，绑定账号后可云端同步",
-      "guestLockHint": "试玩可用，但经验/脑力币/签到/历史与参数设置需注册后解锁",
-      "goSignup": "去注册",
-      "goSignin": "去登录"
+      "guest": "游客模式"
     }
   },
   "nav": {
     "home": "首页",
-    "train": "训练",
     "rank": "排行",
     "profile": "档案",
-    "settings": "设置",
-    "store": "商城",
-    "instruction": "帮助"
+    "settings": "设置"
   },
   "settings": {
     "tabs": {
@@ -228,76 +178,12 @@
     "resetData": "清除本地数据",
     "resetDataHint": "删除本浏览器中保存的训练记录、成绩与配置，不可恢复",
     "resetDataConfirm": "确认清除",
-    "general": {
-      "title": "通用设置",
-      "language": "语言",
-      "sound": "音效",
-      "soundHint": "游戏内的音效开关",
-      "haptics": "触感反馈",
-      "hapticsHint": "震动反馈开关"
-    },
-    "about": {
-      "title": "关于",
-      "version": "版本",
-      "privacy": "隐私政策",
-      "terms": "服务条款",
-      "feedback": "意见反馈",
-      "clearCache": "清除缓存",
-      "clearCacheHint": "如果遇到问题，可以尝试清除本地缓存并刷新",
-      "clearCacheConfirm": "确定要清除缓存吗？这将重置所有本地设置。",
-      "cacheCleared": "缓存已清除"
-    },
-    "accounts": {
-      "hint": "绑定后可用于登录与找回账号",
-      "loginRequired": "登录后可绑定第三方账号"
-    },
+    "sound": "音效",
+    "soundHint": "游戏内的音效开关",
     "emailVerified": "已验证",
-    "emailNotVerified": "未验证",
-    "profile": {
-      "displayName": "显示名称",
-      "renameHint": "消耗 1 张改名卡可修改显示名称",
-      "rename": "改名",
-      "renamePlaceholder": "2-20 字",
-      "renameNeedCard": "改名卡不足，",
-      "goStore": "去商城",
-      "renameNoCard": "改名卡不足，请先购买",
-      "renameInvalid": "名称长度需为 2-20",
-      "renameFailed": "修改失败，请稍后再试",
-      "renameNetworkError": "网络错误，请稍后再试",
-      "renameConfirm": "确认改名",
-      "avatar": "头像",
-      "avatarHint": "即将支持上传/选择头像"
-    },
-    "security": {
-      "title": "账号安全",
-      "changePassword": "修改密码",
-      "changeEmail": "更改邮箱",
-      "verifyEmail": "验证邮箱",
-      "guestHint": "登录后可修改密码、验证邮箱并绑定第三方账号",
-      "changeEmailHint": "验证码将发送到新邮箱",
-      "emailPlaceholder": "新邮箱地址",
-      "otpPlaceholder": "验证码（6 位）",
-      "sendCode": "发送验证码",
-      "confirmChangeEmail": "确认更改",
-      "emailInvalid": "邮箱格式不正确",
-      "emailInUse": "该邮箱已被占用",
-      "otpInvalid": "验证码无效或已过期",
-      "changeEmailFailed": "更改邮箱失败，请稍后再试",
-      "changeEmailNetworkError": "网络错误，请稍后再试",
-      "signOut": "退出登录"
-    },
-    "notifications": {
-      "weeklyReport": "邮件通知",
-      "weeklyReportHint": "训练周报/高级报告（暂存本地开关）"
-    }
+    "emailNotVerified": "未验证"
   },
   "rank": {
-    "tabs": {
-      "coins": "积分榜",
-      "level": "段位榜",
-      "all": "总榜",
-      "week": "周榜"
-    },
     "errors": {
       "maintenance": "排行榜维护中",
       "loginRequired": "登录后查看排行榜",
@@ -316,53 +202,14 @@
     "avgReaction": "平均 {{seconds}}s"
   },
   "sidebar": {
-    "leaderboard": "排行榜",
     "history": "历史记录",
     "recentSessions": "最近训练",
-    "noSessions": "暂无记录",
-    "leaderboardHint": "📊 每周一重置 · 准确率 ≥ 90% 可上榜",
-    "leaderboardComingSoon": "排行榜即将上线",
-    "leaderboardLoginRequired": "需登录后参与排行榜"
-  },
-  "energy": {
-    "in": "后",
-    "recoverIn": "距离下一点恢复还有 {{time}}",
-    "insufficient": "能量不足！请稍后再试或购买能量药水。"
+    "noSessions": "暂无记录"
   },
   "time": {
     "h": "小时",
     "m": "分钟",
     "s": "秒"
-  },
-  "checkin": {
-    "title": "每日签到",
-    "streak": "连续 {{days}} 天",
-    "done": "今日已签到",
-    "claim": "领取奖励",
-    "claiming": "签到中…",
-    "points": "脑力币"
-  },
-  "store": {
-    "title": "脑力商城",
-    "subtitle": "使用脑力币兑换道具",
-    "points": "脑力币",
-    "purchaseSuccess": "购买成功！",
-    "notEnoughPoints": "脑力币不足",
-    "alreadyOwned": "已拥有此物品",
-    "owned": "已拥有",
-    "permanent": "永久",
-    "consumable": "消耗品",
-    "earnHint": "💡 完成训练即可获得脑力币",
-    "energyPotion1": "能量药水 +1",
-    "energyPotion1Desc": "立即恢复 1 点能量",
-    "energyPotion5": "能量药水 +5",
-    "energyPotion5Desc": "立即恢复 5 点能量（满充）",
-    "streakSaver": "连续天数护盾",
-    "streakSaverDesc": "中断一天不会重置连续天数",
-    "renameCard": "改名卡",
-    "renameCardDesc": "消耗 1 张改名卡，可修改显示名称",
-    "premiumReport": "高级分析报告",
-    "premiumReportDesc": "解锁详细的六维能力分析与训练建议"
   },
   "instruction": {
     "title": "帮助与说明",
@@ -455,51 +302,5 @@
     "easy": "慢速",
     "normal": "正常",
     "fast": "快速"
-  },
-  "campaign": {
-    "chapter": "第 {{n}} 章",
-    "storyButton": "📖 查看剧情",
-    "modeNumeric": "数字心流",
-    "modeSpatial": "空间心流",
-    "modeMouse": "鼠标心流",
-    "modeHouse": "人来人往",
-    "paramsNumeric": "{{n}}-Back · {{rounds}} 轮",
-    "paramsSpatial": "{{grid}}×{{grid}} · {{n}}-Back · {{rounds}} 轮",
-    "paramsMouse": "{{count}} 鼠 · {{cols}}×{{rows}} · {{rounds}} 轮",
-    "paramsHouse": "初始 {{initial}} 人 · {{events}} 事件 · {{rounds}} 轮",
-    "passCondition": "通过条件: 正确率 ≥ {{accuracy}}%",
-    "startTraining": "开始训练",
-    "cancel": "取消",
-    "lockedHint": "通过前面的关卡即可解锁",
-    "bossLabel": "BOSS",
-    "newMessage": "新篇章",
-    "confirmEnter": "进入冒险",
-    "startPoint": "起点",
-    "passThreshold": "通关线",
-    "bestRecord": "最好成绩"
-  },
-  "campaignResult": {
-    "passed": "通关成功！",
-    "failed": "未能通关",
-    "failGap": "还差 {{gap}}% 达到通关线",
-    "firstClear": "🎉 首次通关",
-    "newBestStars": "⭐ 星级提升 {{prev}}★ → {{now}}★",
-    "passThreshold": "通关线: ≥{{min}}%",
-    "rewards": "奖励结算",
-    "xpEarned": "经验值",
-    "baseCoins": "基础奖励",
-    "starBonus": "星级奖励",
-    "firstClearBonus": "首通奖励",
-    "dailyFirstWin": "每日首胜",
-    "dailyPerfect": "完美满分",
-    "unlockBonus": "解锁奖励",
-    "totalCoins": "合计",
-    "hintTo2Star": "提示: 正确率≥{{target}}% 可获得 2★",
-    "hintTo3Star": "提示: 正确率≥{{target}}% 可获得 3★",
-    "nextLevel": "下一关 →",
-    "retryFailed": "再试一次",
-    "retryForStars": "重试冲更高星",
-    "playAgain": "再来一局",
-    "backToMap": "返回闯关地图"
   }
 }
