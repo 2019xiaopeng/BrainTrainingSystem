@@ -95,11 +95,6 @@ function preloadAssets() {
     const img = new Image();
     img.src = src;
   });
-  ['/music/click.wav', '/music/correct.mp3', '/music/wrong.mp3'].forEach(src => {
-    const a = new Audio();
-    a.preload = 'auto';
-    a.src = src;
-  });
 }
 
 // ====================================================================
