@@ -3,20 +3,12 @@ import { MainLayout } from './layouts/MainLayout';
 import { HomePage } from './components/pages/HomePage';
 import { TrainPage } from './components/pages/TrainPage';
 import { ResultPage } from './components/pages/ResultPage';
-import { SignInPage } from './components/pages/SignInPage';
-import { SignUpPage } from './components/pages/SignUpPage';
-import { ForgotPasswordPage } from './components/pages/ForgotPasswordPage';
-import { ResetPasswordPage } from './components/pages/ResetPasswordPage';
-import { ChangePasswordPage } from './components/pages/ChangePasswordPage';
-import { VerifyEmailPage } from './components/pages/VerifyEmailPage';
 import { ProfileScreen } from './components/screens/ProfileScreen';
 import { SettingsScreen } from './components/screens/SettingsScreen';
-import { StoreScreen } from './components/screens/StoreScreen';
 import { RankScreen } from './components/screens/RankScreen';
-import { AdminScreen } from './components/screens/AdminScreen';
 
 // ================================================================
-// Brain Flow - 脑力心流 (Phase 4: Router-based Architecture)
+// Brain Flow - 脑力心流 (guest-only arcade)
 // ================================================================
 
 function App() {
@@ -30,23 +22,12 @@ function App() {
           <Route path="/train/:mode" element={<TrainPage />} />
           {/* 结果 */}
           <Route path="/result" element={<ResultPage />} />
-          {/* 登录/注册 */}
-          <Route path="/signin" element={<SignInPage />} />
-          <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/change-password" element={<ChangePasswordPage />} />
           {/* 个人档案 */}
           <Route path="/profile" element={<ProfileScreen />} />
+          {/* 历史（移动端承载右栏内容） */}
+          <Route path="/rank" element={<RankScreen />} />
           {/* 设置 */}
           <Route path="/settings" element={<SettingsScreen />} />
-          {/* 排行榜/历史（移动端承载右栏内容） */}
-          <Route path="/rank" element={<RankScreen />} />
-          {/* 商城 */}
-          <Route path="/store" element={<StoreScreen />} />
-          {/* 管理后台 */}
-          <Route path="/admin" element={<AdminScreen />} />
           {/* 帮助说明 */}
           <Route path="/instruction" element={<Navigate to="/settings?tab=help" replace />} />
           {/* 404 回退 */}

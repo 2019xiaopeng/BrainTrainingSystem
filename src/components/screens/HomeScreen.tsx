@@ -1,190 +1,77 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
-import type { UserProfile, GameMode, MouseDifficultyLevel, MouseGridPreset, HouseSpeed } from '../../types/game';
+import type { GameMode, MouseDifficultyLevel } from '../../types/game';
 import { getBrainRank, MOUSE_GRID_PRESETS, MOUSE_DIFFICULTY_MAP, buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
 import type { MouseGameConfig, HouseGameConfig } from '../../types/game';
-import { CampaignMapView } from '../campaign/CampaignMapView';
 
-const GUEST_DEFAULTS = {
-  numeric: { nLevel: 1, rounds: 10 },
-  spatial: { nLevel: 1, rounds: 10, gridSize: 3 },
-  mouse: { count: 3, grid: [4, 3] as MouseGridPreset, difficulty: 'easy' as MouseDifficultyLevel, rounds: 3 },
-  house: { initialPeople: 3, eventCount: 6, speed: 'easy' as HouseSpeed, rounds: 3 },
-} as const;
-
-const clampToStep = (value: number, min: number, max: number, step: number) => {
-  const clamped = Math.max(min, Math.min(value, max));
-  return min + Math.floor((clamped - min) / step) * step;
-};
-
+/** Minimum rounds so that at least one answer round exists after the N-round warmup */
 const requiredMinRoundsForN = (n: number) => {
   const candidates = [5, 10, 15, 20, 25, 30];
   const target = n + 1;
   return candidates.find((r) => r >= target) ?? 30;
 };
 
+const clampToStep = (value: number, min: number, max: number, step: number) => {
+  const clamped = Math.max(min, Math.min(value, max));
+  return min + Math.floor((clamped - min) / step) * step;
+};
+
 interface HomeScreenProps {
   initialMode: GameMode;
-  initialHomeView?: 'training' | 'campaign';
-  userProfile: UserProfile;
   onStart: (nLevel: number, rounds: number, mode: GameMode, gridSize: number, mouseConfig?: MouseGameConfig, houseConfig?: HouseGameConfig) => void;
 }
 
 /**
- * HomeScreen - 首页配置界面（支持多模式选择）
+ * HomeScreen - 首页配置界面（多模式选择，所有参数自由调节）
  */
-export function HomeScreen({ initialMode, initialHomeView = 'training', userProfile, onStart }: HomeScreenProps) {
+export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
   const { t } = useTranslation();
-  const { gameConfigs } = useGameStore();
-  const { setActiveCampaignRun, lastCampaignUpdate } = useGameStore();
-  const cloudUnlocks = useGameStore((s) => s.cloudUnlocks);
-  const optimisticUnlocks = useGameStore((s) => s.optimisticUnlocks);
-  const [mode, setMode] = useState<GameMode>(initialMode);
-  const [homeView, setHomeView] = useState<'training' | 'campaign'>(initialHomeView);
-  const isGuest = (userProfile.auth?.status ?? 'guest') === 'guest';
-  const brainLevel = getBrainRank(userProfile.totalXP ?? 0, userProfile.completedMilestones || []).level;
+  const { gameConfigs, userProfile } = useGameStore();
+  const updateGameConfig = useGameStore((s) => s.updateGameConfig);
+  const [mode, setModeLocal] = useState<GameMode>(initialMode);
 
-  const effectiveUnlocks = !isGuest ? (cloudUnlocks ?? optimisticUnlocks) : null;
-  const numericUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.numeric : null;
-  const spatialUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.spatial : null;
-  const mouseUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.mouse : null;
-  const houseUnlocks = !isGuest && effectiveUnlocks ? effectiveUnlocks.house : null;
+  const brainLevel = getBrainRank(userProfile.totalXP, userProfile.completedMilestones || []).level;
 
-  // Separate config state for numeric mode (use saved config or defaults)
-  const [numericNLevel, setNumericNLevel] = useState(() => (isGuest ? GUEST_DEFAULTS.numeric.nLevel : gameConfigs.numeric.nLevel));
-  const [numericRounds, setNumericRounds] = useState(() => (isGuest ? GUEST_DEFAULTS.numeric.rounds : gameConfigs.numeric.rounds));
-  
-  // Separate config state for spatial mode (use saved config or defaults)
-  const [spatialNLevel, setSpatialNLevel] = useState(() => (isGuest ? GUEST_DEFAULTS.spatial.nLevel : gameConfigs.spatial.nLevel));
-  const [spatialRounds, setSpatialRounds] = useState(() => (isGuest ? GUEST_DEFAULTS.spatial.rounds : gameConfigs.spatial.rounds));
-  const [gridSize, setGridSize] = useState(() => (isGuest ? GUEST_DEFAULTS.spatial.gridSize : gameConfigs.spatial.gridSize));
+  // Numeric mode config
+  const numericNLevel = gameConfigs.numeric.nLevel;
+  const numericRounds = gameConfigs.numeric.rounds;
+  // Spatial mode config
+  const spatialNLevel = gameConfigs.spatial.nLevel;
+  const spatialRounds = gameConfigs.spatial.rounds;
+  const gridSize = gameConfigs.spatial.gridSize;
+  // Mouse mode config
+  const { count: mouseCount, grid: mouseGrid, difficulty: mouseDifficulty, rounds: mouseRounds } = gameConfigs.mouse;
+  // House mode config
+  const { initialPeople: houseInitial, eventCount: houseEvents, speed: houseSpeed, rounds: houseRounds } = gameConfigs.house;
 
-  // Mouse mode config state (use saved config or defaults)
-  const [mouseCount, setMouseCount] = useState(() => (isGuest ? GUEST_DEFAULTS.mouse.count : gameConfigs.mouse.count));
-  const [mouseGrid, setMouseGrid] = useState<MouseGridPreset>(() => (isGuest ? GUEST_DEFAULTS.mouse.grid : gameConfigs.mouse.grid));
-  const [mouseDifficulty, setMouseDifficulty] = useState<MouseDifficultyLevel>(() =>
-    isGuest ? GUEST_DEFAULTS.mouse.difficulty : gameConfigs.mouse.difficulty
-  );
-  const [mouseRounds, setMouseRounds] = useState(() => (isGuest ? GUEST_DEFAULTS.mouse.rounds : gameConfigs.mouse.rounds));
-
-  // House mode config state (with fallback defaults for backward compatibility)
-  const [houseInitial, setHouseInitial] = useState(() =>
-    isGuest ? GUEST_DEFAULTS.house.initialPeople : Math.max(3, Math.min(gameConfigs.house?.initialPeople ?? 3, 7))
-  );
-  const [houseEvents, setHouseEvents] = useState(() =>
-    isGuest ? GUEST_DEFAULTS.house.eventCount : clampToStep(gameConfigs.house?.eventCount ?? 6, 6, 24, 3)
-  );
-  const [houseSpeed, setHouseSpeed] = useState<HouseSpeed>(() =>
-    isGuest ? GUEST_DEFAULTS.house.speed : ((gameConfigs.house?.speed as HouseSpeed) ?? 'easy')
-  );
-  const [houseRounds, setHouseRounds] = useState(() =>
-    isGuest ? GUEST_DEFAULTS.house.rounds : Math.max(3, Math.min(gameConfigs.house?.rounds ?? 3, 5))
-  );
-
-  // Determine current N-Back config based on mode
-  const nLevel = mode === 'numeric' ? numericNLevel : spatialNLevel;
-  const rounds = mode === 'numeric' ? numericRounds : spatialRounds;
-  const numericMinRounds = requiredMinRoundsForN(numericNLevel);
-  const numericRoundsUnlockedRaw = numericUnlocks?.roundsByN?.[String(numericNLevel)] ?? [5, 10];
-  const numericRoundsUnlocked = Array.from(new Set([...numericRoundsUnlockedRaw, numericMinRounds]));
-  const numericMaxNUnlocked = numericUnlocks?.maxN ?? 12;
-  const numericAllowedRounds = numericRoundsUnlocked.filter((r) => r >= numericMinRounds).sort((a, b) => a - b);
-  const numericRoundIndex = numericAllowedRounds.indexOf(numericRounds);
-  const canDecrementNumericRounds = numericRoundIndex > 0;
-  const canIncrementNumericRounds = numericRoundIndex >= 0 && numericRoundIndex < numericAllowedRounds.length - 1;
-  const spatialGridsUnlocked = spatialUnlocks?.grids ?? [3, 4, 5];
-  const spatialMaxNUnlocked = spatialUnlocks?.maxNByGrid?.[String(gridSize)] ?? 12;
-  const spatialMinRounds = requiredMinRoundsForN(spatialNLevel);
-  const spatialRoundsUnlockedRaw = spatialUnlocks?.roundsByN?.[String(spatialNLevel)] ?? (spatialNLevel === 1 ? [5, 10] : [10]);
-  const spatialRoundsUnlocked = Array.from(new Set([...spatialRoundsUnlockedRaw, spatialMinRounds]));
-  const spatialAllowedRounds = spatialRoundsUnlocked.filter((r) => r >= spatialMinRounds).sort((a, b) => a - b);
-  const spatialRoundIndex = spatialAllowedRounds.indexOf(spatialRounds);
-  const canDecrementSpatialRounds = spatialRoundIndex > 0;
-  const canIncrementSpatialRounds = spatialRoundIndex >= 0 && spatialRoundIndex < spatialAllowedRounds.length - 1;
-  const mouseMaxMiceUnlocked = mouseUnlocks?.maxMice ?? 9;
-  const mouseGridsUnlocked = mouseUnlocks?.grids ?? MOUSE_GRID_PRESETS.map((p) => p.value);
-  const mouseDifficultiesUnlocked = mouseUnlocks?.difficulties ?? (Object.keys(MOUSE_DIFFICULTY_MAP) as MouseDifficultyLevel[]);
-  const mouseMaxRoundsUnlocked = mouseUnlocks?.maxRounds ?? 5;
-  const houseSpeedsUnlocked = houseUnlocks?.speeds ?? (['easy'] as HouseSpeed[]);
-  const houseMaxInitialUnlocked = houseUnlocks?.maxInitialPeople ?? 3;
-  const houseMaxEventsUnlocked = houseUnlocks?.maxEvents ?? 6;
-  const houseMaxRoundsUnlocked = houseUnlocks?.maxRounds ?? 5;
-  
-  useEffect(() => {
-    if (!isGuest) {
-      setNumericNLevel(gameConfigs.numeric.nLevel);
-      setNumericRounds(gameConfigs.numeric.rounds);
-      setSpatialNLevel(gameConfigs.spatial.nLevel);
-      setSpatialRounds(gameConfigs.spatial.rounds);
-      setGridSize(gameConfigs.spatial.gridSize);
-      setMouseCount(gameConfigs.mouse.count);
-      setMouseGrid(gameConfigs.mouse.grid);
-      setMouseDifficulty(gameConfigs.mouse.difficulty);
-      setMouseRounds(gameConfigs.mouse.rounds);
-      setHouseInitial(Math.max(3, Math.min(gameConfigs.house?.initialPeople ?? 3, 7)));
-      setHouseEvents(clampToStep(gameConfigs.house?.eventCount ?? 6, 6, 24, 3));
-      setHouseSpeed((gameConfigs.house?.speed as HouseSpeed) ?? 'easy');
-      setHouseRounds(Math.max(3, Math.min(gameConfigs.house?.rounds ?? 3, 5)));
-      return;
-    }
-
-    setNumericNLevel(GUEST_DEFAULTS.numeric.nLevel);
-    setNumericRounds(GUEST_DEFAULTS.numeric.rounds);
-    setSpatialNLevel(GUEST_DEFAULTS.spatial.nLevel);
-    setSpatialRounds(GUEST_DEFAULTS.spatial.rounds);
-    setGridSize(GUEST_DEFAULTS.spatial.gridSize);
-    setMouseCount(GUEST_DEFAULTS.mouse.count);
-    setMouseGrid(GUEST_DEFAULTS.mouse.grid);
-    setMouseDifficulty(GUEST_DEFAULTS.mouse.difficulty);
-    setMouseRounds(GUEST_DEFAULTS.mouse.rounds);
-    setHouseInitial(GUEST_DEFAULTS.house.initialPeople);
-    setHouseEvents(GUEST_DEFAULTS.house.eventCount);
-    setHouseSpeed(GUEST_DEFAULTS.house.speed);
-    setHouseRounds(GUEST_DEFAULTS.house.rounds);
-  }, [isGuest, gameConfigs]);
-
-  useEffect(() => {
-    if (isGuest) return;
-    if (mode === 'spatial' && spatialAllowedRounds.length > 0 && !spatialAllowedRounds.includes(spatialRounds)) {
-      const fallback =
-        [...spatialAllowedRounds].filter((r) => r <= spatialRounds).pop() ?? spatialAllowedRounds[0];
-      setSpatialRounds(fallback);
-    }
-    if (mode === 'numeric' && numericAllowedRounds.length > 0 && !numericAllowedRounds.includes(numericRounds)) {
-      const fallback =
-        [...numericAllowedRounds].filter((r) => r <= numericRounds).pop() ?? numericAllowedRounds[0];
-      setNumericRounds(fallback);
-    }
-    if (mode === 'house') {
-      if (houseInitial > Math.min(7, houseMaxInitialUnlocked)) setHouseInitial(Math.min(7, houseMaxInitialUnlocked));
-      const maxEvents = Math.min(24, houseMaxEventsUnlocked);
-      const normalizedEvents = clampToStep(houseEvents, 6, maxEvents, 3);
-      if (normalizedEvents !== houseEvents) setHouseEvents(normalizedEvents);
-    }
-  }, [isGuest, mode, spatialAllowedRounds, spatialRounds, numericAllowedRounds, numericRounds, houseEvents, houseInitial, houseMaxEventsUnlocked, houseMaxInitialUnlocked]);
-
-  // Validate N-Back config
   const isNBackMode = mode === 'numeric' || mode === 'spatial';
   const maxMice = mouseGrid[0] * mouseGrid[1] - 1;
   const effectiveMouseCount = Math.min(mouseCount, maxMice);
-  const isUnlocked =
-    isGuest ? true :
-    mode === 'numeric'
-      ? nLevel <= numericMaxNUnlocked && numericAllowedRounds.includes(numericRounds)
-      : mode === 'spatial'
-        ? spatialGridsUnlocked.includes(gridSize) && spatialNLevel <= spatialMaxNUnlocked && spatialAllowedRounds.includes(spatialRounds)
-        : mode === 'mouse'
-          ? effectiveMouseCount <= Math.min(maxMice, mouseMaxMiceUnlocked) &&
-            mouseGridsUnlocked.some((g) => g[0] === mouseGrid[0] && g[1] === mouseGrid[1]) &&
-            mouseDifficultiesUnlocked.includes(mouseDifficulty) &&
-            mouseRounds <= Math.min(5, mouseMaxRoundsUnlocked)
-          : houseSpeedsUnlocked.includes(houseSpeed) &&
-            houseInitial <= Math.min(7, houseMaxInitialUnlocked) &&
-            houseEvents <= Math.min(24, houseMaxEventsUnlocked) &&
-            houseRounds <= Math.min(5, houseMaxRoundsUnlocked);
 
-  const isConfigValid = (isNBackMode ? nLevel < rounds : true) && isUnlocked;
+  const numericMinRounds = requiredMinRoundsForN(numericNLevel);
+  const spatialMinRounds = requiredMinRoundsForN(spatialNLevel);
+
+  // Keep rounds within [minRounds, 30] on a 5-step when N changes or user steps
+  const updateNLevel = (n: number) => {
+    if (mode === 'numeric') {
+      updateGameConfig('numeric', { nLevel: n, rounds: Math.max(requiredMinRoundsForN(n), numericRounds) });
+    } else {
+      updateGameConfig('spatial', { nLevel: n, rounds: Math.max(requiredMinRoundsForN(n), spatialRounds) });
+    }
+  };
+
+  const updateRounds = (r: number) => {
+    if (mode === 'numeric') {
+      updateGameConfig('numeric', { rounds: clampToStep(r, numericMinRounds, 30, 5) });
+    } else {
+      updateGameConfig('spatial', { rounds: clampToStep(r, spatialMinRounds, 30, 5) });
+    }
+  };
+
+  const isConfigValid = isNBackMode
+    ? (mode === 'numeric' ? numericNLevel < numericRounds : spatialNLevel < spatialRounds)
+    : true;
 
   const handleStart = () => {
     if (mode === 'mouse') {
@@ -193,8 +80,10 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
     } else if (mode === 'house') {
       const hConfig = buildHouseGameConfig(houseInitial, houseEvents, houseSpeed, houseRounds);
       onStart(1, houseRounds, mode, 0, undefined, hConfig);
+    } else if (mode === 'numeric') {
+      onStart(numericNLevel, numericRounds, mode, 3);
     } else {
-      onStart(nLevel, rounds, mode, gridSize);
+      onStart(spatialNLevel, spatialRounds, mode, gridSize);
     }
   };
 
@@ -205,65 +94,28 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
         <p className="text-sm text-zen-400 mt-2">{t('app.subtitle')}</p>
       </div>
 
-      {/* View Tab Switcher: 自由训练 / 闯关模式 */}
-      <div className="flex gap-1 bg-zen-100 rounded-lg p-1 w-fit mx-auto">
-        <button
-          onClick={() => setHomeView('training')}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-            homeView === 'training'
-              ? 'bg-white text-sage-700 shadow-sm'
-              : 'text-zen-500 hover:text-zen-700'
-          }`}
-        >
-          {t('home.freeTraining')}
-        </button>
-        <button
-          onClick={() => setHomeView('campaign')}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-            homeView === 'campaign'
-              ? 'bg-white text-sage-700 shadow-sm'
-              : 'text-zen-500 hover:text-zen-700'
-          }`}
-        >
-          {t('home.campaignMode')}
-        </button>
-      </div>
-
-      {homeView === 'campaign' && (
-        <CampaignMapView
-          userProfile={userProfile}
-          onStart={onStart}
-          onSetActiveCampaignRun={setActiveCampaignRun}
-          lastCampaignUpdate={lastCampaignUpdate}
-        />
-      )}
-
-      {homeView === 'training' && (<>
-
       {/* Profile Summary Card */}
       <div className="bg-gradient-to-br from-sage-400 to-sage-500 rounded-2xl p-6 shadow-lg text-white">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-medium">{t('home.profile')}</h2>
-            {!isGuest && (
-              <div className="px-2 py-0.5 rounded-full bg-white/20 text-xs font-bold tracking-wide whitespace-nowrap">
-                LV{brainLevel}
-              </div>
-            )}
+            <div className="px-2 py-0.5 rounded-full bg-white/20 text-xs font-bold tracking-wide whitespace-nowrap">
+              LV{brainLevel}
+            </div>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-            <div className="text-2xl font-mono font-bold">{isGuest ? '-' : userProfile.maxNLevel || '-'}</div>
+            <div className="text-2xl font-mono font-bold">{userProfile.maxNLevel || '-'}</div>
             <div className="text-xs text-white/80 mt-1">{t('home.maxLevel')}</div>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-            <div className="text-2xl font-mono font-bold">{isGuest ? 0 : userProfile.totalScore}</div>
+            <div className="text-2xl font-mono font-bold">{userProfile.totalScore}</div>
             <div className="text-xs text-white/80 mt-1">{t('home.totalScore')}</div>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-            <div className="text-2xl font-mono font-bold">{isGuest ? 0 : userProfile.checkIn.consecutiveDays}</div>
+            <div className="text-2xl font-mono font-bold">{userProfile.daysStreak}</div>
             <div className="text-xs text-white/80 mt-1">{t('home.streakDays')}</div>
           </div>
         </div>
@@ -274,7 +126,7 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
         <h2 className="text-lg font-medium text-zen-600 mb-4">{t('home.gameMode')}</h2>
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={() => setMode('numeric')}
+            onClick={() => setModeLocal('numeric')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'numeric'
                 ? 'border-sage-500 bg-sage-50'
@@ -285,9 +137,9 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
             <div className="font-medium text-zen-700 text-sm">{t('home.numeric')}</div>
             <div className="text-xs text-zen-400 mt-1">{t('home.numericDesc')}</div>
           </button>
-          
+
           <button
-            onClick={() => setMode('spatial')}
+            onClick={() => setModeLocal('spatial')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'spatial'
                 ? 'border-teal-500 bg-teal-50'
@@ -300,7 +152,7 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
           </button>
 
           <button
-            onClick={() => setMode('mouse')}
+            onClick={() => setModeLocal('mouse')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'mouse'
                 ? 'border-amber-500 bg-amber-50'
@@ -313,7 +165,7 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
           </button>
 
           <button
-            onClick={() => setMode('house')}
+            onClick={() => setModeLocal('house')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'house'
                 ? 'border-purple-500 bg-purple-50'
@@ -331,22 +183,6 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
       <div className="bg-white rounded-xl p-6 shadow-sm border border-zen-200 space-y-4">
         <h2 className="text-lg font-medium text-zen-600">{t('home.config')}</h2>
 
-        {isGuest && (
-          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-            <div className="font-medium mb-1">{t('profile.auth.guest')}</div>
-            <div className="flex items-center justify-between gap-3">
-              <span>{t('profile.auth.guestLockHint')}</span>
-              <a
-                href="/signup"
-                className="shrink-0 px-3 py-1.5 rounded-md bg-amber-600 text-white font-medium hover:bg-amber-700 transition-colors"
-              >
-                {t('profile.auth.goSignup')}
-              </a>
-            </div>
-          </div>
-        )}
-
-        <div className={`space-y-4 ${isGuest ? 'pointer-events-none opacity-60' : ''}`}>
         {/* ===== N-Back 模式配置 ===== */}
         {isNBackMode && (
           <>
@@ -354,29 +190,19 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
               <label className="text-sm text-zen-500 w-28">{t('home.nLevel')}</label>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => {
-                    if (mode === 'numeric') {
-                      setNumericNLevel((n) => Math.max(1, n - 1));
-                    } else {
-                      setSpatialNLevel((n) => Math.max(1, n - 1));
-                    }
-                  }}
-                  disabled={nLevel <= 1}
+                  onClick={() => updateNLevel(Math.max(1, (mode === 'numeric' ? numericNLevel : spatialNLevel) - 1))}
+                  disabled={(mode === 'numeric' ? numericNLevel : spatialNLevel) <= 1}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
                   −
                 </button>
-                <span className="text-2xl font-mono text-zen-700 w-10 text-center">{nLevel}</span>
+                <span className="text-2xl font-mono text-zen-700 w-10 text-center">
+                  {mode === 'numeric' ? numericNLevel : spatialNLevel}
+                </span>
                 <button
-                  onClick={() => {
-                    if (mode === 'numeric') {
-                      setNumericNLevel((n) => Math.min(Math.min(12, numericMaxNUnlocked), n + 1));
-                    } else {
-                      setSpatialNLevel((n) => Math.min(Math.min(12, spatialMaxNUnlocked), n + 1));
-                    }
-                  }}
-                  disabled={nLevel >= Math.min(12, mode === 'numeric' ? numericMaxNUnlocked : spatialMaxNUnlocked)}
+                  onClick={() => updateNLevel(Math.min(12, (mode === 'numeric' ? numericNLevel : spatialNLevel) + 1))}
+                  disabled={(mode === 'numeric' ? numericNLevel : spatialNLevel) >= 12}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
@@ -385,61 +211,30 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
               </div>
             </div>
 
-            {mode === 'numeric' ? (
-              <div className="flex items-center gap-4">
-                <label className="text-sm text-zen-500 w-28">{t('home.rounds')}</label>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      if (canDecrementNumericRounds) setNumericRounds(numericAllowedRounds[numericRoundIndex - 1]);
-                    }}
-                    disabled={!canDecrementNumericRounds}
-                    className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
-                      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
-                  >
-                    −
-                  </button>
-                  <span className="text-2xl font-mono text-zen-700 w-12 text-center">{numericRounds}</span>
-                  <button
-                    onClick={() => {
-                      if (canIncrementNumericRounds) setNumericRounds(numericAllowedRounds[numericRoundIndex + 1]);
-                    }}
-                    disabled={!canIncrementNumericRounds}
-                    className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
-                      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
-                  >
-                    +
-                  </button>
-                </div>
+            <div className="flex items-center gap-4">
+              <label className="text-sm text-zen-500 w-28">{t('home.rounds')}</label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => updateRounds((mode === 'numeric' ? numericRounds : spatialRounds) - 5)}
+                  disabled={(mode === 'numeric' ? numericRounds : spatialRounds) <= (mode === 'numeric' ? numericMinRounds : spatialMinRounds)}
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
+                >
+                  −
+                </button>
+                <span className="text-2xl font-mono text-zen-700 w-12 text-center">
+                  {mode === 'numeric' ? numericRounds : spatialRounds}
+                </span>
+                <button
+                  onClick={() => updateRounds((mode === 'numeric' ? numericRounds : spatialRounds) + 5)}
+                  disabled={(mode === 'numeric' ? numericRounds : spatialRounds) >= 30}
+                  className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
+                >
+                  +
+                </button>
               </div>
-            ) : (
-              <div className="flex items-center gap-4">
-                <label className="text-sm text-zen-500 w-28">{t('home.rounds')}</label>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      if (canDecrementSpatialRounds) setSpatialRounds(spatialAllowedRounds[spatialRoundIndex - 1]);
-                    }}
-                    disabled={!canDecrementSpatialRounds}
-                    className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
-                      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
-                  >
-                    −
-                  </button>
-                  <span className="text-2xl font-mono text-zen-700 w-12 text-center">{spatialRounds}</span>
-                  <button
-                    onClick={() => {
-                      if (canIncrementSpatialRounds) setSpatialRounds(spatialAllowedRounds[spatialRoundIndex + 1]);
-                    }}
-                    disabled={!canIncrementSpatialRounds}
-                    className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
-                      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            )}
+            </div>
 
             {/* 网格大小选择（仅空间模式） */}
             {mode === 'spatial' && (
@@ -449,14 +244,11 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
                   {[3, 4, 5].map((size) => (
                     <button
                       key={size}
-                      onClick={() => spatialGridsUnlocked.includes(size) && setGridSize(size)}
-                      disabled={!spatialGridsUnlocked.includes(size)}
+                      onClick={() => updateGameConfig('spatial', { gridSize: size })}
                       className={`px-4 py-2 rounded-lg font-medium transition-all ${
                         gridSize === size
                           ? 'bg-teal-500 text-white shadow-sm'
-                          : spatialGridsUnlocked.includes(size)
-                            ? 'bg-zen-100 text-zen-600 hover:bg-zen-200'
-                            : 'bg-zen-100 text-zen-400 opacity-60 cursor-not-allowed'
+                          : 'bg-zen-100 text-zen-600 hover:bg-zen-200'
                       }`}
                     >
                       {size}×{size}
@@ -469,7 +261,10 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
             {!isConfigValid && (
               <div className="bg-red-50 rounded-lg p-3 text-xs text-red-700 border border-red-200">
                 <div className="font-medium mb-1">{t('home.configError')}</div>
-                <p>{nLevel >= rounds ? t('home.configErrorMsg', { n: nLevel, rounds }) : t('home.lockedConfigErrorMsg')}</p>
+                <p>{t('home.configErrorMsg', {
+                  n: mode === 'numeric' ? numericNLevel : spatialNLevel,
+                  rounds: mode === 'numeric' ? numericRounds : spatialRounds,
+                })}</p>
               </div>
             )}
           </>
@@ -483,7 +278,7 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
               <label className="text-sm text-zen-500 font-medium w-28">{t('home.mouseCount')}</label>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setMouseCount((n) => Math.max(3, n - 1))}
+                  onClick={() => updateGameConfig('mouse', { count: Math.max(3, mouseCount - 1) })}
                   disabled={mouseCount <= 3}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
@@ -492,8 +287,8 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
                 </button>
                 <span className="text-2xl font-mono text-zen-700 w-12 text-center">{effectiveMouseCount}</span>
                 <button
-                  onClick={() => setMouseCount((n) => Math.min(Math.min(9, maxMice, mouseMaxMiceUnlocked), n + 1))}
-                  disabled={mouseCount >= Math.min(maxMice, mouseMaxMiceUnlocked) || mouseCount >= 9}
+                  onClick={() => updateGameConfig('mouse', { count: Math.min(Math.min(9, maxMice), mouseCount + 1) })}
+                  disabled={mouseCount >= Math.min(9, maxMice)}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
@@ -506,30 +301,23 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
             <div className="space-y-2">
               <label className="text-sm text-zen-500 font-medium">{t('home.mouseGrid')}</label>
               <div className="flex gap-2">
-                {MOUSE_GRID_PRESETS.map(({ label, value }) => {
-                  const unlocked = mouseGridsUnlocked.some((g) => g[0] === value[0] && g[1] === value[1]);
-                  return (
-                    <button
-                      key={label}
-                      onClick={() => {
-                        if (!unlocked) return;
-                        setMouseGrid(value);
-                        const newMax = value[0] * value[1] - 1;
-                        if (mouseCount > newMax) setMouseCount(Math.min(7, newMax));
-                      }}
-                      disabled={!unlocked}
-                      className={`flex-1 py-2.5 rounded-lg font-medium transition-all text-sm ${
-                        mouseGrid[0] === value[0] && mouseGrid[1] === value[1]
-                          ? 'bg-amber-500 text-white shadow-sm'
-                          : unlocked
-                            ? 'bg-zen-100 text-zen-600 hover:bg-amber-100'
-                            : 'bg-zen-100 text-zen-400 opacity-60 cursor-not-allowed'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+                {MOUSE_GRID_PRESETS.map(({ label, value }) => (
+                  <button
+                    key={label}
+                    onClick={() => {
+                      updateGameConfig('mouse', { grid: value });
+                      const newMax = value[0] * value[1] - 1;
+                      if (mouseCount > newMax) updateGameConfig('mouse', { count: Math.min(7, newMax) });
+                    }}
+                    className={`flex-1 py-2.5 rounded-lg font-medium transition-all text-sm ${
+                      mouseGrid[0] === value[0] && mouseGrid[1] === value[1]
+                        ? 'bg-amber-500 text-white shadow-sm'
+                        : 'bg-zen-100 text-zen-600 hover:bg-amber-100'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -538,27 +326,21 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
               <label className="text-sm text-zen-500 font-medium">{t('home.mouseDifficulty')}</label>
               <div className="grid grid-cols-4 gap-2">
                 {(Object.entries(MOUSE_DIFFICULTY_MAP) as [MouseDifficultyLevel, { label: string; pushes: number }][]).map(
-                  ([key, { label }]) => {
-                    const unlocked = mouseDifficultiesUnlocked.includes(key);
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => unlocked && setMouseDifficulty(key)}
-                        disabled={!unlocked}
-                        className={`py-3 rounded-lg font-medium transition-all ${
-                          mouseDifficulty === key
-                            ? key === 'hell'
-                              ? 'bg-red-500 text-white shadow-sm'
-                              : 'bg-amber-500 text-white shadow-sm'
-                            : unlocked
-                              ? 'bg-zen-100 text-zen-600 hover:bg-amber-100'
-                              : 'bg-zen-100 text-zen-400 opacity-60 cursor-not-allowed'
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  },
+                  ([key, { label }]) => (
+                    <button
+                      key={key}
+                      onClick={() => updateGameConfig('mouse', { difficulty: key })}
+                      className={`py-3 rounded-lg font-medium transition-all ${
+                        mouseDifficulty === key
+                          ? key === 'hell'
+                            ? 'bg-red-500 text-white shadow-sm'
+                            : 'bg-amber-500 text-white shadow-sm'
+                          : 'bg-zen-100 text-zen-600 hover:bg-amber-100'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ),
                 )}
               </div>
             </div>
@@ -568,7 +350,7 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
               <label className="text-sm text-zen-500 w-28">{t('home.mouseRounds')}</label>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setMouseRounds((r) => Math.max(3, r - 1))}
+                  onClick={() => updateGameConfig('mouse', { rounds: Math.max(3, mouseRounds - 1) })}
                   disabled={mouseRounds <= 3}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
@@ -577,8 +359,8 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
                 </button>
                 <span className="text-2xl font-mono text-zen-700 w-12 text-center">{mouseRounds}</span>
                 <button
-                  onClick={() => setMouseRounds((r) => Math.min(Math.min(5, mouseMaxRoundsUnlocked), r + 1))}
-                  disabled={mouseRounds >= Math.min(5, mouseMaxRoundsUnlocked)}
+                  onClick={() => updateGameConfig('mouse', { rounds: Math.min(5, mouseRounds + 1) })}
+                  disabled={mouseRounds >= 5}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
@@ -597,7 +379,7 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
               <label className="text-sm text-zen-500 font-medium w-28">{t('home.houseInitial')}</label>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setHouseInitial((n) => Math.max(3, n - 1))}
+                  onClick={() => updateGameConfig('house', { initialPeople: Math.max(3, houseInitial - 1) })}
                   disabled={houseInitial <= 3}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
@@ -606,8 +388,8 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
                 </button>
                 <span className="text-2xl font-mono text-zen-700 w-12 text-center">{houseInitial}</span>
                 <button
-                  onClick={() => setHouseInitial((n) => Math.min(Math.min(7, houseMaxInitialUnlocked), n + 1))}
-                  disabled={houseInitial >= Math.min(7, houseMaxInitialUnlocked)}
+                  onClick={() => updateGameConfig('house', { initialPeople: Math.min(7, houseInitial + 1) })}
+                  disabled={houseInitial >= 7}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
@@ -621,7 +403,7 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
               <label className="text-sm text-zen-500 font-medium w-28">{t('home.houseEvents')}</label>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setHouseEvents((n) => Math.max(6, n - 3))}
+                  onClick={() => updateGameConfig('house', { eventCount: Math.max(6, houseEvents - 3) })}
                   disabled={houseEvents <= 6}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
@@ -630,8 +412,8 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
                 </button>
                 <span className="text-2xl font-mono text-zen-700 w-12 text-center">{houseEvents}</span>
                 <button
-                  onClick={() => setHouseEvents((n) => Math.min(Math.min(24, houseMaxEventsUnlocked), n + 3))}
-                  disabled={houseEvents >= Math.min(24, houseMaxEventsUnlocked)}
+                  onClick={() => updateGameConfig('house', { eventCount: Math.min(24, houseEvents + 3) })}
+                  disabled={houseEvents >= 24}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
@@ -647,14 +429,11 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
                 {(['easy', 'normal', 'fast'] as const).map((speed) => (
                   <button
                     key={speed}
-                    onClick={() => houseSpeedsUnlocked.includes(speed) && setHouseSpeed(speed)}
-                    disabled={!houseSpeedsUnlocked.includes(speed)}
+                    onClick={() => updateGameConfig('house', { speed })}
                     className={`flex-1 py-2.5 rounded-lg font-medium transition-all text-sm ${
                       houseSpeed === speed
                         ? 'bg-purple-500 text-white shadow-sm'
-                        : houseSpeedsUnlocked.includes(speed)
-                          ? 'bg-zen-100 text-zen-600 hover:bg-purple-100'
-                          : 'bg-zen-100 text-zen-400 opacity-60 cursor-not-allowed'
+                        : 'bg-zen-100 text-zen-600 hover:bg-purple-100'
                     }`}
                   >
                     {t(`speed.${speed}`)}
@@ -668,7 +447,7 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
               <label className="text-sm text-zen-500 font-medium w-28">{t('home.houseRounds')}</label>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setHouseRounds((n) => Math.max(3, n - 1))}
+                  onClick={() => updateGameConfig('house', { rounds: Math.max(3, houseRounds - 1) })}
                   disabled={houseRounds <= 3}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
@@ -677,8 +456,8 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
                 </button>
                 <span className="text-2xl font-mono text-zen-700 w-12 text-center">{houseRounds}</span>
                 <button
-                  onClick={() => setHouseRounds((n) => Math.min(Math.min(5, houseMaxRoundsUnlocked), n + 1))}
-                  disabled={houseRounds >= Math.min(5, houseMaxRoundsUnlocked)}
+                  onClick={() => updateGameConfig('house', { rounds: Math.min(5, houseRounds + 1) })}
+                  disabled={houseRounds >= 5}
                   className="w-9 h-9 rounded-lg bg-zen-100 text-zen-600 hover:bg-zen-200 active:scale-95 transition-all
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zen-100"
                 >
@@ -693,13 +472,13 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
         <div className="bg-sage-50 rounded-lg p-3 text-xs text-sage-700 border border-sage-200">
           <div className="font-medium mb-1">{t('home.howToPlay')}</div>
           <p>
-            {mode === 'numeric' 
-              ? t('home.numericHelp', { n: nLevel })
+            {mode === 'numeric'
+              ? t('home.numericHelp', { n: numericNLevel })
               : mode === 'spatial'
-              ? t('home.spatialHelp', { grid: gridSize, n: nLevel })
+              ? t('home.spatialHelp', { grid: gridSize, n: spatialNLevel })
               : mode === 'mouse'
-              ? t('home.mouseHelp', { 
-                  mice: effectiveMouseCount, 
+              ? t('home.mouseHelp', {
+                  mice: effectiveMouseCount,
                   cats: mouseGrid[0] * mouseGrid[1] - effectiveMouseCount,
                   grid: `${mouseGrid[0]}×${mouseGrid[1]}`,
                   pushes: MOUSE_DIFFICULTY_MAP[mouseDifficulty].pushes
@@ -711,7 +490,6 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
                 })
             }
           </p>
-        </div>
         </div>
       </div>
 
@@ -727,11 +505,13 @@ export function HomeScreen({ initialMode, initialHomeView = 'training', userProf
           ? t('home.startMouse', { difficulty: MOUSE_DIFFICULTY_MAP[mouseDifficulty].label, rounds: mouseRounds })
           : mode === 'house'
           ? t('home.startHouse', { speed: t(`speed.${houseSpeed}`), rounds: houseRounds })
-          : t('home.startNBack', { n: nLevel, mode: mode === 'numeric' ? t('home.numeric') : t('home.spatial'), rounds })
+          : t('home.startNBack', {
+              n: mode === 'numeric' ? numericNLevel : spatialNLevel,
+              mode: mode === 'numeric' ? t('home.numeric') : t('home.spatial'),
+              rounds: mode === 'numeric' ? numericRounds : spatialRounds,
+            })
         }
       </button>
-
-      </>)}
     </div>
   );
 }

@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
 import { HomeScreen } from '../screens/HomeScreen';
 import { HOUSE_SPEED_MAP, MOUSE_DIFFICULTY_MAP } from '../../types/game';
@@ -12,20 +11,10 @@ import type { GameMode, MouseGameConfig, HouseGameConfig, MouseDifficultyLevel, 
  */
 export function HomePage() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
-  const { setNextConfig, updateGameConfig, userProfile, nextConfig, recalculateEnergy, consumeEnergy } = useGameStore();
+  const { setNextConfig, updateGameConfig, nextConfig } = useGameStore();
 
   const handleStart = useCallback(
     (nLevel: number, rounds: number, mode: GameMode, gridSize: number, mouseConfig?: MouseGameConfig, houseConfig?: HouseGameConfig) => {
-      // Recalculate energy before checking
-      recalculateEnergy();
-      
-      // Check and consume energy
-      if (!consumeEnergy()) {
-        alert(t('energy.insufficient'));
-        return;
-      }
-      
       // 保存配置到 store，TrainPage 会读取
       if (mode === 'mouse' && mouseConfig) {
         const difficulty =
@@ -67,13 +56,12 @@ export function HomePage() {
       setNextConfig({ nLevel, totalRounds: rounds, mode, gridSize });
       navigate(`/train/${mode}`);
     },
-    [setNextConfig, updateGameConfig, navigate, t, recalculateEnergy, consumeEnergy]
+    [setNextConfig, updateGameConfig, navigate]
   );
 
   return (
     <HomeScreen
       initialMode={nextConfig.mode}
-      userProfile={userProfile}
       onStart={handleStart}
     />
   );

@@ -1,5 +1,5 @@
 // ============================================================
-// Brain Flow - Core Game Type Definitions
+// Brain Flow - Core Game Type Definitions (guest-only arcade)
 // ============================================================
 
 /** Possible states for the game lifecycle */
@@ -10,9 +10,6 @@ export type GameMode = 'numeric' | 'spatial' | 'mouse' | 'house';
 
 /** The type of stimulus shown to the player (deprecated, kept for compatibility) */
 export type StimulusType = 'number' | 'position' | 'word';
-
-/** View/screen the player is currently on */
-export type AppView = 'home' | 'game' | 'result';
 
 // ------------------------------------------------------------
 // User Profile & History
@@ -40,14 +37,6 @@ export interface BrainRankLevel {
   titleZh: string;
   titleEn: string;
   xpRequired: number;
-  /** 
-   * Milestone requirements (e.g., unlock 2-Back Numeric). 
-   * Each inner array is an OR group (any one of them satisfied is enough).
-   * Wait, PRD says "A > 90% OR B > 90%". 
-   * Let's simplify: `milestones` is a list of milestone IDs.
-   * If `milestoneLogic` is 'OR', then meeting ANY one is sufficient.
-   * If `milestoneLogic` is 'AND' (default), then ALL must be met.
-   */
   milestones?: string[];
   milestoneLogic?: 'AND' | 'OR';
 }
@@ -55,50 +44,50 @@ export interface BrainRankLevel {
 /** All brain rank levels */
 export const BRAIN_RANK_LEVELS: BrainRankLevel[] = [
   { level: 1, titleZh: '见习', titleEn: 'Novice', xpRequired: 0 },
-  { 
-    level: 2, 
-    titleZh: '觉醒', 
-    titleEn: 'Awakened', 
+  {
+    level: 2,
+    titleZh: '觉醒',
+    titleEn: 'Awakened',
     xpRequired: 500,
     milestones: ['numeric_2back', 'spatial_3x3_2back'],
     milestoneLogic: 'OR'
   },
-  { 
-    level: 3, 
-    titleZh: '敏捷', 
-    titleEn: 'Agile', 
+  {
+    level: 3,
+    titleZh: '敏捷',
+    titleEn: 'Agile',
     xpRequired: 2000,
     milestones: ['spatial_4x4_2back', 'mouse_4mice'],
     milestoneLogic: 'OR'
   },
-  { 
-    level: 4, 
-    titleZh: '逻辑', 
-    titleEn: 'Logical', 
+  {
+    level: 4,
+    titleZh: '逻辑',
+    titleEn: 'Logical',
     xpRequired: 5000,
     milestones: ['numeric_3back', 'house_normal_12'],
     milestoneLogic: 'OR'
   },
-  { 
-    level: 5, 
-    titleZh: '深邃', 
-    titleEn: 'Profound', 
+  {
+    level: 5,
+    titleZh: '深邃',
+    titleEn: 'Profound',
     xpRequired: 10000,
     milestones: ['spatial_5x5_3back', 'mouse_7mice'],
     milestoneLogic: 'OR'
   },
-  { 
-    level: 6, 
-    titleZh: '大师', 
-    titleEn: 'Master', 
+  {
+    level: 6,
+    titleZh: '大师',
+    titleEn: 'Master',
     xpRequired: 30000,
     milestones: ['numeric_5back', 'house_fast_15'],
     milestoneLogic: 'OR'
   },
-  { 
-    level: 7, 
-    titleZh: '超凡', 
-    titleEn: 'Transcendent', 
+  {
+    level: 7,
+    titleZh: '超凡',
+    titleEn: 'Transcendent',
     xpRequired: 80000,
     milestones: ['numeric_7back', 'spatial_5x5', 'mouse_9mice', 'house_fast_15'],
     milestoneLogic: 'AND' // All required for Transcendent
@@ -110,18 +99,15 @@ export function getBrainRank(xp: number, completedMilestones: string[] = []): Br
   for (let i = BRAIN_RANK_LEVELS.length - 1; i >= 0; i--) {
     const rank = BRAIN_RANK_LEVELS[i];
     if (xp >= rank.xpRequired) {
-      // Check if milestones are met (if any)
       if (rank.milestones && rank.milestones.length > 0) {
         if (rank.milestoneLogic === 'OR') {
           const anyMet = rank.milestones.some(m => completedMilestones.includes(m));
           if (anyMet) return rank;
         } else {
-          // Default AND
           const allMet = rank.milestones.every(m => completedMilestones.includes(m));
           if (allMet) return rank;
         }
       } else {
-        // No milestones required
         return rank;
       }
     }
@@ -136,28 +122,7 @@ export function getNextBrainRank(xp: number, completedMilestones: string[] = [])
   return nextIdx < BRAIN_RANK_LEVELS.length ? BRAIN_RANK_LEVELS[nextIdx] : null;
 }
 
-/** Authentication provider type */
-export type AuthProvider = 'guest' | 'email' | 'google' | 'wechat';
-
-/** User's authentication profile (placeholder for future backend) */
-export interface AuthProfile {
-  /** Current login status */
-  status: 'guest' | 'authenticated';
-  /** Better Auth user id (present when authenticated) */
-  userId?: string;
-  /** User email (optional) */
-  email?: string;
-  /** Whether email is verified (if applicable) */
-  emailVerified?: boolean;
-  /** Display name */
-  displayName: string;
-  /** Avatar URL (null for default) */
-  avatarUrl: string | null;
-  /** Linked providers */
-  linkedProviders: AuthProvider[];
-}
-
-/** User's persistent profile data */
+/** User's local profile data (guest-only, persisted to localStorage) */
 export interface UserProfile {
   /** Accumulative points across all sessions */
   totalScore: number;
@@ -171,178 +136,8 @@ export interface UserProfile {
   lastPlayedDate: string | null;
   /** Six-dimension brain stats */
   brainStats: BrainStats;
-  /** Auth profile (placeholder) */
-  auth: AuthProfile;
   /** Completed milestones (e.g., ['numeric_2back', 'spatial_3x3']) */
   completedMilestones: string[];
-  /** In-game currency (Brain Coins) */
-  brainCoins: number;
-  /** Energy system state */
-  energy: EnergyState;
-  /** Check-in system state */
-  checkIn: CheckInState;
-  /** Owned permanent items (product IDs) */
-  ownedItems: string[];
-  /** Inventory item counts (consumables / tickets) */
-  inventory: Record<string, number>;
-  /** User preferences (local settings) */
-  preferences: UserPreferences;
-}
-
-export interface UserPreferences {
-  language: 'zh' | 'en';
-  soundEnabled: boolean;
-  hapticsEnabled: boolean;
-}
-
-export type GameUnlocks = {
-  numeric: { maxN: number; roundsByN: Record<string, number[]> };
-  spatial: { grids: number[]; maxNByGrid: Record<string, number>; roundsByN: Record<string, number[]> };
-  mouse: { maxMice: number; grids: [number, number][]; difficulties: MouseDifficultyLevel[]; maxRounds: number };
-  house: { speeds: HouseSpeed[]; maxInitialPeople: number; maxEvents: number; maxRounds: number };
-};
-
-// ------------------------------------------------------------
-// Energy System
-// ------------------------------------------------------------
-
-/** Energy system state */
-export interface EnergyState {
-  /** Current energy points */
-  current: number;
-  /** Maximum energy capacity */
-  max: number;
-  /** Timestamp of last energy update (for recovery calculation) */
-  lastUpdated: number;
-  /** Timestamp until which energy is unlimited (0 = no unlimited) */
-  unlimitedUntil: number;
-}
-
-/** Recovery interval in ms (4 hours) */
-export const ENERGY_RECOVERY_INTERVAL_MS = 4 * 60 * 60 * 1000;
-
-/** Default max energy */
-export const ENERGY_MAX = 5;
-
-/** Calculate recovered energy based on time elapsed */
-export function calculateRecoveredEnergy(state: EnergyState): EnergyState {
-  if (state.current >= state.max) return state;
-  const now = Date.now();
-  const elapsed = now - state.lastUpdated;
-  const recovered = Math.floor(elapsed / ENERGY_RECOVERY_INTERVAL_MS);
-  if (recovered <= 0) return state;
-  const newCurrent = Math.min(state.max, state.current + recovered);
-  const remainder = elapsed % ENERGY_RECOVERY_INTERVAL_MS;
-  return {
-    ...state,
-    current: newCurrent,
-    lastUpdated: now - remainder,
-  };
-}
-
-/** Get remaining time until next energy recovery in ms */
-export function getNextRecoveryMs(state: EnergyState): number {
-  if (state.current >= state.max) return 0;
-  const now = Date.now();
-  const elapsed = now - state.lastUpdated;
-  const remaining = ENERGY_RECOVERY_INTERVAL_MS - (elapsed % ENERGY_RECOVERY_INTERVAL_MS);
-  return remaining;
-}
-
-// ------------------------------------------------------------
-// Check-in System
-// ------------------------------------------------------------
-
-/** Check-in system state */
-export interface CheckInState {
-  /** Last check-in date (ISO date string YYYY-MM-DD) */
-  lastCheckInDate: string | null;
-  /** Consecutive check-in days */
-  consecutiveDays: number;
-}
-
-/** Check-in reward tiers */
-export function getCheckInReward(consecutiveDays: number): { xp: number; coins: number } {
-  if (consecutiveDays >= 7) return { xp: 50, coins: 60 };
-  if (consecutiveDays >= 3) return { xp: 50, coins: 20 };
-  return { xp: 50, coins: 10 };
-}
-
-// ------------------------------------------------------------
-// Store Products
-// ------------------------------------------------------------
-
-/** Product effect types */
-export type ProductEffect =
-  | { type: 'energy'; amount: number }
-  | { type: 'streak_saver' }
-  | { type: 'rename_card' }
-  | { type: 'premium_report' };
-
-/** Store product definition */
-export interface StoreProduct {
-  id: string;
-  type: 'consumable' | 'permanent';
-  nameKey: string;
-  descKey: string;
-  price: number;
-  icon: string;
-  effect: ProductEffect;
-}
-
-/** All available products */
-export const STORE_PRODUCTS: StoreProduct[] = [
-  {
-    id: 'energy_1',
-    type: 'consumable',
-    nameKey: 'store.energyPotion1',
-    descKey: 'store.energyPotion1Desc',
-    price: 100,
-    icon: '⚡',
-    effect: { type: 'energy', amount: 1 },
-  },
-  {
-    id: 'energy_5',
-    type: 'consumable',
-    nameKey: 'store.energyPotion5',
-    descKey: 'store.energyPotion5Desc',
-    price: 450,
-    icon: '🔋',
-    effect: { type: 'energy', amount: 5 },
-  },
-  {
-    id: 'streak_saver',
-    type: 'consumable',
-    nameKey: 'store.streakSaver',
-    descKey: 'store.streakSaverDesc',
-    price: 500,
-    icon: '🛡️',
-    effect: { type: 'streak_saver' },
-  },
-  {
-    id: 'rename_card',
-    type: 'consumable',
-    nameKey: 'store.renameCard',
-    descKey: 'store.renameCardDesc',
-    price: 1000,
-    icon: '✏️',
-    effect: { type: 'rename_card' },
-  },
-  {
-    id: 'premium_report',
-    type: 'permanent',
-    nameKey: 'store.premiumReport',
-    descKey: 'store.premiumReportDesc',
-    price: 1000,
-    icon: '📊',
-    effect: { type: 'premium_report' },
-  },
-];
-
-export interface DailyActivityEntry {
-  date: string;
-  totalXp: number;
-  sessionsCount: number;
 }
 
 /** Simplified session entry for history list */

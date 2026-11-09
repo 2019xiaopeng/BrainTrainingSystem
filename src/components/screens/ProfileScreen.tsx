@@ -4,56 +4,19 @@ import { useGameStore } from '../../store/gameStore';
 import { BrainRankCard } from '../profile/BrainRankCard';
 import { RadarChartWidget } from '../profile/RadarChartWidget';
 import { ActivityHeatmap } from '../profile/ActivityHeatmap';
-import { EnergyBar } from '../economy/EnergyBar';
-import { generateYearlyHeatmap } from '../../mocks/userData';
-import { Trophy, Target, Flame, BarChart3, Coins, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { generateYearlyHeatmap } from '../../lib/heatmap';
+import { Trophy, Target, Flame, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 
 /**
- * ProfileScreen - 完整个人档案页面
- * 包含: Brain Rank, Stats, Radar, 365天 Heatmap, History, Auth
+ * ProfileScreen - 个人档案页面（本地数据）
+ * 包含: Brain Rank, Stats, Radar, 365天 Heatmap, History
  */
 export function ProfileScreen() {
   const { t } = useTranslation();
-  const { userProfile, sessionHistory, cloudDailyActivity } = useGameStore();
-
-  // Ensure auth profile exists (migration fallback)
-  const authProfile = userProfile.auth || {
-    status: 'guest' as const,
-    displayName: 'Guest',
-    avatarUrl: null,
-    linkedProviders: ['guest' as const],
-  };
-  const isGuest = authProfile.status === 'guest';
+  const { userProfile, sessionHistory } = useGameStore();
   const hasRealData = sessionHistory.length > 0;
 
-  const heatmapData = useMemo(() => {
-    if (!isGuest && Array.isArray(cloudDailyActivity)) {
-      const now = new Date();
-      const year = now.getUTCFullYear();
-      const startOfYear = new Date(Date.UTC(year, 0, 1));
-      const endOfYear = new Date(Date.UTC(year, 11, 31));
-      const map = new Map<string, { count: number; xp: number }>();
-
-      for (let d = new Date(startOfYear); d <= endOfYear; d.setUTCDate(d.getUTCDate() + 1)) {
-        const key = d.toISOString().slice(0, 10);
-        map.set(key, { count: 0, xp: 0 });
-      }
-
-      for (const entry of cloudDailyActivity) {
-        const key = String((entry as { date?: unknown }).date ?? '');
-        if (!map.has(key)) continue;
-        map.set(key, {
-          count: Number((entry as { sessionsCount?: unknown }).sessionsCount ?? 0) || 0,
-          xp: Number((entry as { totalXp?: unknown }).totalXp ?? 0) || 0,
-        });
-      }
-
-      return Array.from(map.entries()).map(([date, data]) => ({ date, count: data.count, xp: data.xp }));
-    }
-
-    return generateYearlyHeatmap(sessionHistory);
-  }, [cloudDailyActivity, isGuest, sessionHistory]);
+  const heatmapData = useMemo(() => generateYearlyHeatmap(sessionHistory), [sessionHistory]);
 
   // Pagination for History
   const ITEMS_PER_PAGE = 10;
@@ -61,7 +24,7 @@ export function ProfileScreen() {
 
   const sortedHistory = useMemo(() => [...sessionHistory].reverse(), [sessionHistory]);
   const totalPages = Math.max(1, Math.ceil(sortedHistory.length / ITEMS_PER_PAGE));
-  
+
   const currentSessions = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return sortedHistory.slice(start, start + ITEMS_PER_PAGE);
@@ -91,196 +54,142 @@ export function ProfileScreen() {
         {t('profile.title')}
       </h1>
 
-      {/* Energy & Check-in row (mobile only - sidebar has these on desktop) */}
-      <div className="lg:hidden space-y-3">
-        <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm">
-          <EnergyBar />
+      {/* Brain Rank Card */}
+      <BrainRankCard
+        totalXP={userProfile.totalXP}
+        completedMilestones={userProfile.completedMilestones || []}
+      />
+
+      {/* Stats summary row */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-zen-200/50">
+          <Trophy className="w-5 h-5 mx-auto mb-1.5 text-amber-500" />
+          <div className="text-xl font-mono font-bold text-zen-700">
+            {userProfile.maxNLevel || '-'}
+          </div>
+          <div className="text-xs text-zen-400 mt-0.5">{t('home.maxLevel')}</div>
+        </div>
+        <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-zen-200/50">
+          <Target className="w-5 h-5 mx-auto mb-1.5 text-sage-500" />
+          <div className="text-xl font-mono font-bold text-zen-700">
+            {userProfile.totalScore.toLocaleString()}
+          </div>
+          <div className="text-xs text-zen-400 mt-0.5">{t('home.totalScore')}</div>
+        </div>
+        <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-zen-200/50">
+          <Flame className="w-5 h-5 mx-auto mb-1.5 text-orange-500" />
+          <div className="text-xl font-mono font-bold text-zen-700">
+            {userProfile.daysStreak}
+          </div>
+          <div className="text-xs text-zen-400 mt-0.5">{t('home.streakDays')}</div>
         </div>
       </div>
 
-      {isGuest ? (
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-zen-200/50">
-          <div className="text-sm font-medium text-zen-700 mb-1">
-            {t('profile.auth.guest')}
-          </div>
-          <div className="text-xs text-zen-500">
-            {t('profile.auth.guestLockHint')}
-          </div>
-          <div className="mt-3 flex gap-2">
-            <a
-              href="/signup"
-              className="px-3 py-2 rounded-lg bg-sage-500 text-white text-xs font-medium hover:bg-sage-600 transition-colors"
-            >
-              {t('profile.auth.goSignup')}
-            </a>
-            <a
-              href="/signin"
-              className="px-3 py-2 rounded-lg bg-zen-100 text-zen-700 text-xs font-medium hover:bg-zen-200 transition-colors"
-            >
-              {t('profile.auth.goSignin')}
-            </a>
-          </div>
+      {/* Brain Radar Chart */}
+      <div className="bg-white rounded-xl p-5 shadow-sm border border-zen-200/50">
+        <h2 className="text-sm font-medium text-zen-600 mb-2 flex items-center gap-2">
+          <BarChart3 className="w-4 h-4" />
+          {t('profile.brainRadar')}
+        </h2>
+        {!hasRealData && (
+          <p className="text-xs text-zen-400 mb-2 italic">
+            {t('profile.startFirst')}
+          </p>
+        )}
+        <RadarChartWidget stats={userProfile.brainStats} />
+      </div>
+
+      {/* Activity Heatmap (365 days) */}
+      <div className="bg-white rounded-xl p-5 shadow-sm border border-zen-200/50">
+        <h2 className="text-sm font-medium text-zen-600 mb-3">
+          {t('profile.activityHeatmap')}
+        </h2>
+        <ActivityHeatmap data={heatmapData} />
+      </div>
+
+      {/* History with Pagination */}
+      <div className="bg-white rounded-xl p-5 shadow-sm border border-zen-200/50">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-medium text-zen-600">
+            {t('profile.history')}
+          </h2>
+          {sortedHistory.length > 0 && (
+            <div className="text-xs text-zen-400">
+              {t('common.total')} {sortedHistory.length}
+            </div>
+          )}
         </div>
-      ) : (
-        <>
-          <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm flex items-center justify-between">
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-zen-700 truncate">{authProfile.displayName}</div>
-              <div className="text-xs text-zen-400 truncate">{authProfile.email ?? ''}</div>
-            </div>
-            <Link
-              className="shrink-0 px-3 py-2 rounded-lg border border-zen-200 text-zen-700 text-xs hover:bg-zen-50 transition-colors"
-              to="/settings"
-            >
-              {t('nav.settings')}
-            </Link>
+
+        {sortedHistory.length === 0 ? (
+          <div className="text-center py-8 text-zen-400">
+            <p className="text-sm">{t('profile.noHistory')}</p>
+            <p className="text-xs mt-1">{t('profile.startFirst')}</p>
           </div>
-
-          {/* Brain Rank Card */}
-          <BrainRankCard
-            totalXP={userProfile.totalXP ?? 0}
-            completedMilestones={userProfile.completedMilestones || []}
-          />
-
-          {/* Stats summary row */}
-          <div className="grid grid-cols-4 gap-3">
-            <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-zen-200/50">
-              <Trophy className="w-5 h-5 mx-auto mb-1.5 text-amber-500" />
-              <div className="text-xl font-mono font-bold text-zen-700">
-                {userProfile.maxNLevel || '-'}
-              </div>
-              <div className="text-xs text-zen-400 mt-0.5">{t('home.maxLevel')}</div>
-            </div>
-            <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-zen-200/50">
-              <Target className="w-5 h-5 mx-auto mb-1.5 text-sage-500" />
-              <div className="text-xl font-mono font-bold text-zen-700">
-                {userProfile.totalScore.toLocaleString()}
-              </div>
-              <div className="text-xs text-zen-400 mt-0.5">{t('home.totalScore')}</div>
-            </div>
-            <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-zen-200/50">
-              <Flame className="w-5 h-5 mx-auto mb-1.5 text-orange-500" />
-              <div className="text-xl font-mono font-bold text-zen-700">
-                {userProfile.checkIn.consecutiveDays}
-              </div>
-              <div className="text-xs text-zen-400 mt-0.5">{t('home.streakDays')}</div>
-            </div>
-            <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-zen-200/50">
-              <Coins className="w-5 h-5 mx-auto mb-1.5 text-amber-600" />
-              <div className="text-xl font-mono font-bold text-zen-700">
-                {(userProfile.brainCoins ?? 0).toLocaleString()}
-              </div>
-              <div className="text-xs text-zen-400 mt-0.5">{t('profile.brainPoints')}</div>
-            </div>
-          </div>
-
-          {/* Brain Radar Chart */}
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-zen-200/50">
-            <h2 className="text-sm font-medium text-zen-600 mb-2 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              {t('profile.brainRadar')}
-            </h2>
-            {!hasRealData && (
-              <p className="text-xs text-zen-400 mb-2 italic">
-                {t('profile.startFirst')}
-              </p>
-            )}
-            <RadarChartWidget stats={userProfile.brainStats} />
-          </div>
-
-          {/* Activity Heatmap (365 days) */}
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-zen-200/50">
-            <h2 className="text-sm font-medium text-zen-600 mb-3">
-              {t('profile.activityHeatmap')}
-            </h2>
-            <ActivityHeatmap data={heatmapData} />
-          </div>
-
-          {/* History with Pagination */}
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-zen-200/50">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-medium text-zen-600">
-                {t('profile.history')}
-              </h2>
-              {sortedHistory.length > 0 && (
-                <div className="text-xs text-zen-400">
-                  {t('common.total')} {sortedHistory.length}
-                </div>
-              )}
-            </div>
-
-            {sortedHistory.length === 0 ? (
-              <div className="text-center py-8 text-zen-400">
-                <p className="text-sm">{t('profile.noHistory')}</p>
-                <p className="text-xs mt-1">{t('profile.startFirst')}</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  {currentSessions.map((session, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 rounded-lg bg-zen-50 border border-zen-100 text-sm"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-base">{modeEmoji[session.mode || 'numeric']}</span>
-                        <div>
-                          <span className="font-mono text-zen-700 font-medium">
-                            {session.nLevel}-Back
-                          </span>
-                          <span className="text-xs text-zen-400 ml-1.5">
-                            {modeLabels[session.mode || 'numeric']}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`font-medium ${
-                            session.accuracy >= 80
-                              ? 'text-green-600'
-                              : session.accuracy >= 50
-                              ? 'text-amber-500'
-                              : 'text-red-500'
-                          }`}
-                        >
-                          {session.accuracy}%
-                        </span>
-                        <span className="text-xs text-zen-400">+{session.score}</span>
-                        <span className="text-xs text-zen-300">
-                          {new Date(session.timestamp).toLocaleDateString()}
-                        </span>
-                      </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="space-y-2">
+              {currentSessions.map((session, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-3 rounded-lg bg-zen-50 border border-zen-100 text-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-base">{modeEmoji[session.mode || 'numeric']}</span>
+                    <div>
+                      <span className="font-mono text-zen-700 font-medium">
+                        {session.nLevel}-Back
+                      </span>
+                      <span className="text-xs text-zen-400 ml-1.5">
+                        {modeLabels[session.mode || 'numeric']}
+                      </span>
                     </div>
-                  ))}
-                </div>
-
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-4 pt-2">
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="p-1 rounded-md text-zen-500 hover:bg-zen-100 disabled:opacity-30 disabled:hover:bg-transparent"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <span className="text-xs text-zen-500 font-medium">
-                      {currentPage} / {totalPages}
-                    </span>
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="p-1 rounded-md text-zen-500 hover:bg-zen-100 disabled:opacity-30 disabled:hover:bg-transparent"
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
                   </div>
-                )}
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`font-medium ${
+                        session.accuracy >= 80
+                          ? 'text-green-600'
+                          : session.accuracy >= 50
+                          ? 'text-amber-500'
+                          : 'text-red-500'
+                      }`}
+                    >
+                      {session.accuracy}%
+                    </span>
+                    <span className="text-xs text-zen-400">+{session.score}</span>
+                    <span className="text-xs text-zen-300">
+                      {new Date(session.timestamp).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-4 pt-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="p-1 rounded-md text-zen-500 hover:bg-zen-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <span className="text-xs text-zen-500 font-medium">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="p-1 rounded-md text-zen-500 hover:bg-zen-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
             )}
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }

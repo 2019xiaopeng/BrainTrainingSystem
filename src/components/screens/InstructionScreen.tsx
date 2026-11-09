@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Card } from '../ui/Card';
 import { BRAIN_RANK_LEVELS } from '../../types/game';
-import { Brain, HelpCircle, Award, BarChart3, Zap, Target, Flame, Eye, Database, Timer } from 'lucide-react';
+import { Brain, HelpCircle, Award, BarChart3, Zap, Target, Eye, Database, Timer } from 'lucide-react';
 
 /**
  * InstructionScreen — 帮助与说明页面
@@ -176,20 +176,6 @@ export function InstructionScreen() {
               </div>
             </div>
           ))}
-        </div>
-      </Card>
-
-      {/* Section 4: Energy System */}
-      <Card>
-        <h2 className="text-lg font-medium text-zen-700 flex items-center gap-2 mb-4">
-          <Flame className="w-5 h-5 text-orange-500" />
-          {t('instruction.energy.title')}
-        </h2>
-
-        <div className="space-y-2 text-sm text-zen-500">
-          <p>{t('instruction.energy.desc1')}</p>
-          <p>{t('instruction.energy.desc2')}</p>
-          <p>{t('instruction.energy.desc3')}</p>
         </div>
       </Card>
     </div>

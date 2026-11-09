@@ -222,11 +222,12 @@
   "settings": {
     "tabs": {
       "profile": "Profile",
-      "security": "Security",
-      "accounts": "Accounts",
-      "notifications": "Notifications",
       "help": "Help"
     },
+    "localDataCount": "Local data · {{count}} sessions",
+    "resetData": "Clear local data",
+    "resetDataHint": "Deletes training history, scores and configs saved in this browser. Cannot be undone.",
+    "resetDataConfirm": "Confirm",
     "accounts": {
       "hint": "Linking helps sign-in and account recovery",
       "loginRequired": "Sign in to link accounts"
