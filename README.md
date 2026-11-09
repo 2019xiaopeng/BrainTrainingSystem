@@ -1,89 +1,66 @@
-# Brain Flow - 脑力心流
+# Brain Flow — 脑力心流
 
-一个极简风格的 N-Back 脑力训练游戏（Vite + React），并内置 better-auth 认证服务（同仓 `/api/*`，可直接部署到 Vercel）。
+一个极简风格的 N-Back 脑力训练小游戏（Vite + React + TypeScript），**游客即玩、无后端、纯静态部署**。
 
-## 功能概览
+> 2026-11 起项目转向出海小游戏矩阵路线：砍掉账号/体力/商城/战役等系统，专注做更多 2-5 分钟的脑力小游戏。
+> 背景与计划见 [docs/pivot-roadmap-2026-11.md](docs/pivot-roadmap-2026-11.md)（路线图）与 [docs/code-audit-2026-11-09.md](docs/code-audit-2026-11-09.md)（转向前的全仓审计）。
 
-- 训练模式：数字 N-Back / 空间 N-Back / 魔鬼老鼠 / 人来人往
-- 游客模式：可试玩；不产生经验/脑力币/签到/历史；不能改参数与购买
-- 登录后：解锁参数编辑、签到、商城等（当前业务数据仍以本地为主）
+## 现有游戏
+
+| 模式 | 说明 |
+|---|---|
+| 🔢 数字心流 | 延迟回忆算术答案（N-Back 魔鬼计算） |
+| 🎯 空间心流 | 网格位置 N-Back（3×3 / 4×4 / 5×5） |
+| 🐭 魔鬼老鼠 | 老鼠路径追踪 + 推挤位移记忆 |
+| 🏠 人来人往 | 动态进出人数心算 |
+
+所有参数（N 值、轮数、网格、难度、速度）自由调节，无需解锁。
 
 ## 技术栈
 
-- 前端：Vite + React + TypeScript + Tailwind CSS
-- 状态：Zustand（含持久化）
-- 认证：better-auth（前端 client + Vercel Functions）
-- 数据库：Postgres（用于 better-auth 表）
-- ORM/迁移：drizzle-orm + drizzle-kit
-- 部署：Vercel（静态站点 + Functions）
+- **前端**:Vite 7 + React 19 + TypeScript 5.9(strict)
+- **样式**:Tailwind CSS 3(zen/sage 主题色板)
+- **状态**:Zustand 5 + persist(localStorage `brain-flow-storage`,仅本地游客数据)
+- **路由**:react-router-dom v7
+- **动画**:Framer Motion 12
+- **图表**:Recharts(六维脑力雷达)
+- **国际化**:i18next(zh/en)
+- **部署**:Vercel 纯静态(见 `vercel.json` 的 SPA rewrite)
 
-## 快速开始（本地）
-
-1) 安装依赖：
+## 快速开始
 
 ```bash
 npm install
+npm run dev      # 本地开发
+npm run build    # tsc 类型检查 + 生产构建
+npm run preview  # 预览生产构建
+npm run lint     # ESLint
 ```
 
-2) 配置环境变量：复制 `env.example` 为 `.env`，并填写：
+无需任何环境变量或数据库。
 
-- `DATABASE_URL`
-- `BETTER_AUTH_SECRET`
-- `BETTER_AUTH_URL`
-- `NEXT_PUBLIC_BASE_URL`
+## 架构速览
 
-3) 启动认证服务（本地 /api/auth）：
-
-```bash
-npm run dev:auth
+```
+src/
+├── App.tsx                    # 路由:/ /train/:mode /result /profile /rank /settings
+├── store/gameStore.ts         # 唯一 Zustand store:配置 + 本地历史 + 本地档案
+├── types/game.ts              # 全部游戏类型与常量(N-Back/老鼠/人来人往)
+├── hooks/                     # useNBack / useMouseGame / useHouseGame / useSoundEffects
+├── components/
+│   ├── pages/                 # 路由包装(Home/Train/Result)
+│   ├── screens/               # 页面级 UI(Home/Game/MouseGame/HouseGame/Result/Profile/Rank/Settings/Instruction)
+│   ├── game/                  # 游戏内组件(StimulusCard/NumericKeypad/AnswerCountdown/StatusBar)
+│   ├── profile/               # BrainRankCard / RadarChartWidget / ActivityHeatmap
+│   └── layout/                # MainLayout 三栏 + Sidebar/RightPanel/MobileNav
+└── lib/                       # cn 工具 / heatmap 聚合
 ```
 
-4) 启动前端：
+**数据模型**:`userProfile`(总分/XP/最高N/连续天数/六维脑力/里程碑)全部由本地 `sessionHistory` 驱动,存在浏览器 localStorage。无服务端。
 
-```bash
-npm run dev
-```
+## 开发约定
 
-默认：
-
-- 前端：http://localhost:5173
-- Auth 服务：http://localhost:3000
-- Vite 会将 `/api/auth/*` 代理到 3000（见 `vite.config.ts`）
-
-## 数据库初始化（仅第一次）
-
-better-auth 需要创建 `user/session/account/verification` 等表：
-
-```bash
-npm run db:push
-```
-
-## 部署到 Vercel（单仓）
-
-本项目可直接一个 Vercel 项目部署：
-
-- 前端 build 输出：`dist/`
-- Functions：`/api/*`
-- 路由与 SPA fallback：`vercel.json`
-
-在 Vercel 项目中配置环境变量（生产）：
-
-- `DATABASE_URL`
-- `BETTER_AUTH_SECRET`
-- `BETTER_AUTH_URL`（例：`https://your-app.vercel.app`，不要带 `/api/auth`）
-- `NEXT_PUBLIC_BASE_URL`（同上）
-
-可选（Google 登录）：
-
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
-
-## 文档
-
-- 技术文档：`docs/TECH.md`
-- 文件树速览：`docs/TREE.md`
-
-## 常见排错
-
-- 白屏 `Invalid base URL: /api/auth`：不要把 `VITE_AUTH_BASE_URL` 配成相对路径；删掉该变量即可使用同域默认 `/api/auth`。
-- `db:push` drizzle-kit 报 replace undefined：优先升级 `drizzle-kit` 后重试。
+- React 函数组件 + Hooks;严格 TS,禁止 `any`
+- 组件放 `components/`,游戏逻辑放 `hooks/`,类型集中 `types/game.ts`
+- PascalCase 组件名,camelCase 变量;提交信息遵循 conventional commits
+- 新游戏接入:在 `types/game.ts` 定义配置 → `hooks/` 写引擎 → `components/screens/` 写界面 → HomeScreen 加模式入口
