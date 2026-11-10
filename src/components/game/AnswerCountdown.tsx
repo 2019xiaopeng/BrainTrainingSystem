@@ -77,7 +77,7 @@ export function AnswerCountdown({ duration, roundIndex, isPaused }: AnswerCountd
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
-          className="transition-all duration-100"
+          className="transition-colors duration-300"
         />
       </svg>
       {/* 中心显示剩余秒数 */}

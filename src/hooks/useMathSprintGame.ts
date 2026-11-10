@@ -114,6 +114,8 @@ export function useMathSprintGame() {
   const durationSecRef = useRef(60);
   const tickCancelRef = useRef<(() => void) | null>(null);
   const flashCancelRef = useRef<(() => void) | null>(null);
+  const lastTickAtRef = useRef(0);
+  const visCleanupRef = useRef<(() => void) | null>(null);
 
   const { playClick, playWrong, playFinish, playRecord } = useSoundEffects();
 
@@ -133,6 +135,8 @@ export function useMathSprintGame() {
   const finish = useCallback(() => {
     tickCancelRef.current?.();
     flashCancelRef.current?.();
+    visCleanupRef.current?.();
+    visCleanupRef.current = null;
 
     const results = resultsRef.current;
     const attemptCount = results.length;
@@ -210,20 +214,44 @@ export function useMathSprintGame() {
     nextQuestion();
     go('playing');
 
-    // Countdown loop: each tick burns TICK_MS of *visible* time only
-    // (scheduleVisible never fires while the tab is hidden).
+    // Countdown: delta-based ticks via scheduleVisible + a visibilitychange
+    // handler, so only VISIBLE wall time is consumed. A fixed per-tick burn
+    // would hand the player extra time whenever the browser throttles timers
+    // (backgrounded-but-visible windows); a bare delta would charge hidden time.
+    visCleanupRef.current?.();
+    lastTickAtRef.current = performance.now();
     const tick = () => {
       if (phaseRef.current !== 'playing') return;
-      remainingRef.current = Math.max(0, remainingRef.current - TICK_MS);
+      const now = performance.now();
+      remainingRef.current = Math.max(0, remainingRef.current - (now - lastTickAtRef.current));
+      lastTickAtRef.current = now;
       setTimeLeftMs(remainingRef.current);
       if (remainingRef.current <= 0) {
         finish();
+        return;
+      }
+      tickCancelRef.current?.();
+      tickCancelRef.current = scheduleVisible(tick, TICK_MS);
+    };
+    const onVisibility = () => {
+      const now = performance.now();
+      if (document.hidden) {
+        // Consume only the visible portion, then freeze the clock
+        remainingRef.current = Math.max(0, remainingRef.current - (now - lastTickAtRef.current));
+        lastTickAtRef.current = now;
+        setTimeLeftMs(remainingRef.current);
+        tickCancelRef.current?.();
+        tickCancelRef.current = null;
       } else {
+        lastTickAtRef.current = now;
         tickCancelRef.current?.();
         tickCancelRef.current = scheduleVisible(tick, TICK_MS);
       }
     };
-    tick();
+    tickCancelRef.current?.();
+    tickCancelRef.current = scheduleVisible(tick, TICK_MS);
+    document.addEventListener('visibilitychange', onVisibility);
+    visCleanupRef.current = () => document.removeEventListener('visibilitychange', onVisibility);
   }, [finish, go, nextQuestion]);
 
   const retry = useCallback(() => startGame(durationSecRef.current), [startGame]);
@@ -266,11 +294,12 @@ export function useMathSprintGame() {
     }
   }, [input, question, nextQuestion, playClick, playWrong]);
 
-  // Never fire timers after the screen unmounts
+  // Never fire timers or keep listeners after the screen unmounts
   useEffect(
     () => () => {
       tickCancelRef.current?.();
       flashCancelRef.current?.();
+      visCleanupRef.current?.();
     },
     [],
   );

@@ -189,13 +189,13 @@ export function HouseGameScreen({ engine, onQuit }: HouseGameScreenProps) {
   useEffect(() => {
     if (engine.phase !== 'showing') return;
 
-    const t1 = setTimeout(() => setScene('houseDrop'), PEEK_MS);
+    const cancel1 = scheduleVisible(() => setScene('houseDrop'), PEEK_MS);
     const cancel2 = scheduleVisible(() => {
       setScene('covered');
       engineRef.current.startEvents();
     }, PEEK_MS + HOUSE_DROP_MS);
 
-    return () => { clearTimeout(t1); cancel2(); };
+    return () => { cancel1(); cancel2(); };
   }, [engine.phase, engine.currentRound]);
 
   // ── Phase: events → create movers + schedule advancement ───────

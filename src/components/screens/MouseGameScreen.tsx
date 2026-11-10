@@ -539,7 +539,7 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
       {/* 阶段指示器 */}
       <div className="text-center py-1">
         <AnimatePresence mode="wait">
-          <motion.div key={`${phase}-${currentRound}-${currentPushIndex}`}
+          <motion.div key={`${phase}-${currentRound}`}
             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }} className="text-xl font-medium text-zen-700">
             {phaseText}
