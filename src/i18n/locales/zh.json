@@ -81,9 +81,7 @@
       "wrong": "记错了",
       "gameOver": "最终数字长度",
       "again": "再挑战"
-    }
-  },
-  "game": {
+    },
     "quit": "← 退出",
     "resume": "▶ 继续",
     "pause": "⏸ 暂停",

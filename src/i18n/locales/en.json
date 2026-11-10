@@ -81,9 +81,7 @@
       "wrong": "Wrong",
       "gameOver": "Final digit length",
       "again": "Try Again"
-    }
-  },
-  "game": {
+    },
     "quit": "← Quit",
     "resume": "▶ Resume",
     "pause": "⏸ Pause",
