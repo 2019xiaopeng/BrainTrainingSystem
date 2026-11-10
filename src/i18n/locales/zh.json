@@ -54,7 +54,19 @@
     "numberMemory": "数字记忆",
     "numberMemoryDesc": "记住变长的数字串",
     "numberMemoryHelp": "记住显示的数字串并输入。每记对一次长度加一，直到记错为止。",
-    "startNumberMemory": "开始 数字记忆"
+    "startNumberMemory": "开始 数字记忆",
+    "sequence": "顺序记忆",
+    "sequenceDesc": "复现格子亮起顺序",
+    "sequenceHelp": "方格会按顺序依次亮起，记住顺序并按同样顺序点击。每记对一次长度加一，直到记错为止。",
+    "startSequence": "开始 顺序记忆",
+    "stroop": "色词冲突",
+    "stroopDesc": "60 秒选出文字颜色",
+    "stroopHelp": "屏幕显示颜色词，但字的颜色与词义不同。请忽略词义，选出文字的印刷颜色。60 秒内答对越多越好，答错扣分。",
+    "startStroop": "开始 色词冲突",
+    "mathSprint": "口算冲刺",
+    "mathSprintDesc": "60 秒限时口算",
+    "mathSprintHelp": "60 秒内连续答题，答对自动下一题，难度逐渐上升。答对越多得分越高。",
+    "startMathSprint": "开始 口算冲刺"
   },
   "game": {
     "comingSoon": "该游戏开发中，即将上线",
@@ -81,6 +93,36 @@
       "wrong": "记错了",
       "gameOver": "最终数字长度",
       "again": "再挑战"
+    },
+    "sequence": {
+      "title": "顺序记忆",
+      "personalBest": "个人最佳",
+      "level": "序列长度",
+      "watch": "记住亮起的顺序",
+      "repeat": "按顺序点击",
+      "correct": "正确！长度 +1",
+      "wrong": "顺序错了",
+      "gameOver": "最终序列长度",
+      "again": "再挑战"
+    },
+    "stroop": {
+      "title": "色词冲突",
+      "personalBest": "个人最佳",
+      "score": "得分",
+      "timeLeft": "剩余时间",
+      "prompt": "选出文字的印刷颜色",
+      "correct": "答对",
+      "wrong": "答错",
+      "finished": "时间到！",
+      "again": "再来一次"
+    },
+    "mathSprint": {
+      "title": "口算冲刺",
+      "personalBest": "个人最佳",
+      "solved": "答对题数",
+      "timeLeft": "剩余时间",
+      "finished": "时间到！",
+      "again": "再来一次"
     },
     "quit": "← 退出",
     "resume": "▶ 继续",

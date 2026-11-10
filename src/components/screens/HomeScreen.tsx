@@ -86,8 +86,14 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
       onStart(spatialNLevel, spatialRounds, mode, gridSize);
     } else if (mode === 'reaction') {
       onStart(1, gameConfigs.reaction.trials, mode, 0);
+    } else if (mode === 'numberMemory') {
+      onStart(1, gameConfigs.numberMemory.startDigits, mode, 0);
+    } else if (mode === 'sequence') {
+      onStart(1, 1, mode, gameConfigs.sequence.gridSize);
+    } else if (mode === 'stroop') {
+      onStart(1, gameConfigs.stroop.durationSec, mode, 0);
     } else {
-      onStart(1, gameConfigs.numberMemory.startDigits, 'numberMemory', 0);
+      onStart(1, gameConfigs.mathSprint.durationSec, 'mathSprint', 0);
     }
   };
 
@@ -205,6 +211,45 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
             <div className="text-2xl mb-1">🧠</div>
             <div className="font-medium text-zen-700 text-sm">{t('home.numberMemory')}</div>
             <div className="text-xs text-zen-400 mt-1">{t('home.numberMemoryDesc')}</div>
+          </button>
+
+          <button
+            onClick={() => setModeLocal('sequence')}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              mode === 'sequence'
+                ? 'border-cyan-500 bg-cyan-50'
+                : 'border-zen-200 bg-white hover:border-cyan-300'
+            }`}
+          >
+            <div className="text-2xl mb-1">🧩</div>
+            <div className="font-medium text-zen-700 text-sm">{t('home.sequence')}</div>
+            <div className="text-xs text-zen-400 mt-1">{t('home.sequenceDesc')}</div>
+          </button>
+
+          <button
+            onClick={() => setModeLocal('stroop')}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              mode === 'stroop'
+                ? 'border-pink-400 bg-pink-50'
+                : 'border-zen-200 bg-white hover:border-pink-300'
+            }`}
+          >
+            <div className="text-2xl mb-1">🎨</div>
+            <div className="font-medium text-zen-700 text-sm">{t('home.stroop')}</div>
+            <div className="text-xs text-zen-400 mt-1">{t('home.stroopDesc')}</div>
+          </button>
+
+          <button
+            onClick={() => setModeLocal('mathSprint')}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              mode === 'mathSprint'
+                ? 'border-lime-500 bg-lime-50'
+                : 'border-zen-200 bg-white hover:border-lime-300'
+            }`}
+          >
+            <div className="text-2xl mb-1">🧮</div>
+            <div className="font-medium text-zen-700 text-sm">{t('home.mathSprint')}</div>
+            <div className="text-xs text-zen-400 mt-1">{t('home.mathSprintDesc')}</div>
           </button>
         </div>
       </div>
@@ -521,7 +566,13 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
                 })
               : mode === 'reaction'
               ? t('home.reactionHelp')
-              : t('home.numberMemoryHelp')
+              : mode === 'numberMemory'
+              ? t('home.numberMemoryHelp')
+              : mode === 'sequence'
+              ? t('home.sequenceHelp')
+              : mode === 'stroop'
+              ? t('home.stroopHelp')
+              : t('home.mathSprintHelp')
             }
           </p>
         </div>
@@ -543,6 +594,12 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
           ? t('home.startReaction')
           : mode === 'numberMemory'
           ? t('home.startNumberMemory')
+          : mode === 'sequence'
+          ? t('home.startSequence')
+          : mode === 'stroop'
+          ? t('home.startStroop')
+          : mode === 'mathSprint'
+          ? t('home.startMathSprint')
           : t('home.startNBack', {
               n: mode === 'numeric' ? numericNLevel : spatialNLevel,
               mode: mode === 'numeric' ? t('home.numeric') : t('home.spatial'),

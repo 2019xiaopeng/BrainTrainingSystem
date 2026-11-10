@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useNBack } from '../../hooks/useNBack';
 import { useMouseGame } from '../../hooks/useMouseGame';
 import { useHouseGame } from '../../hooks/useHouseGame';
@@ -19,6 +20,7 @@ import type { GameMode, HouseSpeed } from '../../types/game';
 export function TrainPage() {
   const { mode } = useParams<{ mode: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   // 逐字段订阅：避免整个 store 的任何变化都触发重渲染（会放大子组件的 effect 问题）
   const nextConfig = useGameStore((s) => s.nextConfig);
   const saveSession = useGameStore((s) => s.saveSession);
@@ -33,7 +35,11 @@ export function TrainPage() {
   const isHouseMode = gameMode === 'house';
   const isReactionMode = gameMode === 'reaction';
   const isNumberMemoryMode = gameMode === 'numberMemory';
-  const isArcadeStub = isReactionMode || isNumberMemoryMode;
+  const isSequenceMode = gameMode === 'sequence';
+  const isStroopMode = gameMode === 'stroop';
+  const isMathMode = gameMode === 'mathSprint';
+  const isArcadeStub =
+    isReactionMode || isNumberMemoryMode || isSequenceMode || isStroopMode || isMathMode;
 
   // 自动启动游戏（仅首次mount）
   useEffect(() => {
@@ -97,6 +103,19 @@ export function TrainPage() {
     return <NumberMemoryGameScreen />;
   }
 
+  // 街机第二批占位（引擎接入后由各自分支替换各自块）
+  if (isSequenceMode) {
+    return <ArcadeComingSoon emoji="🧩" title={t('home.sequence')} onBack={() => navigate('/', { replace: true })} />;
+  }
+
+  if (isStroopMode) {
+    return <ArcadeComingSoon emoji="🎨" title={t('home.stroop')} onBack={() => navigate('/', { replace: true })} />;
+  }
+
+  if (isMathMode) {
+    return <ArcadeComingSoon emoji="🧮" title={t('home.mathSprint')} onBack={() => navigate('/', { replace: true })} />;
+  }
+
   if (isHouseMode) {
     if (houseEngine.phase === 'idle' || houseEngine.phase === 'finished') return null;
     return (
@@ -120,6 +139,23 @@ export function TrainPage() {
     <StageFrame ratio="4 / 3">
       <GameScreen engine={nbackEngine} onQuit={handleQuit} />
     </StageFrame>
+  );
+}
+
+function ArcadeComingSoon({ emoji, title, onBack }: { emoji: string; title: string; onBack: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="pt-16 pb-8 text-center space-y-5 animate-fade-in">
+      <div className="text-5xl">{emoji}</div>
+      <h1 className="text-2xl font-light text-zen-700">{title}</h1>
+      <p className="text-sm text-zen-400">{t('game.comingSoon')}</p>
+      <button
+        onClick={onBack}
+        className="px-6 py-3 rounded-xl bg-zen-100 text-zen-600 hover:bg-zen-200 transition-all"
+      >
+        {t('result.backHome')}
+      </button>
+    </div>
   );
 }
 

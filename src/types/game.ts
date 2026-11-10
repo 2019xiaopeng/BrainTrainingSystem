@@ -6,7 +6,7 @@
 export type GamePhase = 'idle' | 'playing' | 'waitingToAnswer' | 'answering' | 'paused' | 'finished';
 
 /** Game mode types */
-export type GameMode = 'numeric' | 'spatial' | 'mouse' | 'house' | 'reaction' | 'numberMemory';
+export type GameMode = 'numeric' | 'spatial' | 'mouse' | 'house' | 'reaction' | 'numberMemory' | 'sequence' | 'stroop' | 'mathSprint';
 
 /** The type of stimulus shown to the player (deprecated, kept for compatibility) */
 export type StimulusType = 'number' | 'position' | 'word';
@@ -186,6 +186,15 @@ export interface GameConfigs {
   };
   numberMemory: {
     startDigits: number;
+  };
+  sequence: {
+    gridSize: number;
+  };
+  stroop: {
+    durationSec: number;
+  };
+  mathSprint: {
+    durationSec: number;
   };
 }
 

@@ -43,6 +43,7 @@ export function ProfileScreen() {
   // Mode label mapping
   const modeEmoji: Record<string, string> = {
     numeric: '🔢', spatial: '🎯', mouse: '🐭', house: '🏠', reaction: '⚡', numberMemory: '🧠',
+    sequence: '🧩', stroop: '🎨', mathSprint: '🧮',
   };
   const modeLabels: Record<string, string> = {
     numeric: t('home.numeric'),
@@ -51,6 +52,9 @@ export function ProfileScreen() {
     house: t('home.house'),
     reaction: t('home.reaction'),
     numberMemory: t('home.numberMemory'),
+    sequence: t('home.sequence'),
+    stroop: t('home.stroop'),
+    mathSprint: t('home.mathSprint'),
   };
 
   return (

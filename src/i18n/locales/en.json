@@ -54,7 +54,19 @@
     "numberMemory": "Number Memory",
     "numberMemoryDesc": "Recall growing digit strings",
     "numberMemoryHelp": "Memorize the digits shown and type them back. Each success adds one digit, until you miss.",
-    "startNumberMemory": "Start Number Memory"
+    "startNumberMemory": "Start Number Memory",
+    "sequence": "Sequence Memory",
+    "sequenceDesc": "Repeat the flashing order",
+    "sequenceHelp": "Tiles light up one by one. Remember the order and click them back in the same sequence. Each success adds one step, until you miss.",
+    "startSequence": "Start Sequence Memory",
+    "stroop": "Stroop Test",
+    "stroopDesc": "Pick the ink color in 60s",
+    "stroopHelp": "A color word appears, printed in a different color. Ignore the word's meaning and pick the ink color. As many correct picks as possible in 60 seconds — wrong picks lose points.",
+    "startStroop": "Start Stroop Test",
+    "mathSprint": "Math Sprint",
+    "mathSprintDesc": "60-second mental math",
+    "mathSprintHelp": "Answer as many problems as you can in 60 seconds. Correct answers auto-advance and the difficulty ramps up.",
+    "startMathSprint": "Start Math Sprint"
   },
   "game": {
     "comingSoon": "This game is coming soon",
@@ -80,6 +92,36 @@
       "correct": "Correct! +1 digit",
       "wrong": "Wrong",
       "gameOver": "Final digit length",
+      "again": "Try Again"
+    },
+    "sequence": {
+      "title": "Sequence Memory",
+      "personalBest": "Personal Best",
+      "level": "Sequence Length",
+      "watch": "Watch the flashing order",
+      "repeat": "Click them in order",
+      "correct": "Correct! +1 step",
+      "wrong": "Wrong order",
+      "gameOver": "Final sequence length",
+      "again": "Try Again"
+    },
+    "stroop": {
+      "title": "Stroop Test",
+      "personalBest": "Personal Best",
+      "score": "Score",
+      "timeLeft": "Time Left",
+      "prompt": "Pick the INK color of the word",
+      "correct": "Correct",
+      "wrong": "Wrong",
+      "finished": "Time's up!",
+      "again": "Try Again"
+    },
+    "mathSprint": {
+      "title": "Math Sprint",
+      "personalBest": "Personal Best",
+      "solved": "Solved",
+      "timeLeft": "Time Left",
+      "finished": "Time's up!",
       "again": "Try Again"
     },
     "quit": "← Quit",

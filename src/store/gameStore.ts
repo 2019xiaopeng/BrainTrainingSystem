@@ -57,6 +57,9 @@ const defaultGameConfigs = (): GameConfigs => ({
   house: { initialPeople: 3, eventCount: 6, speed: 'easy', rounds: 3 },
   reaction: { trials: 5 },
   numberMemory: { startDigits: 3 },
+  sequence: { gridSize: 3 },
+  stroop: { durationSec: 60 },
+  mathSprint: { durationSec: 60 },
 });
 
 // Score formula: (accuracy * nLevel * totalRounds) / 10

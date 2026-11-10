@@ -61,6 +61,18 @@ export function HomePage() {
         updateGameConfig('numberMemory', { startDigits: rounds });
       }
 
+      if (mode === 'sequence') {
+        updateGameConfig('sequence', { gridSize });
+      }
+
+      if (mode === 'stroop') {
+        updateGameConfig('stroop', { durationSec: rounds });
+      }
+
+      if (mode === 'mathSprint') {
+        updateGameConfig('mathSprint', { durationSec: rounds });
+      }
+
       setNextConfig({ nLevel, totalRounds: rounds, mode, gridSize });
       navigate(`/train/${mode}`);
     },

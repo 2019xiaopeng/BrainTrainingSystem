@@ -23,6 +23,9 @@ export function RightPanel() {
     house: '🏠',
     reaction: '⚡',
     numberMemory: '🧠',
+    sequence: '🧩',
+    stroop: '🎨',
+    mathSprint: '🧮',
   };
 
   const modeLabels: Record<string, string> = {
@@ -32,6 +35,9 @@ export function RightPanel() {
     house: t('home.house'),
     reaction: t('home.reaction'),
     numberMemory: t('home.numberMemory'),
+    sequence: t('home.sequence'),
+    stroop: t('home.stroop'),
+    mathSprint: t('home.mathSprint'),
   };
 
   return (
