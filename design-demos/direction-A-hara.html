@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brain Flow — Reaction Time Test · Direction A</title>
+<meta name="description" content="A quiet arcade of nine brain games. No signup, plays in your browser. Design draft, direction A — the white gallery.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Hara White Gallery — direction A.
+     White is emptiness; the content is the exhibit.
+     Sage #798C79 is the only hue: marks, seals, the play button, data.
+     #A89D8E is reserved for hairlines (it cannot pass 4.5:1 as text). */
+
+  :root{
+    --paper:   #FCFBF9;
+    --paper-2: #F7F6F4;
+    --ink:     #3A352F;  /* 11.0:1 on paper */
+    --ink-2:   #5C554B;  /*  7.1:1 */
+    --ink-3:   #6E655B;  /*  5.5:1 - smallest labels */
+    --rule:    #E4DFD7;  /* hairline */
+    --rule-2:  #A89D8E;  /* stronger hairline, decoration only */
+    --sage:     #798C79; /* brand hue - marks, seals, borders, graphics */
+    --sage-ink: #5E7261; /* sage for text and data values (5.0:1) */
+    --sage-deep:#556858; /* sage fill on hover; paper text on it is 5.8:1 */
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0 }
+  html{ scroll-behavior:smooth; -webkit-text-size-adjust:100% }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font:400 15.5px/1.65 var(--sans);
+    -webkit-font-smoothing:antialiased;
+    -webkit-tap-highlight-color:transparent;
+  }
+  ::selection{ background:rgba(121,140,121,.20) }
+  a{ color:inherit }
+  :focus-visible{ outline:1.5px solid var(--sage); outline-offset:3px }
+
+  .wrap{
+    max-width:800px;
+    margin-inline:auto;
+    padding-inline:clamp(20px, 6vw, 64px);
+  }
+
+  /* small-caps letter-spaced label — mono, 11px minimum */
+  .label{
+    font-family:var(--mono);
+    font-size:11px;
+    font-weight:500;
+    line-height:1.5;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--ink-3);
+  }
+  .label.sage{ color:var(--sage-ink) }
+
+  .kickrow{ display:flex; align-items:center; gap:16px }
+  .kickrow .line{ flex:1; height:1px; background:var(--rule) }
+
+  h2{
+    font-weight:300;
+    font-size:clamp(26px, 3.4vw, 34px);
+    line-height:1.15;
+    letter-spacing:-0.01em;
+    margin:20px 0 14px;
+  }
+
+  /* ————— top bar ————— */
+  .topbar{
+    display:flex; justify-content:space-between; align-items:baseline; gap:16px;
+    padding:22px clamp(20px, 6vw, 64px);
+    border-bottom:1px solid var(--rule);
+  }
+  .brand{
+    font-family:var(--mono); font-size:12px; font-weight:500;
+    letter-spacing:.22em; text-transform:uppercase; color:var(--ink);
+  }
+  .top-note{
+    font-family:var(--mono); font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ink-3); text-align:right;
+  }
+
+  /* ————— fixed side index ————— */
+  .index{
+    position:fixed;
+    left:clamp(14px, 2.5vw, 36px);
+    top:50%;
+    transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:24px;
+    z-index:10;
+  }
+  .index a{
+    font-family:var(--mono); font-size:11px; letter-spacing:.1em;
+    color:var(--ink-3); text-decoration:none;
+    display:flex; align-items:center; gap:9px;
+    transition:color .35s ease;
+  }
+  .index a::before{
+    content:''; width:14px; height:1px; background:var(--rule-2);
+    transition:width .35s ease, background .35s ease;
+  }
+  .index a:hover{ color:var(--sage-ink) }
+  .index a.active{ color:var(--sage-ink) }
+  .index a.active::before{ width:28px; background:var(--sage) }
+
+  /* ————— 01 · hero ————— */
+  .hero{
+    position:relative;
+    min-height:100vh;
+    min-height:calc(100vh - 66px);
+    min-height:calc(100svh - 66px);
+    display:flex; flex-direction:column; justify-content:center;
+    padding-block:56px 96px;
+  }
+  .seal{ color:var(--sage); display:block; margin-bottom:44px }
+  .hero .kicker{ margin-bottom:18px }
+  h1{
+    font-weight:200;
+    font-size:clamp(38px, 6.4vw, 62px);
+    line-height:1.06;
+    letter-spacing:-0.015em;
+    margin-bottom:14px;
+  }
+  .hook{
+    font-size:17px; line-height:1.6; color:var(--ink-2);
+    max-width:34ch; margin-bottom:44px;
+  }
+  .btn{
+    display:inline-flex; align-items:center; gap:12px;
+    padding:15px 30px;
+    border:1px solid var(--sage);
+    border-radius:999px;
+    font-family:var(--mono); font-size:12px; font-weight:500;
+    letter-spacing:.16em; text-transform:uppercase;
+    color:var(--sage-ink); text-decoration:none;
+    background:transparent;
+    transition:background .35s ease, border-color .35s ease, color .35s ease;
+  }
+  .btn .arr{ font-family:var(--mono); transition:transform .35s ease }
+  .btn:hover{
+    background:var(--sage-deep); border-color:var(--sage-deep); color:var(--paper);
+  }
+  .btn:hover .arr{ transform:translateX(3px) }
+  .meta{
+    margin-top:30px;
+    font-family:var(--mono); font-size:11px; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--ink-3);
+  }
+  .cue{
+    position:absolute; left:50%; bottom:26px; transform:translateX(-50%);
+    font-family:var(--mono); font-size:13px; color:var(--ink-3);
+    text-decoration:none; padding:6px 10px;
+    transition:color .35s ease;
+  }
+  .cue:hover{ color:var(--sage-ink) }
+
+  /* about + faq, still section 01, below the fold */
+  .about{ margin-top:clamp(88px, 13vh, 150px); padding-top:38px; border-top:1px solid var(--rule) }
+  .about p{ max-width:62ch; color:var(--ink-2); margin-top:18px }
+  .faq{ margin-top:clamp(72px, 10vh, 110px) }
+  .faq details{ border-top:1px solid var(--rule) }
+  .faq details:last-child{ border-bottom:1px solid var(--rule) }
+  .faq summary{
+    list-style:none;
+    cursor:pointer;
+    display:flex; justify-content:space-between; align-items:center; gap:18px;
+    padding:19px 2px;
+    font-size:15px; font-weight:500; color:var(--ink);
+    transition:color .3s ease;
+  }
+  .faq summary::-webkit-details-marker{ display:none }
+  .faq summary:hover{ color:var(--sage-ink) }
+  .faq summary:focus-visible{ outline-offset:-2px }
+  .faq .fx{
+    font-family:var(--mono); font-size:15px; color:var(--ink-3);
+    transition:transform .3s ease, color .3s ease;
+  }
+  .faq details[open] .fx{ transform:rotate(45deg); color:var(--sage-ink) }
+  .faq details p{ padding:0 2px 22px; max-width:60ch; font-size:15px; color:var(--ink-2) }
+
+  /* ————— sections ————— */
+  .sec{
+    border-top:1px solid var(--rule);
+    padding-block:clamp(88px, 13vh, 150px);
+    scroll-margin-top:8px;
+  }
+  .lede{ max-width:56ch; color:var(--ink-2); margin-bottom:56px }
+
+  /* ————— 02 · the collection ————— */
+  .exhibit{
+    display:grid;
+    grid-template-columns:56px 40px 1fr 30px;
+    align-items:center;
+    column-gap:18px;
+    padding:21px 2px;
+    border-top:1px solid var(--rule);
+    text-decoration:none;
+  }
+  .exhibits{ margin-top:8px }
+  .exhibits .exhibit:last-child{ border-bottom:1px solid var(--rule) }
+  .ex-no{
+    font-family:var(--mono); font-size:12px; color:var(--ink-3);
+    transition:color .35s ease;
+  }
+  .ex-mark{ color:var(--sage); display:block }
+  .ex-name{
+    font-size:16px; font-weight:500; line-height:1.35; color:var(--ink);
+    border-bottom:1px solid transparent;
+    padding-bottom:2px;
+    transition:border-color .35s ease;
+  }
+  .ex-hook{ display:block; margin-top:3px; font-size:14px; line-height:1.5; color:var(--ink-2) }
+  .ex-go{
+    justify-self:end;
+    font-family:var(--mono); font-size:14px; color:var(--sage-ink);
+    opacity:0; transform:translateX(-6px);
+    transition:opacity .35s ease, transform .35s ease;
+  }
+  .exhibit:hover .ex-name{ border-bottom-color:var(--rule-2) }  /* the whisper underline */
+  .exhibit:hover .ex-no{ color:var(--sage-ink) }
+  .exhibit:hover .ex-go{ opacity:1; transform:none }
+  .exhibit:focus-visible{ outline-offset:-2px }
+
+  /* ————— 03 · the report ————— */
+  .report-meta{
+    margin-top:4px;
+    font-family:var(--mono); font-size:11px; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--ink-3);
+  }
+  .scoreblock{ margin-top:52px }
+  .score{
+    margin-top:10px;
+    font-family:var(--mono); font-weight:500;
+    font-size:clamp(76px, 15vw, 126px);
+    line-height:1;
+    letter-spacing:-0.04em;
+    color:var(--sage-ink);
+  }
+  .score .unit{
+    font-size:.22em; font-weight:400; letter-spacing:.06em;
+    color:var(--ink-3); margin-left:.4em;
+  }
+  .cmp{ margin-top:52px; max-width:520px }
+  .cmp-row{
+    display:grid;
+    grid-template-columns:104px 96px 1fr;
+    align-items:baseline;
+    column-gap:16px;
+    padding:13px 2px;
+    border-top:1px solid var(--rule);
+  }
+  .cmp-row:last-child{ border-bottom:1px solid var(--rule) }
+  .cmp-val{ font-family:var(--mono); font-size:15px; font-weight:500; color:var(--sage-ink) }
+  .cmp-desc{ font-size:14px; color:var(--ink-2) }
+  .footnote{
+    margin-top:22px; max-width:66ch;
+    font-size:14px; line-height:1.6; color:var(--ink-3);
+  }
+  .spark{ margin-top:64px }
+  .spark-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    gap:16px; flex-wrap:wrap; margin-bottom:18px;
+  }
+  .spark-head .m{
+    font-family:var(--mono); font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ink-3);
+  }
+  .spark svg{ display:block; width:100%; max-width:420px; height:auto }
+  .actions{ margin-top:72px; display:flex; gap:44px; flex-wrap:wrap }
+  .tlink{
+    font-size:15px; font-weight:500; color:var(--ink); text-decoration:none;
+    border-bottom:1px solid var(--rule-2); padding-bottom:3px;
+    transition:color .3s ease, border-color .3s ease;
+  }
+  .tlink .arr{ font-family:var(--mono); color:var(--sage-ink); margin-left:7px }
+  .tlink:hover{ color:var(--sage-ink); border-bottom-color:var(--sage) }
+
+  /* ————— footer ————— */
+  footer{ border-top:1px solid var(--rule); padding:38px 0 46px }
+  .foot{
+    display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    font-family:var(--mono); font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ink-3); line-height:1.9;
+  }
+
+  /* ————— responsive ————— */
+  @media (max-width:979px){
+    .index{ display:none }
+  }
+  @media (max-width:600px){
+    body{ font-size:15px }
+    .hero{ padding-top:40px }
+    .seal{ margin-bottom:36px }
+    .exhibit{ grid-template-columns:30px 1fr 22px; column-gap:14px; padding:17px 2px }
+    .ex-no{ display:none }
+    .cmp-row{ grid-template-columns:92px 1fr }
+    .cmp-desc{ grid-column:1 / -1; margin-top:2px }
+    .score{ margin-top:14px }
+    .actions{ gap:30px }
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto }
+    *{ transition-duration:.01ms !important }
+  }
+</style>
+</head>
+<body>
+
+<nav class="index" aria-label="Section index">
+  <a href="#test" aria-label="01 — the test">01</a>
+  <a href="#collection" aria-label="02 — the collection">02</a>
+  <a href="#report" aria-label="03 — the report">03</a>
+</nav>
+
+<header class="topbar">
+  <span class="brand">Brain Flow</span>
+  <span class="top-note">Direction A — the white gallery</span>
+</header>
+
+<main>
+
+<!-- ————— 01 · the test ————— -->
+<section class="hero" id="test">
+  <div class="wrap">
+    <svg class="seal" width="84" height="84" viewBox="0 0 96 96" aria-hidden="true" focusable="false">
+      <circle cx="48" cy="48" r="45" fill="none" stroke="currentColor" stroke-width="1.2"
+              stroke-linecap="round" stroke-dasharray="256 27" transform="rotate(-72 48 48)"/>
+    </svg>
+
+    <p class="label kicker">01 · The test — exhibit 1 of 9</p>
+    <h1>Reaction Time Test</h1>
+    <p class="hook">How fast are your reflexes?</p>
+
+    <a class="btn" href="#report">Play the test <span class="arr" aria-hidden="true">&#8594;</span></a>
+
+    <p class="meta">9 games &middot; no signup &middot; in your browser</p>
+  </div>
+
+  <a class="cue" href="#about" aria-label="Scroll to about the test">&#8595;</a>
+
+  <div class="wrap about" id="about">
+    <div class="kickrow"><span class="label">About the test</span><span class="line" aria-hidden="true"></span></div>
+    <h2>About the test</h2>
+    <p>The screen holds still, then changes colour. Click — or tap — the moment it does. Five rounds; your median time is the score. There is nothing to install and nothing to sign up for: the whole test runs in this browser tab, and the result stays on your device.</p>
+    <p>Reaction time depends on your equipment as much as on your nervous system. A mouse click is typically faster than a trackpad click, and both are faster than a touch tap. Treat the number as a reading, not a verdict.</p>
+
+    <div class="faq">
+      <div class="kickrow"><span class="label">A few questions</span><span class="line" aria-hidden="true"></span></div>
+      <details>
+        <summary>Is my score good? <span class="fx" aria-hidden="true">+</span></summary>
+        <p>The published median for this kind of test is about 273&nbsp;ms, measured across roughly 81 million samples. Faster than that, and you are quicker than most people. Much faster than that usually means you anticipated the change rather than reacted to it.</p>
+      </details>
+      <details>
+        <summary>Is this an IQ test? <span class="fx" aria-hidden="true">+</span></summary>
+        <p>No. It measures one narrow thing — how quickly you respond to a visual change. It is not a cognitive or intelligence score, and it says nothing about memory, attention or arithmetic.</p>
+      </details>
+      <details>
+        <summary>Where do my results go? <span class="fx" aria-hidden="true">+</span></summary>
+        <p>Nowhere. Results live in this browser&rsquo;s local storage. There is no account, no upload, and no server.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ————— 02 · the collection ————— -->
+<section class="sec" id="collection">
+  <div class="wrap">
+    <div class="kickrow"><span class="label">02 · The collection</span><span class="line" aria-hidden="true"></span></div>
+    <h2>The collection</h2>
+    <p class="lede">Nine small tests of reflex and memory. Each one opens ready to play — nothing to unlock, nothing to configure. A quiet minute is enough.</p>
+
+    <div class="exhibits">
+
+      <a class="exhibit" href="#" data-quiet>
+        <span class="ex-no">01</span>
+        <svg class="ex-mark" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M13.5 3.5 L7.5 13 H11.7 L10.5 20.5 L16.5 10.8 H12.4 Z"
+                fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <span class="ex-body">
+          <span class="ex-name">Reaction Time</span>
+          <span class="ex-hook">How fast are your reflexes?</span>
+        </span>
+        <span class="ex-go" aria-hidden="true">&#8594;</span>
+      </a>
+
+      <a class="exhibit" href="#" data-quiet>
+        <span class="ex-no">02</span>
+        <svg class="ex-mark" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4.5 5.5 H10.5 L7.2 13.5 M16.5 4.5 V14 M16.5 10.8 H9.8 M9.8 10.8 L16.5 4.5"
+                fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="ex-body">
+          <span class="ex-name">Number Memory</span>
+          <span class="ex-hook">How many digits can you hold?</span>
+        </span>
+        <span class="ex-go" aria-hidden="true">&#8594;</span>
+      </a>
+
+      <a class="exhibit" href="#" data-quiet>
+        <span class="ex-no">03</span>
+        <svg class="ex-mark" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="5.2" cy="12" r="1.7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="12" cy="12" r="1.7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="18.8" cy="12" r="1.7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+        <span class="ex-body">
+          <span class="ex-name">Sequence Memory</span>
+          <span class="ex-hook">Repeat the pattern. One more every round.</span>
+        </span>
+        <span class="ex-go" aria-hidden="true">&#8594;</span>
+      </a>
+
+      <a class="exhibit" href="#" data-quiet>
+        <span class="ex-no">04</span>
+        <svg class="ex-mark" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <rect x="4.2" y="4.2" width="9.2" height="9.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <rect x="10.6" y="10.6" width="9.2" height="9.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <span class="ex-body">
+          <span class="ex-name">Stroop</span>
+          <span class="ex-hook">Your brain lies to you. Catch it.</span>
+        </span>
+        <span class="ex-go" aria-hidden="true">&#8594;</span>
+      </a>
+
+      <a class="exhibit" href="#" data-quiet>
+        <span class="ex-no">05</span>
+        <svg class="ex-mark" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="13.8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M12 7.6 V4.8 M12 13.8 L15.6 10.6"
+                fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span class="ex-body">
+          <span class="ex-name">Math Sprint</span>
+          <span class="ex-hook">60 seconds. No calculator.</span>
+        </span>
+        <span class="ex-go" aria-hidden="true">&#8594;</span>
+      </a>
+
+      <a class="exhibit" href="#" data-quiet>
+        <span class="ex-no">06</span>
+        <svg class="ex-mark" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M5 15.5 V19.5 M12 15.5 V19.5 M19 15.5 V19.5 M19 13.5 C16.5 8.3, 7.5 8.3, 5 13.5 M6.9 12.1 L5.1 13.5 L6.9 14.9"
+                fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="ex-body">
+          <span class="ex-name">N-Back</span>
+          <span class="ex-hook">Remember the answer from 2 steps ago.</span>
+        </span>
+        <span class="ex-go" aria-hidden="true">&#8594;</span>
+      </a>
+
+      <a class="exhibit" href="#" data-quiet>
+        <span class="ex-no">07</span>
+        <svg class="ex-mark" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <rect x="4" y="4" width="6.8" height="6.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <rect x="13.2" y="4" width="6.8" height="6.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <rect x="4" y="13.2" width="6.8" height="6.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <rect x="13.2" y="13.2" width="6.8" height="6.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <circle cx="16.6" cy="7.4" r="1.6" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="ex-body">
+          <span class="ex-name">Spatial</span>
+          <span class="ex-hook">Positions fade. Your memory doesn&rsquo;t.</span>
+        </span>
+        <span class="ex-go" aria-hidden="true">&#8594;</span>
+      </a>
+
+      <a class="exhibit" href="#" data-quiet>
+        <span class="ex-no">08</span>
+        <svg class="ex-mark" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="8.6" cy="13.6" r="3.9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="12" cy="9.2" r="2.1" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M12.5 14.4 C16 16.5, 18.5 13.5, 19.8 10.6"
+                fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="7.4" cy="12.8" r="0.9" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="ex-body">
+          <span class="ex-name">Devilish Mice</span>
+          <span class="ex-hook">Track the mice through the shuffle.</span>
+        </span>
+        <span class="ex-go" aria-hidden="true">&#8594;</span>
+      </a>
+
+      <a class="exhibit" href="#" data-quiet>
+        <span class="ex-no">09</span>
+        <svg class="ex-mark" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 4.2 L20 10.6 V20 H4 V10.6 Z M9.9 20 V14.6 H14.1 V20"
+                fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="ex-body">
+          <span class="ex-name">House Flow</span>
+          <span class="ex-hook">Count who&rsquo;s left when the door stops.</span>
+        </span>
+        <span class="ex-go" aria-hidden="true">&#8594;</span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ————— 03 · the report ————— -->
+<section class="sec" id="report">
+  <div class="wrap">
+    <div class="kickrow"><span class="label">03 · The report</span><span class="line" aria-hidden="true"></span></div>
+    <h2>The report</h2>
+    <p class="report-meta">Sample session &middot; five trials &middot; demo data</p>
+
+    <div class="scoreblock">
+      <span class="label sage">Your result</span>
+      <div class="score">245<span class="unit">ms</span></div>
+    </div>
+
+    <div class="cmp">
+      <div class="cmp-row">
+        <span class="label">Typical</span>
+        <span class="cmp-val">273 ms</span>
+        <span class="cmp-desc">published median — roughly 81,000,000 samples*</span>
+      </div>
+      <div class="cmp-row">
+        <span class="label">Yours</span>
+        <span class="cmp-val">245 ms</span>
+        <span class="cmp-desc">this session — 28 ms faster than the median*</span>
+      </div>
+    </div>
+
+    <p class="footnote">* Reference: aggregate reaction-time statistics published by humanbenchmark.com — median of about 81 million samples, public data, read November&nbsp;2026. A typical value, not a clinical norm. Brain Flow is not affiliated with Human&nbsp;Benchmark, and this number is not a cognitive score.</p>
+
+    <div class="spark">
+      <div class="spark-head">
+        <span class="label">Your last runs — demo data</span>
+        <span class="m">8 runs &middot; best 245 ms</span>
+      </div>
+      <svg viewBox="0 0 300 66" role="img"
+           aria-label="Sparkline of eight demo reaction times, from about 262 milliseconds down to 245 milliseconds, with the typical 273 milliseconds shown as a dotted line.">
+        <line x1="8" y1="57.1" x2="292" y2="57.1" stroke="#CFC8BD" stroke-width="1" stroke-dasharray="1.5 5"/>
+        <text x="8" y="50" font-family="JetBrains Mono, monospace" font-size="11" fill="#6E655B">typical 273</text>
+        <path d="M10 41.4 C23 40.5, 37 37.5, 50 35.7 C63 34, 76 52, 90 54.3 C103 56.5, 117 30, 130 27.1 C144 24, 157 26.5, 170 22.9 C183 19.5, 196 34, 210 31.4 C224 28.8, 236 23, 250 20 C264 17, 276 18.5, 290 17.1"
+              fill="none" stroke="#798C79" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="290" cy="17.1" r="3" fill="#798C79"/>
+        <text x="288" y="9" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="11" fill="#5E7261">245</text>
+      </svg>
+    </div>
+
+    <div class="actions">
+      <a class="tlink" href="#test">Play again <span class="arr" aria-hidden="true">&#8594;</span></a>
+      <a class="tlink" href="#collection">All games <span class="arr" aria-hidden="true">&#8594;</span></a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span>Brain Flow — a quiet arcade. Nine games, no accounts, everything stays in your browser.</span>
+    <span>Direction A &middot; the white gallery &middot; &copy; 2026</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // Side index: mark the section currently in view.
+  var links = Array.prototype.slice.call(document.querySelectorAll('.index a'));
+  var secs = Array.prototype.slice.call(document.querySelectorAll('section[id]'));
+  function setActive(id) {
+    links.forEach(function (a) {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+    });
+  }
+  if ('IntersectionObserver' in window && secs.length && links.length) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { setActive(en.target.id); }
+      });
+    }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+    secs.forEach(function (s) { io.observe(s); });
+  }
+  // Static draft: inventory rows show affordance but run no game yet.
+  Array.prototype.forEach.call(document.querySelectorAll('a[data-quiet]'), function (a) {
+    a.addEventListener('click', function (e) { e.preventDefault(); });
+  });
+})();
+</script>
+</body>
+</html>
