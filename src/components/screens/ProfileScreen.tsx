@@ -1,11 +1,15 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
 import { BrainRankCard } from '../profile/BrainRankCard';
-import { RadarChartWidget } from '../profile/RadarChartWidget';
 import { ActivityHeatmap } from '../profile/ActivityHeatmap';
 import { generateYearlyHeatmap } from '../../lib/heatmap';
 import { Trophy, Target, Flame, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
+
+// Shares the same on-demand chunk as the sidebar mini chart
+const RadarChartWidget = lazy(() =>
+  import('../profile/RadarChartWidget').then(m => ({ default: m.RadarChartWidget }))
+);
 
 /**
  * ProfileScreen - 个人档案页面（本地数据）
@@ -96,7 +100,9 @@ export function ProfileScreen() {
             {t('profile.startFirst')}
           </p>
         )}
-        <RadarChartWidget stats={userProfile.brainStats} />
+        <Suspense fallback={<div className="h-[280px] rounded-lg bg-zen-50" />}>
+          <RadarChartWidget stats={userProfile.brainStats} />
+        </Suspense>
       </div>
 
       {/* Activity Heatmap (365 days) */}

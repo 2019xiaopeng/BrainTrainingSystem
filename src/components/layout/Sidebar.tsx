@@ -1,9 +1,14 @@
+import { lazy, Suspense } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, User, Settings } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../../store/gameStore';
 import { BrainRankCard } from '../profile/BrainRankCard';
-import { RadarChartWidget } from '../profile/RadarChartWidget';
+
+// recharts (~48KB gzip) stays out of the initial payload; the sidebar chart loads on demand
+const RadarChartWidget = lazy(() =>
+  import('../profile/RadarChartWidget').then(m => ({ default: m.RadarChartWidget }))
+);
 
 /**
  * Sidebar - 桌面端左侧栏
@@ -43,9 +48,11 @@ export function Sidebar() {
         compact
       />
 
-      {/* Mini Radar Chart */}
+      {/* Mini Radar Chart — skeleton matches compact chart height (200px) to avoid layout shift */}
       <div className="bg-white/50 rounded-xl p-2 border border-zen-200/30">
-        <RadarChartWidget stats={userProfile.brainStats} compact />
+        <Suspense fallback={<div className="h-[200px] rounded-lg bg-zen-100/60" />}>
+          <RadarChartWidget stats={userProfile.brainStats} compact />
+        </Suspense>
       </div>
 
       {/* 导航菜单 */}
