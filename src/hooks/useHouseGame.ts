@@ -216,6 +216,8 @@ export function useHouseGame(): UseHouseGameReturn {
   const [pendingAnswer, setPendingAnswer] = useState<number | null>(null);
 
   const startTimeRef = useRef(0);
+  // 最后一个事件结束 → 进入答题阶段的延时计时器（resetGame 时需清除）
+  const answeringDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /** Set up a new round */
   const setupRound = useCallback((cfg: HouseGameConfig, roundIdx: number) => {
@@ -226,6 +228,11 @@ export function useHouseGame(): UseHouseGameReturn {
     let count = init;
     for (const e of evts) {
       count = count - e.leaveCount + e.enterCount;
+    }
+
+    if (answeringDelayRef.current) {
+      clearTimeout(answeringDelayRef.current);
+      answeringDelayRef.current = null;
     }
 
     setInitialPeople(init);
@@ -259,7 +266,12 @@ export function useHouseGame(): UseHouseGameReturn {
     if (nextIdx >= events.length) {
       // All events done, go to answering
       // Add a small delay after last event before showing keypad
-      setTimeout(() => setPhase('answering'), 1000);
+      if (answeringDelayRef.current) clearTimeout(answeringDelayRef.current);
+      answeringDelayRef.current = setTimeout(() => {
+        answeringDelayRef.current = null;
+        // 仅当仍处于 events 阶段才切换（防止 reset 后误触发）
+        setPhase((p) => (p === 'events' ? 'answering' : p));
+      }, 1000);
       return;
     }
 
@@ -270,7 +282,7 @@ export function useHouseGame(): UseHouseGameReturn {
     if (phase !== 'answering') return;
     setPendingAnswer(answer);
     setPhase('revealing');
-  }, [phase, correctCount, events, initialPeople]);
+  }, [phase]);
 
   const finishReveal = useCallback(() => {
     if (phase !== 'revealing' || pendingAnswer === null) return;
@@ -297,19 +309,17 @@ export function useHouseGame(): UseHouseGameReturn {
       // Game finished
       const endTime = Date.now();
       setPhase('finished');
-
-      // Build summary with all results including the just-added one
-      setRoundResults(prev => {
-        const finalSummary = buildHouseSummary(config, prev, startTimeRef.current, endTime);
-        setSummary(finalSummary);
-        return prev;
-      });
+      setSummary(buildHouseSummary(config, roundResults, startTimeRef.current, endTime));
     } else {
       setupRound(config, nextRoundIdx);
     }
-  }, [phase, currentRound, config, setupRound]);
+  }, [phase, currentRound, config, setupRound, roundResults]);
 
   const resetGame = useCallback(() => {
+    if (answeringDelayRef.current) {
+      clearTimeout(answeringDelayRef.current);
+      answeringDelayRef.current = null;
+    }
     setPhase('idle');
     setEvents([]);
     setCurrentEventIndex(-1);

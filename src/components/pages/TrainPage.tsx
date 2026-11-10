@@ -17,7 +17,10 @@ import type { GameMode, HouseSpeed } from '../../types/game';
 export function TrainPage() {
   const { mode } = useParams<{ mode: string }>();
   const navigate = useNavigate();
-  const { nextConfig, saveSession, gameConfigs } = useGameStore();
+  // 逐字段订阅：避免整个 store 的任何变化都触发重渲染（会放大子组件的 effect 问题）
+  const nextConfig = useGameStore((s) => s.nextConfig);
+  const saveSession = useGameStore((s) => s.saveSession);
+  const gameConfigs = useGameStore((s) => s.gameConfigs);
   const nbackEngine = useNBack();
   const mouseEngine = useMouseGame();
   const houseEngine = useHouseGame();

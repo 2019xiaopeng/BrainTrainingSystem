@@ -66,15 +66,15 @@ src/
 - Brain rank LV1-7 from XP + milestones (table in `types/game.ts` BRAIN_RANK_LEVELS)
 - Six-dimension brain stats heuristic in `gameStore.updateBrainStats` (memory/focus/math/observation/loadCapacity/reaction)
 
-## 7. Known Issues (from audit, to fix in roadmap E3 — do NOT re-audit from scratch)
+## 7. Known Issues (from audit; items 1-4 FIXED on v6-game-core 2026-11-09 — do NOT re-audit from scratch)
 
-1. `useNBack.ts:376-393` pause during 'playing' then resume → soft-lock (resume always enters 'answering')
-2. `GameScreen.tsx` / `HouseGameScreen.tsx` effects depend on the whole `engine` object → any store re-render (e.g. unrelated) restarts timers, doubles event spawns and sounds
-3. No `visibilitychange` handling: hidden-tab game desync (House events advance while animations freeze)
-4. No answer deadline in any engine → `missedCount` always 0; `AnswerCountdown` component exists unused
-5. Three engines duplicate the same state machine (unify in roadmap E2)
-6. `AnswerCountdown.tsx` and `SpatialGrid.tsx` currently unused (keep AnswerCountdown — it is the fix for #4)
-7. Orphan i18n keys from deleted features (~100 per locale) — cleanup deferred, harmless
+1. ✅ FIXED — pause soft-lock: `useNBack.pauseGame` now remembers the pre-pause phase (`phaseBeforePauseRef`) and `resumeGame` restores it
+2. ✅ FIXED — engine-object effect deps: game screens keep the engine in a ref (`engineRef`) and their timer/sound effects depend only on scalars; `TrainPage` uses per-field `useGameStore` selectors. Mover spawning in `HouseGameScreen` is idempotent (deterministic ids + `spawnedEventSeqRef`), so re-renders can no longer duplicate movers/sounds
+3. ✅ FIXED — hidden-tab desync: `lib/scheduleVisible.ts` (setTimeout that re-checks `document.hidden` every 500ms) guards every House/Mouse/N-Back advance timer; the Mouse push rAF clamps its frame delta so hidden time doesn't fast-forward it; N-Back additionally auto-pauses on `visibilitychange`
+4. ✅ FIXED — answer deadline: numeric mode has a 10s deadline (`ANSWER_DEADLINE_MS`), `AnswerCountdown` is wired into `GameScreen`, and `useNBack.markRoundMissed` records the round as missed (`missedCount` / `result.timeout` now show real numbers). The previously unreachable miss branch in `advanceToNext` was removed
+5. OPEN — three engines duplicate the same state machine (unify in roadmap E2)
+6. OPEN — `SpatialGrid.tsx` still unused (dead component; `AnswerCountdown` is now used by `GameScreen`)
+7. OPEN — orphan i18n keys from deleted features (~100 per locale) — cleanup deferred, harmless
 
 ## 8. Conventions
 

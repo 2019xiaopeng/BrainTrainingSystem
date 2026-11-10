@@ -479,18 +479,14 @@ export function useMouseGame(): UseMouseGameReturn {
     const nextRound = currentRound + 1;
 
     if (nextRound >= totalRounds) {
-      setRoundResults((prev) => {
-        const s = buildMouseSummary(prev, nbackConfig);
-        setSummary(s);
-        return prev;
-      });
+      setSummary(buildMouseSummary(roundResults, nbackConfig));
       setPhase('finished');
     } else {
       setCurrentRound(nextRound);
       setCurrentPushIndex(0);
       setPhase('revealing');
     }
-  }, [phase, currentRound, totalRounds, nbackConfig, buildMouseSummary]);
+  }, [phase, currentRound, totalRounds, nbackConfig, buildMouseSummary, roundResults]);
 
   const resetGame = useCallback(() => {
     setPhase('idle');
