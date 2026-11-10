@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { GAME_CATALOG } from '../../lib/games';
 import { useGameStore } from '../../store/gameStore';
 import type { GameMode, MouseDifficultyLevel } from '../../types/game';
 import { getBrainRank, MOUSE_GRID_PRESETS, MOUSE_DIFFICULTY_MAP, buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
@@ -607,6 +609,24 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
             })
         }
       </button>
+
+      {/* 全部游戏目录（SEO 内链） */}
+      <section className="bg-white rounded-xl p-6 shadow-sm border border-zen-200">
+        <h2 className="text-lg font-medium text-zen-600 mb-4">{t('gameLanding.allGames')}</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {GAME_CATALOG.map((g) => (
+            <Link
+              key={g.slug}
+              to={`/games/${g.slug}`}
+              className="p-3 rounded-xl border border-zen-200 text-center
+                         hover:border-sage-300 hover:bg-sage-50 transition-all"
+            >
+              <div className="text-2xl mb-1" aria-hidden="true">{g.emoji}</div>
+              <div className="text-xs text-zen-600">{t(g.titleKey)}</div>
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

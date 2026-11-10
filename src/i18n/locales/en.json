@@ -377,5 +377,18 @@
     "easy": "Slow",
     "normal": "Normal",
     "fast": "Fast"
+  },
+  "gameLanding": {
+    "playNow": "Play Now",
+    "howToPlay": "How to Play",
+    "faqTitle": "FAQ",
+    "faqFreeQ": "Is Brain Flow free?",
+    "faqFreeA": "Yes. All games are completely free to play, with no downloads and no hidden paywalls.",
+    "faqAccountQ": "Do I need an account?",
+    "faqAccountA": "No. Just open a game and play — your progress is saved locally in your browser, no sign-up required.",
+    "faqMobileQ": "Does it work on mobile?",
+    "faqMobileA": "Yes. Every game is designed mobile-first and runs in any modern browser on phones, tablets and desktops.",
+    "allGames": "All Games",
+    "metaDescription": "Play {{game}} free online — {{description}}. No download, no sign-up, works on mobile and desktop."
   }
 }

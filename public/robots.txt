@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /train/
+Disallow: /result/
+
+Sitemap: https://brain-flow.example.com/sitemap.xml
