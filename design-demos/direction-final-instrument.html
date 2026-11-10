@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reaction Time Test — Brain Flow</title>
+<meta name="description" content="Test your reaction time in 30 seconds. Nine free brain games — no signup, plays in your browser, scores stay on your device.">
+<!--
+  INSTRUMENT VERSION — the page IS the game (user verdict on the poster draft:
+  "more professional, more playable, simpler").
+  Kept: unified zen/sage scale (the app's own Tailwind tokens), stimulus-color
+  exemption (standard red→green protocol + swapped text cue), honest sourcing.
+  Deleted vs direction-CB-hybrid: color-field poster hero, stats-strip marquee,
+  3×3 hue poster wall, FAQ accordion, exit strip, separate full-bleed ink room.
+  New: HB-standard 5-tap series with live median; the ink room shrunk to a
+  readout card right under the pad.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F6F4;      /* zen-50 */
+    --paper2:#EFECE7;     /* zen-100 */
+    --ink:#3A352F;        /* zen-900 — also the readout card */
+    --ink-soft:#5C5145;   /* zen-700 */
+    --ink-mute:#8D7F6D;   /* zen-500 — decor only */
+    --line:#DBD7CF;       /* zen-200 */
+    --line2:#C4BEB2;      /* zen-300 */
+    --sage:#4F5D4F;       /* sage-700 — paper-world accents, 6.5:1 */
+    --sage-light:#B7CDB4; /* readout data accent, 7.2:1 on ink */
+    --dm-text:#EFECE7;    /* 10.3:1 on ink */
+    --dm-muted:#C4BEB2;   /* 6.6:1 on ink */
+    /* stimulus colors — lab equipment, exempt from theme (5.2:1 / 5.4:1) */
+    --stim-red:#C62828;
+    --stim-green:#6FBF73;
+    --disp:'Space Grotesk',Inter,sans-serif;
+    --body:Inter,system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --r-out:10px; --r-chip:4px;
+  }
+  *{box-sizing:border-box;margin:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font:400 16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 20px}
+
+  /* masthead — one line, that's all */
+  header{display:flex;justify-content:space-between;align-items:baseline;padding:22px 0 0}
+  .brand{font:700 17px var(--disp);letter-spacing:.02em}
+  .meta{font:400 11px var(--mono);letter-spacing:.14em;color:var(--ink-soft)}
+
+  /* game head */
+  .ghead{padding:52px 0 10px}
+  .kicker{font:500 12px var(--mono);letter-spacing:.22em;color:var(--sage)}
+  .hook{font:600 clamp(22px,3.4vw,28px)/1.25 var(--body);margin-top:8px}
+  .statline{font:400 12.5px var(--mono);color:var(--ink-soft);margin-top:10px;letter-spacing:.02em}
+  .statline b{color:var(--sage);font-weight:700}
+  .statline .src{color:var(--ink-mute)}
+
+  /* the pad — the page's hero */
+  .pad{
+    min-height:60vh;height:60vh;border-radius:var(--r-out);
+    background:var(--paper2);border:1.5px dashed var(--line2);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    margin-top:18px;cursor:pointer;user-select:none;outline:none;touch-action:manipulation;
+  }
+  .pad:focus-visible{box-shadow:0 0 0 3px var(--sage-light)}
+  .pad .word{font:700 clamp(34px,6vw,64px)/1 var(--disp);letter-spacing:-.01em;text-transform:uppercase;text-align:center}
+  .pad .sub{font:400 13px var(--mono);text-align:center;max-width:34ch;padding:0 16px}
+  .pad[data-state="idle"]{color:var(--ink-soft)}
+  .pad[data-state="idle"] .sub{color:var(--ink-mute)}
+  .pad[data-state="wait"]{background:var(--stim-red);border-color:var(--stim-red);color:var(--paper)}
+  .pad[data-state="go"]{background:var(--stim-green);border-color:var(--stim-green);color:var(--ink)}
+  .pad[data-state="wait"],.pad[data-state="go"]{border-style:solid;transition:none} /* stimulus flip must be instantaneous — timing honesty */
+  .pad[data-state="result"],.pad[data-state="early"]{background:var(--ink);border:1.5px solid var(--ink);color:var(--dm-text)}
+  .pad[data-state="result"] .num{font:700 clamp(56px,10vw,110px)/1 var(--mono);color:var(--sage-light)}
+  .pad[data-state="result"] .word{display:none}
+  .pad[data-state="result"] .sub{color:var(--dm-muted)}
+  .pad[data-state="early"] .word{color:#E7B5B0}
+
+  /* series progress row */
+  .series{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;font:400 12px var(--mono);color:var(--ink-soft)}
+  .series .count{font-weight:700;letter-spacing:.1em}
+  .series .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .series .chips i{font-style:normal;background:var(--paper2);border:1px solid var(--line);border-radius:var(--r-chip);padding:3px 8px;font-weight:500}
+  .series .hint{color:var(--ink-mute)}
+
+  /* readout — the ink room, instrument-sized */
+  .readout{display:none;margin-top:26px;background:var(--ink);border-radius:var(--r-out);padding:34px 34px 28px;color:var(--dm-text);position:relative}
+  .readout.on{display:block}
+  .readout .tick{position:absolute;top:14px;right:14px;width:10px;height:10px;border-radius:2px;background:#9C5F46} /* reaction's hue */
+  .readout .kicker{color:var(--sage-light)}
+  .readout .score{font:700 clamp(52px,9vw,84px)/1 var(--mono);color:var(--sage-light);margin:10px 0 2px}
+  .readout .cap{font:400 12px var(--mono);color:var(--dm-muted);letter-spacing:.04em}
+  .rgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px 28px;margin-top:22px;padding-top:20px;border-top:1px solid rgba(92,81,69,.45)}
+  .rrow .k{font:400 11px var(--mono);letter-spacing:.16em;color:var(--dm-muted)}
+  .rrow .v{font:700 17px var(--mono);margin-top:3px}
+  .rrow .v small{font-weight:400;font-size:11px;color:var(--dm-muted);margin-left:6px}
+  .rrow .src{font:400 10.5px var(--mono);color:var(--dm-muted);margin-top:4px;line-height:1.5}
+  .spark{grid-column:1/-1}
+  .spark svg{width:100%;height:74px;display:block;margin-top:6px}
+  .spark .cap{margin-top:4px;display:block}
+  .rbtns{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+  .rbtn{font:700 13px var(--mono);letter-spacing:.06em;border:0;border-radius:var(--r-chip);padding:13px 26px;cursor:pointer;text-decoration:none;display:inline-block}
+  .rbtn.primary{background:var(--sage-light);color:var(--ink)}
+  .rbtn.primary:hover{background:#C9DCC6}
+  .rbtn.ghost{background:none;border:1px solid rgba(92,81,69,.6);color:var(--dm-text)}
+  .rbtn.ghost:hover{border-color:var(--dm-text)}
+
+  /* games index — compact, mono, one line each */
+  .idx{margin-top:96px}
+  .idx h2{font:500 12px var(--mono);letter-spacing:.22em;color:var(--sage);padding-bottom:12px;border-bottom:2px solid var(--line2)}
+  .idx a{display:grid;grid-template-columns:34px 14px 1fr auto;gap:12px;align-items:baseline;padding:13px 2px;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+  .idx a:hover .name{color:var(--sage);text-decoration:underline;text-underline-offset:4px}
+  .idx a:hover .hue{transform:scale(1.35)}
+  .idx .n{font:500 12px var(--mono);color:var(--ink-mute)}
+  .idx .hue{width:11px;height:11px;border-radius:2px;transition:transform .2s;align-self:center}
+  .idx .name{font:600 15px var(--body)}
+  .idx .hook{font:400 13px var(--body);color:var(--ink-soft);margin-top:1px}
+  .idx .pb{font:500 12px var(--mono);color:var(--ink-soft);white-space:nowrap}
+  .idx .foot{font:400 10.5px var(--mono);color:var(--ink-mute);padding-top:8px}
+
+  /* about + footer */
+  .about{margin-top:72px;padding-top:26px;border-top:2px solid var(--line2)}
+  .about p{font-size:14px;color:var(--ink-soft);max-width:60ch}
+  .about .src{font:400 11px var(--mono);color:var(--ink-mute);margin-top:10px;display:block}
+  footer{margin:56px 0 40px;font:400 11px var(--mono);letter-spacing:.12em;color:var(--ink-mute)}
+
+  /* one orchestrated entrance, nothing else */
+  .rise{opacity:0;transform:translateY(14px)}
+  html.js .rise.in{opacity:1;transform:none;transition:opacity .5s ease,transform .5s cubic-bezier(.2,.7,.2,1)}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none!important;transition:none!important}
+    .rise{opacity:1;transform:none}
+  }
+  @media (max-width:560px){
+    .pad{min-height:52vh;height:52vh}
+    .rgrid{grid-template-columns:1fr}
+    .idx a{grid-template-columns:26px 12px 1fr;grid-template-rows:auto auto}
+    .idx .pb{grid-column:3;text-align:right}
+  }
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add('js')</script>
+<div class="wrap">
+  <header>
+    <span class="brand">Brain Flow</span>
+    <span class="meta">9 GAMES · NO SIGNUP</span>
+  </header>
+
+  <section class="ghead rise" id="top">
+    <p class="kicker">REACTION TIME TEST — 01</p>
+    <h1 class="hook">How fast are your reflexes?</h1>
+    <p class="statline">PB <b id="pb">—</b> · TYPICAL 273 MS <span class="src">(humanbenchmark.com, ≈81M samples)</span></p>
+  </section>
+
+  <div class="pad rise" id="pad" data-state="idle" role="button" tabindex="0"
+       aria-label="Reaction test pad: tap to start a 5-tap series. Wait for green, then tap as fast as you can.">
+    <p class="word" id="word">Tap to start</p>
+    <p class="num" id="num"></p>
+    <p class="sub" id="sub">5-tap series · score is your median · Space works too</p>
+  </div>
+
+  <div class="series rise" id="series" hidden>
+    <span class="count" id="count">TAP 1/5</span>
+    <span class="chips" id="chips"></span>
+    <span class="hint" id="hint"></span>
+  </div>
+
+  <section class="readout" id="readout" aria-live="polite">
+    <span class="tick" title="Reaction — game 01"></span>
+    <p class="kicker">RESULT — MEDIAN OF 5 TAPS</p>
+    <p class="score" id="median">— MS</p>
+    <p class="cap">the human benchmark protocol: your score is the median, not the best</p>
+    <div class="rgrid">
+      <div class="rrow">
+        <p class="k">YOURS</p>
+        <p class="v" id="yours">— <small>MEDIAN</small></p>
+      </div>
+      <div class="rrow">
+        <p class="k">TYPICAL</p>
+        <p class="v">273 <small>MEDIAN</small></p>
+        <p class="src">source: humanbenchmark.com public aggregate,<br>median of ≈81,000,000 samples · a typical value, not a clinical norm</p>
+      </div>
+      <div class="spark">
+        <p class="k">YOUR TAPS · LAST SESSION</p>
+        <svg viewBox="0 0 600 74" preserveAspectRatio="none" aria-hidden="true">
+          <line x1="0" y1="37" x2="600" y2="37" stroke="rgba(92,81,69,.5)" stroke-width="1" stroke-dasharray="3 4"/>
+          <text x="4" y="33" font-family="JetBrains Mono,monospace" font-size="9" fill="#C4BEB2">TYPICAL 273</text>
+          <polyline id="sparkPrev" fill="none" stroke="rgba(183,205,180,.35)" stroke-width="1.5" stroke-dasharray="4 3" points=""/>
+          <polyline id="sparkNow" fill="none" stroke="#B7CDB4" stroke-width="2" points=""/>
+        </svg>
+        <span class="cap">last session: 312 · 288 · 301 · 279 · 296 — DEMO DATA</span>
+      </div>
+    </div>
+    <div class="rbtns">
+      <button class="rbtn primary" id="again" type="button">PLAY AGAIN</button>
+      <a class="rbtn ghost" href="#games">ALL 9 GAMES</a>
+    </div>
+  </section>
+
+  <section class="idx" id="games">
+    <h2>ALL GAMES — 01–09</h2>
+    <a href="#top"><span class="n">01</span><span class="hue" style="background:#9C5F46"></span><span><span class="name">Reaction Time Test</span><br><span class="hook">How fast are your reflexes?</span></span><span class="pb">245 MS</span></a>
+    <a href="#games"><span class="n">02</span><span class="hue" style="background:#4A6B8A"></span><span><span class="name">Number Memory</span><br><span class="hook">How many digits can you hold?</span></span><span class="pb">—</span></a>
+    <a href="#games"><span class="n">03</span><span class="hue" style="background:#2B6E68"></span><span><span class="name">Sequence Memory</span><br><span class="hook">Repeat the pattern. One more step every round.</span></span><span class="pb">—</span></a>
+    <a href="#games"><span class="n">04</span><span class="hue" style="background:#7C5F98"></span><span><span class="name">Stroop Test</span><br><span class="hook">Your brain lies to you. Catch it.</span></span><span class="pb">—</span></a>
+    <a href="#games"><span class="n">05</span><span class="hue" style="background:#84663B"></span><span><span class="name">Math Sprint</span><br><span class="hook">60 seconds. No calculator.</span></span><span class="pb">—</span></a>
+    <a href="#games"><span class="n">06</span><span class="hue" style="background:#5F7040"></span><span><span class="name">N-Back Challenge</span><br><span class="hook">Remember the answer from N steps ago.</span></span><span class="pb">—</span></a>
+    <a href="#games"><span class="n">07</span><span class="hue" style="background:#6B6B3B"></span><span><span class="name">Devilish Mice</span><br><span class="hook">Track the mice through the shuffle.</span></span><span class="pb">—</span></a>
+    <a href="#games"><span class="n">08</span><span class="hue" style="background:#9C5346"></span><span><span class="name">Spatial Memory</span><br><span class="hook">Positions fade. Your memory doesn't.</span></span><span class="pb">—</span></a>
+    <a href="#games"><span class="n">09</span><span class="hue" style="background:#7A6A42"></span><span><span class="name">House Flow</span><br><span class="hook">Count who's left when the door stops.</span></span><span class="pb">—</span></a>
+    <p class="foot">01's shown personal best is sample data.</p>
+  </section>
+
+  <section class="about">
+    <p>This test measures simple visual reaction time: the pad turns green after a random delay, and your tap latency is recorded. Scores depend on your device and input method — a gaming mouse and a touchscreen report differently, so compare against the typical value only in spirit.</p>
+    <p style="margin-top:10px">Everything runs and stays in your browser. No account, no data leaving this device.</p>
+    <span class="src">typical value source: humanbenchmark.com public statistics (median ≈81M samples), read Nov 2026 · not a percentile, not a cognitive score</span>
+  </section>
+
+  <footer>BRAIN FLOW — PLAYS IN YOUR BROWSER · DATA STAYS ON YOUR DEVICE</footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var pad = document.getElementById('pad');
+  var word = document.getElementById('word');
+  var num = document.getElementById('num');
+  var sub = document.getElementById('sub');
+  var seriesBox = document.getElementById('series');
+  var count = document.getElementById('count');
+  var chips = document.getElementById('chips');
+  var hint = document.getElementById('hint');
+  var readout = document.getElementById('readout');
+  var TAPS = 5;
+  var taps = [], goAt = 0, timer = null, phase = 'idle';
+
+  function setState(s, w, nVal, sText) {
+    phase = s;
+    pad.setAttribute('data-state', s);
+    word.textContent = w || '';
+    num.textContent = nVal != null ? nVal : '';
+    sub.textContent = sText || '';
+  }
+  function idle() {
+    setState('idle', 'Tap to start', null,
+      taps.length ? (TAPS - taps.length) + ' taps left · score is your median · Space works too'
+                  : '5-tap series · score is your median · Space works too');
+    updateSeries();
+  }
+  function updateSeries() {
+    if (taps.length === 0 && phase === 'idle') { seriesBox.hidden = true; return; }
+    seriesBox.hidden = false;
+    count.textContent = 'TAP ' + Math.min(taps.length + 1, TAPS) + '/' + TAPS;
+    chips.innerHTML = '';
+    taps.forEach(function (ms) {
+      var i = document.createElement('i');
+      i.textContent = ms;
+      chips.appendChild(i);
+    });
+    hint.textContent = taps.length >= TAPS ? 'series complete' : '';
+  }
+  function armWait() {
+    setState('wait', 'Wait…', null, 'tap only when the pad turns green');
+    var delay = 1200 + Math.random() * 2200;
+    timer = setTimeout(function () {
+      goAt = performance.now();
+      setState('go', 'Click', null, 'as fast as you can');
+    }, delay);
+  }
+  function startSeries() {
+    clearTimeout(timer);
+    if (taps.length >= TAPS) { taps = []; readout.classList.remove('on'); }
+    armWait();
+  }
+  function finishSeries() {
+    var sorted = taps.slice().sort(function (a, b) { return a - b; });
+    var median = sorted[Math.floor(TAPS / 2)];
+    document.getElementById('median').textContent = median + ' MS';
+    document.getElementById('yours').innerHTML = median + ' <small>MEDIAN</small>';
+    var pbEl = document.getElementById('pb');
+    var prev = pbEl.textContent === '—' ? null : parseInt(pbEl.textContent, 10);
+    if (prev == null || median < prev) pbEl.textContent = median + ' MS';
+    var lo = Math.min(200, Math.min.apply(null, taps) - 20);
+    var hi = Math.max(330, Math.max.apply(null, taps.concat([273])) + 20);
+    function pts(arr) {
+      return arr.map(function (v, i) {
+        var x = (i / (arr.length - 1)) * 600;
+        var y = 66 - ((v - lo) / (hi - lo)) * 58;
+        return x.toFixed(1) + ',' + y.toFixed(1);
+      }).join(' ');
+    }
+    document.getElementById('sparkNow').setAttribute('points', pts(taps));
+    document.getElementById('sparkPrev').setAttribute('points', pts([312, 288, 301, 279, 296]));
+    readout.classList.add('on');
+    updateSeries();
+    readout.scrollIntoView({ block: 'nearest' });
+  }
+  function press() {
+    if (phase === 'idle' || phase === 'result' || phase === 'early') { startSeries(); return; }
+    if (phase === 'wait') {
+      clearTimeout(timer);
+      setState('early', 'Too soon', null, 'the pad hadn’t turned green yet — tap to retry this tap');
+      return;
+    }
+    if (phase === 'go') {
+      var ms = Math.round(performance.now() - goAt);
+      taps.push(ms);
+      setState('result', null, ms + ' ms', ms + ' ms — tap to continue');
+      if (taps.length >= TAPS) { finishSeries(); } else { updateSeries(); }
+    }
+  }
+  pad.addEventListener('pointerdown', function (e) { e.preventDefault(); press(); });
+  pad.addEventListener('keydown', function (e) {
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); press(); }
+  });
+  window.addEventListener('keydown', function (e) {
+    if (e.key === ' ' && document.activeElement !== pad) {
+      var tag = document.activeElement && document.activeElement.tagName;
+      if (tag !== 'BUTTON' && tag !== 'A') { e.preventDefault(); press(); }
+    }
+  });
+  document.getElementById('again').addEventListener('click', function () {
+    taps = [];
+    readout.classList.remove('on');
+    seriesBox.hidden = true;
+    idle();
+    pad.focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); io.disconnect(); } });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.rise').forEach(function (el) { io.observe(el); });
+  } else {
+    document.querySelectorAll('.rise').forEach(function (el) { el.classList.add('in'); });
+  }
+  idle();
+})();
+</script>
+</body>
+</html>

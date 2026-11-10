@@ -1,0 +1,765 @@
+<!doctype html>
+<!--
+  HYBRID KEY — skeleton = C (dark charcoal-green instrument: #1E211E canvas, sticky mono header,
+  mono kicker culture, config pill row, live playable reaction hero, About + FAQ, mono 01-09 game
+  index) · result = B (Dumbar interlocking blocks: full-bleed hue field + paper score block, hard
+  edges, ink block button) · hue = game identity (Reaction = terracotta #AC4E2B) — the ONLY
+  saturated color on the page. Quiet canvas everywhere; a game's color arrives only with its result.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#1E211E">
+<meta name="description" content="Free reaction time test and nine quiet brain games. No signup, plays in your browser, scores compared against public reference data.">
+<title>Brain Flow — Reaction Time Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============ tokens — C's dark instrument + B's contrast-corrected bloom pair ============ */
+:root{
+  --canvas:#1E211E;
+  --surface:#262A26;
+  --hairline:#333833;
+  --text:#E8EAE6;
+  --muted:#9BA49B;
+  /* the bloom — used ONLY inside #result; nothing else on the page is saturated */
+  --hue:#AC4E2B;                  /* Reaction identity hue; paper-on-hue = 4.8:1 */
+  --paper:#F2F1EC;                /* ink-on-paper = 13.7:1 */
+  --ink:#242424;
+  --ink-soft:#55534D;             /* 6.8:1 on paper */
+  --ink-mute:#6B6963;             /* 4.9:1 on paper */
+  --paper-70:rgba(242,241,236,.7);
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --disp:'Space Grotesk',var(--sans);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:auto;overflow-x:clip} /* clip: res-paper bleeds to the viewport edge */
+body{overflow-x:clip}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{
+  background:var(--canvas);
+  color:var(--text);
+  font:400 16px/1.6 var(--sans);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  -webkit-tap-highlight-color:transparent;
+}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{display:block}
+::selection{background:rgba(232,234,230,.18)}
+#result ::selection{background:rgba(36,36,36,.14)}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--paper);outline-offset:3px;border-radius:2px}
+section{scroll-margin-top:80px}
+#result{scroll-margin-top:76px}
+.container{max-width:1140px;margin:0 auto;padding:0 28px}
+.num{font-family:var(--mono);font-size:.94em;letter-spacing:-.01em}
+
+/* ============ header (C) ============ */
+.site-head{
+  position:sticky;top:0;z-index:50;
+  background:rgba(30,33,30,.92);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--hairline);
+}
+.head-in{display:flex;align-items:center;justify-content:space-between;height:56px}
+.brand{display:flex;align-items:center;gap:10px;font:600 13px var(--mono);letter-spacing:.22em;color:var(--text)}
+.brand svg{color:var(--text)}
+.site-nav{display:flex;gap:26px}
+.site-nav a{font:500 12px var(--mono);letter-spacing:.14em;color:var(--muted);transition:color .16s}
+.site-nav a:hover{color:var(--text)}
+
+/* ============ kicker / headings (C) ============ */
+.kicker{
+  display:flex;align-items:center;gap:14px;
+  font:500 12px var(--mono);letter-spacing:.22em;color:var(--muted);text-transform:uppercase;
+}
+.kicker::before{content:"";width:26px;height:1px;background:var(--muted);opacity:.6;flex:none}
+h2{font:600 26px/1.25 var(--sans);letter-spacing:-.01em;color:var(--text);margin:14px 0 26px}
+.section{padding-top:96px}
+
+/* ============ hero (C) ============ */
+.hero{padding:64px 28px 0}
+h1{
+  font:700 clamp(2.35rem,5vw + .8rem,4rem)/1.08 var(--sans);
+  letter-spacing:-.028em;color:var(--text);
+  margin:18px 0 14px;max-width:22ch;
+}
+.hero-sub{font:400 17px/1.65 var(--sans);color:var(--text);max-width:60ch}
+
+/* config pills — active state previews the paper signal; no color */
+.pills{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;margin:26px 0 16px}
+.pill-label{font:500 11px var(--mono);letter-spacing:.18em;color:var(--muted)}
+.pill-divider{width:1px;height:22px;background:var(--hairline);margin:0 10px}
+.pill{
+  font:500 12px var(--mono);letter-spacing:.08em;color:var(--muted);
+  border:1px solid var(--hairline);border-radius:6px;padding:7px 12px;
+  transition:color .15s,border-color .15s,background .15s;
+}
+.pill:hover{color:var(--text);border-color:var(--muted)}
+.pill.is-active{color:var(--ink);border-color:var(--paper);background:var(--paper)}
+
+/* the target zone — live test. the GO signal is a paper flash (neutral): the
+   game's hue is reserved for the result bloom below, so color stays honest. */
+.zone{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  width:100%;min-height:340px;padding:28px;text-align:center;
+  background:var(--surface);border:1px solid var(--hairline);border-radius:10px;
+  font-family:var(--mono);
+  transition:background .18s,border-color .18s;
+}
+.zone-main{font:500 20px var(--mono);letter-spacing:.22em;color:var(--text);text-transform:uppercase}
+#zone-num{transition:color .15s}
+.zone-unit{font:600 18px var(--mono);letter-spacing:.1em;color:var(--text);margin-left:12px}
+.zone-sub{font:500 12px var(--mono);letter-spacing:.08em;color:var(--muted);max-width:52ch}
+.key{
+  font:500 11px var(--mono);letter-spacing:.06em;color:var(--muted);
+  border:1px solid var(--hairline);border-bottom-width:2px;border-radius:4px;
+  padding:2px 7px;background:var(--canvas);
+}
+.zone[data-state="idle"]:hover,.zone[data-state="result"]:hover{
+  border-color:var(--muted);
+}
+.zone[data-state="idle"]:hover #zone-num,.zone[data-state="result"] #zone-num{color:var(--text)}
+.zone[data-state="wait"] .zone-main{color:var(--muted);animation:zonePulse 1.3s ease-in-out infinite}
+@keyframes zonePulse{0%,100%{opacity:.45}50%{opacity:1}}
+.zone[data-state="early"] .zone-main{color:var(--text)}
+.zone[data-state="go"]{
+  background:var(--paper);border-color:var(--paper);
+  transition:none; /* instant onset — a fade here would eat into the measured time */
+}
+.zone[data-state="go"] .zone-main{color:var(--ink);letter-spacing:.24em}
+.zone[data-state="go"] .zone-sub{color:var(--ink-soft)}
+.zone[data-state="result"] #zone-num{font-size:clamp(44px,6vw,60px);font-weight:600;letter-spacing:-.02em}
+
+/* stats strip — real facts only */
+.strip{
+  margin-top:18px;padding:13px 2px;
+  border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);
+  display:flex;flex-wrap:wrap;gap:6px 0;
+  font:500 12px var(--mono);letter-spacing:.18em;color:var(--muted);text-transform:uppercase;
+}
+.strip span:not(:first-child)::before{content:"·";padding:0 14px}
+
+/* ============ about + faq (C) ============ */
+.about-grid{display:grid;grid-template-columns:7fr 5fr;gap:64px;align-items:start}
+.prose p{font:400 15.5px/1.72 var(--sans);color:var(--text);max-width:64ch}
+.prose p + p{margin-top:18px}
+.faq details{border-top:1px solid var(--hairline)}
+.faq details:last-child{border-bottom:1px solid var(--hairline)}
+.faq summary{
+  list-style:none;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;gap:16px;
+  padding:15px 2px;font:500 15px var(--sans);color:var(--text);
+}
+.faq summary::-webkit-details-marker{display:none}
+.faq-x{font:500 15px var(--mono);color:var(--muted);transition:transform .18s,color .18s;flex:none}
+.faq summary:hover .faq-x{color:var(--text)}
+.faq details[open] .faq-x{transform:rotate(45deg);color:var(--text)}
+.faq-a{padding:1px 2px 17px;font:400 14px/1.68 var(--sans);color:var(--muted)}
+
+/* ============ all-games index (C) — quiet; hue never touches this list ============ */
+.list-head{display:flex;align-items:baseline;justify-content:space-between;gap:24px;margin-bottom:26px}
+.list-meta{font:500 11px var(--mono);letter-spacing:.18em;color:var(--muted)}
+.g-head,.g-row{display:grid;grid-template-columns:3.2rem minmax(0,1fr) auto;column-gap:16px;align-items:center}
+.g-head{padding:0 0 10px;border-bottom:1px solid var(--hairline)}
+.g-head span{font:500 11px var(--mono);letter-spacing:.18em;color:var(--muted)}
+.g-head .right{text-align:right}
+.g-row{
+  position:relative;padding:17px 0;
+  border-bottom:1px solid var(--hairline);
+  transition:padding-left .18s ease;
+}
+.g-row::after{ /* paper left rule on hover — the accent slot, earned without color */
+  content:"";position:absolute;left:0;top:13px;bottom:13px;width:2px;
+  background:var(--text);transform:scaleY(0);transform-origin:top;transition:transform .18s ease;
+}
+.g-row:hover{padding-left:12px}
+.g-row:hover::after{transform:scaleY(1)}
+.g-idx{font:500 13px var(--mono);color:var(--muted)}
+.g-mid{display:flex;align-items:baseline;min-width:0}
+.g-name{
+  display:flex;align-items:center;gap:11px;
+  font:600 15.5px/1.3 var(--sans);color:var(--text);white-space:nowrap;flex:none;
+}
+.g-glyph{width:18px;height:18px;color:var(--muted);flex:none;transition:color .18s}
+.g-row:hover .g-glyph{color:var(--text)}
+.g-hook{
+  font:400 14px/1.4 var(--sans);color:var(--muted);
+  margin-left:16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.g-pb{font:500 13px var(--mono);letter-spacing:.04em;color:var(--muted);white-space:nowrap}
+.g-pb.has-val{color:var(--text)}
+.list-note{margin-top:14px;font:400 14px/1.6 var(--sans);color:var(--muted)}
+
+/* ============ result (B) — the bloom: Dumbar blocks on the dark canvas ============
+   Full-bleed hue field interlocked with a paper score block:
+   - res-paper bleeds left past the canvas edge (color runs off, type holds position)
+   - paper/hue share a hard zero-gap seam at the column boundary
+   - hue appears nowhere else on the page */
+#result{background:var(--hue);color:var(--paper)}
+.res-strip{
+  max-width:1140px;margin:0 auto;padding:18px 28px 13px;
+  display:flex;justify-content:space-between;align-items:baseline;gap:6px 24px;flex-wrap:wrap;
+  border-bottom:1.5px solid rgba(242,241,236,.8);
+  font:500 11px/1.5 var(--mono);letter-spacing:.18em;color:var(--paper);text-transform:uppercase;
+}
+.res-grid{max-width:1140px;margin:0 auto;padding-right:28px;display:grid;grid-template-columns:repeat(12,1fr)}
+.res-paper{
+  grid-column:1/8;
+  background:var(--paper);color:var(--ink);
+  margin-left:min(-24px,calc(28px - 14vw)); /* run the block off the left canvas edge */
+  padding:42px clamp(26px,4vw,58px) 44px;
+}
+.rp-kick{font:500 11px var(--mono);letter-spacing:.2em;color:var(--ink-mute);text-transform:uppercase}
+.rp-score{
+  margin-top:12px;color:var(--ink);font-variant-numeric:tabular-nums;
+  font:600 clamp(76px,11vw,168px)/0.95 var(--mono);letter-spacing:-.045em;
+}
+.rp-unit{font:600 clamp(22px,2.6vw,36px)/1 var(--disp);letter-spacing:.06em;margin-left:10px}
+.rp-delta{margin-top:16px;font:600 12px var(--mono);letter-spacing:.16em;color:var(--ink);text-transform:uppercase}
+.spark{width:100%;height:auto;margin-top:30px}
+.spark-typ{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:5 5;opacity:.6}
+.spark-path{
+  fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.1s ease .15s;
+}
+.in-view .spark-path{stroke-dashoffset:0}
+.spark .pt{opacity:0;transition:opacity .4s ease}
+.in-view .spark .pt{opacity:1;transition-delay:.9s}
+.rp-cap{
+  margin-top:12px;font:500 11px/1.8 var(--mono);letter-spacing:.14em;
+  color:var(--ink-mute);text-transform:uppercase;
+}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.chip{
+  display:inline-flex;align-items:baseline;gap:9px;
+  border:1.5px solid var(--ink);padding:8px 12px;
+  font:500 11.5px var(--mono);letter-spacing:.12em;color:var(--ink-soft);text-transform:uppercase;
+}
+.chip b{font-weight:600;color:var(--ink);letter-spacing:.04em}
+.res-side{grid-column:8/13;padding:50px 0 50px 38px;min-width:0}
+.rs-h{font:700 clamp(26px,3vw,40px)/1.05 var(--disp);letter-spacing:-.01em;color:var(--paper)}
+.rs-h .num{font-weight:600;font-size:.92em}
+.rs-p{margin-top:14px;font:400 15px/1.65 var(--sans);color:var(--paper);max-width:44ch}
+.rs-table{margin:24px 0 4px;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--paper)}
+.rs-table div{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:10px 0;border-bottom:1px solid var(--paper-70)}
+.rs-table b{font-weight:600;letter-spacing:.04em;white-space:nowrap}
+.rs-note{
+  margin-top:22px;border:1.5px solid var(--paper);padding:12px 14px;
+  font:500 11px/1.75 var(--mono);letter-spacing:.05em;color:var(--paper);text-transform:uppercase;
+}
+.rs-actions{display:flex;flex-wrap:wrap;gap:14px;margin-top:30px}
+#result :focus-visible{outline:3px solid var(--paper);outline-offset:2px;border-radius:0}
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  font:600 15px var(--disp);letter-spacing:.02em;
+  padding:15px 26px;transition:background-color .18s ease,color .18s ease,transform .18s ease;
+}
+.btn:active{transform:translateX(4px) scale(.99)}
+.btn-ink{background:var(--ink);color:var(--paper)}
+.btn-ink:hover{background:var(--paper);color:var(--ink);transform:translateX(4px)}
+.btn-ghost{border:1.5px solid rgba(242,241,236,.85);color:var(--paper);font:600 12.5px var(--mono);letter-spacing:.14em}
+.btn-ghost:hover{background:var(--paper);border-color:var(--paper);color:var(--ink)}
+
+/* ============ footer (C) ============ */
+.foot{border-top:1px solid var(--hairline);margin-top:96px;padding:44px 0 60px}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1.5fr;gap:40px;align-items:start}
+.foot-tag{margin-top:14px;font:400 14px/1.65 var(--sans);color:var(--muted);max-width:34ch}
+.foot-links{display:flex;flex-direction:column;gap:10px}
+.foot-links a{font:500 12px var(--mono);letter-spacing:.14em;color:var(--muted);transition:color .16s}
+.foot-links a:hover{color:var(--text)}
+.foot-meta{display:flex;flex-direction:column;gap:8px;font:400 11px/1.6 var(--mono);letter-spacing:.1em;color:var(--muted);text-align:right}
+
+/* ============ responsive ============ */
+@media (max-width:920px){
+  .about-grid{grid-template-columns:1fr;gap:44px}
+  .res-grid{grid-template-columns:1fr;padding:0 20px}
+  .res-paper{grid-column:auto;margin-left:min(-24px,calc(28px - 14vw));margin-right:-20px;padding:34px 24px 36px}
+  .res-side{grid-column:auto;padding:34px 0 40px}
+  .rp-score{font-size:clamp(72px,20vw,120px)}
+}
+@media (max-width:640px){
+  .container,.hero{padding-left:20px;padding-right:20px}
+  .section{padding-top:72px}
+  .hero{padding-top:48px}
+  .zone{min-height:250px}
+  .g-head,.g-row{grid-template-columns:2.3rem minmax(0,1fr) auto;column-gap:12px}
+  .g-mid{flex-direction:column;align-items:flex-start;gap:3px}
+  .g-hook{margin-left:0;white-space:normal;overflow:visible}
+  .g-pb{font-size:12px}
+  .foot-grid{grid-template-columns:1fr;gap:32px}
+  .foot-meta{text-align:left}
+  .res-strip{padding:16px 20px 12px}
+  .btn{flex:1;justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<header class="site-head">
+  <div class="container head-in">
+    <a class="brand" href="#top" aria-label="Brain Flow home">
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="currentColor">
+        <rect x="1" y="8" width="2.6" height="5" rx="0.8"/>
+        <rect x="5.7" y="4.5" width="2.6" height="8.5" rx="0.8"/>
+        <rect x="10.4" y="1.5" width="2.6" height="11.5" rx="0.8"/>
+      </svg>
+      BRAIN&nbsp;FLOW
+    </a>
+    <nav class="site-nav" aria-label="Sections">
+      <a href="#about">ABOUT</a>
+      <a href="#games">GAMES</a>
+      <a href="#result">RESULT</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ============ 01 · hero / SEO landing (reaction time test) — C skeleton ============ -->
+  <section class="hero container" aria-label="Reaction time test">
+    <p class="kicker">Brain Flow — Reaction Time Test</p>
+    <h1>How fast are your reflexes?</h1>
+    <p class="hero-sub">
+      One signal, one tap. Get your reaction time in milliseconds, see it against a
+      public median of <span class="num">81</span> million samples, and keep every score
+      locally in your browser — no signup.
+    </p>
+
+    <div class="pills" aria-label="Test settings">
+      <span class="pill-label" aria-hidden="true">LENGTH</span>
+      <div class="pill-group" role="group" aria-label="Series length">
+        <button class="pill" type="button" aria-pressed="false">3 TAPS</button><button class="pill" type="button" aria-pressed="true">5 TAPS</button><button class="pill" type="button" aria-pressed="false">10 TAPS</button>
+      </div>
+      <span class="pill-divider" aria-hidden="true"></span>
+      <span class="pill-label" aria-hidden="true">SCORE</span>
+      <div class="pill-group" role="group" aria-label="Score statistic">
+        <button class="pill is-active" type="button" aria-pressed="true">MEDIAN</button><button class="pill" type="button" aria-pressed="false">AVG</button><button class="pill" type="button" aria-pressed="false">BEST</button>
+      </div>
+    </div>
+
+    <button id="zone" class="zone" type="button" data-state="idle" aria-live="polite">
+      <span class="zone-main"><span id="zone-num">TAP TO START</span><span id="zone-unit" class="zone-unit" hidden>MS</span></span>
+      <span class="zone-sub" id="zone-sub">or press <kbd class="key">SPACE</kbd> · the signal fires after a random delay</span>
+    </button>
+
+    <p class="strip">
+      <span>9 GAMES</span><span>NO SIGNUP</span><span>IN YOUR BROWSER</span>
+    </p>
+  </section>
+
+  <!-- ============ 02 · about the test + faq — C skeleton ============ -->
+  <section id="about" class="container section" aria-label="About the test">
+    <p class="kicker">01 — About the test</p>
+    <h2>What this test measures</h2>
+    <div class="about-grid">
+      <div class="prose">
+        <p>
+          This is a simple visual reaction time test. The screen holds, a signal appears,
+          and you tap as fast as you can. The interval between the signal and your tap —
+          measured in milliseconds — is your score. Most first attempts land between
+          <span class="num">230</span> and <span class="num">300&nbsp;ms</span>.
+        </p>
+        <p>
+          Your number includes device latency, not just your brain. The display needs time
+          to draw the signal and the browser needs time to register your tap — typically
+          <span class="num">20–50&nbsp;ms</span> combined. A desktop monitor with a mouse or
+          keyboard reads closest to true reaction time; touchscreens usually read slightly
+          slower. Treat your score as a consistent personal baseline, not a lab measurement.
+        </p>
+        <p>
+          Reference point: the typical value of <span class="num">273&nbsp;ms</span> is the
+          median of roughly <span class="num">81</span> million samples published publicly by
+          humanbenchmark.com. It is crowd data from their visitors — a useful yardstick,
+          not a clinical norm. Your own runs are kept in your browser's local storage:
+          no account, no upload, nothing leaves this page.
+        </p>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>What counts as a good reaction time?<span class="faq-x">+</span></summary>
+          <p class="faq-a">The public median is <span class="num">273&nbsp;ms</span>. Regular players — gamers, athletes — often sit between <span class="num">200</span> and <span class="num">250&nbsp;ms</span>. Consistency across five taps matters more than one lucky tap.</p>
+        </details>
+        <details>
+          <summary>Why is my phone slower than my laptop?<span class="faq-x">+</span></summary>
+          <p class="faq-a">Touch sampling and screen refresh add latency. The same nervous system usually reads <span class="num">20–50&nbsp;ms</span> slower on a phone — compare your scores from the same device only.</p>
+        </details>
+        <details>
+          <summary>Do you store my results anywhere?<span class="faq-x">+</span></summary>
+          <p class="faq-a">In your browser's local storage, and nowhere else. Clear your browser data and they are gone — there is no server-side account to sync to.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 · all games index — C skeleton ============ -->
+  <section id="games" class="container section" aria-label="All games">
+    <div class="list-head">
+      <div>
+        <p class="kicker">02 — All games</p>
+        <h2>Pick a test. Play in one tap.</h2>
+      </div>
+      <p class="list-meta">09 · SAVED LOCALLY</p>
+    </div>
+
+    <div class="g-head" aria-hidden="true">
+      <span>NO.</span><span>GAME</span><span class="right">PERSONAL BEST</span>
+    </div>
+
+    <a class="g-row" href="#games" data-draft aria-label="Play Reaction Time">
+      <span class="g-idx">01</span>
+      <span class="g-mid">
+        <span class="g-name">
+          <svg class="g-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Reaction Time
+        </span>
+        <span class="g-hook">How fast are your reflexes?</span>
+      </span>
+      <span class="g-pb has-val">245 MS</span>
+    </a>
+
+    <a class="g-row" href="#games" data-draft aria-label="Play Number Memory">
+      <span class="g-idx">02</span>
+      <span class="g-mid">
+        <span class="g-name">
+          <svg class="g-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></svg>
+          Number Memory
+        </span>
+        <span class="g-hook">How many digits can you hold?</span>
+      </span>
+      <span class="g-pb">—</span>
+    </a>
+
+    <a class="g-row" href="#games" data-draft aria-label="Play Sequence Memory">
+      <span class="g-idx">03</span>
+      <span class="g-mid">
+        <span class="g-name">
+          <svg class="g-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><rect x="16" y="9.5" width="5" height="5" rx="1" fill="currentColor" stroke="none"/></svg>
+          Sequence Memory
+        </span>
+        <span class="g-hook">Repeat the pattern. One more every round.</span>
+      </span>
+      <span class="g-pb">—</span>
+    </a>
+
+    <a class="g-row" href="#games" data-draft aria-label="Play Stroop">
+      <span class="g-idx">04</span>
+      <span class="g-mid">
+        <span class="g-name">
+          <svg class="g-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg>
+          Stroop
+        </span>
+        <span class="g-hook">Your brain lies to you. Catch it.</span>
+      </span>
+      <span class="g-pb">—</span>
+    </a>
+
+    <a class="g-row" href="#games" data-draft aria-label="Play Math Sprint">
+      <span class="g-idx">05</span>
+      <span class="g-mid">
+        <span class="g-name">
+          <svg class="g-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/><circle cx="12" cy="5.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="18.5" r="1.4" fill="currentColor" stroke="none"/></svg>
+          Math Sprint
+        </span>
+        <span class="g-hook"><span class="num">60</span> seconds. No calculator.</span>
+      </span>
+      <span class="g-pb">—</span>
+    </a>
+
+    <a class="g-row" href="#games" data-draft aria-label="Play N-Back">
+      <span class="g-idx">06</span>
+      <span class="g-mid">
+        <span class="g-name">
+          <svg class="g-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/></svg>
+          N-Back
+        </span>
+        <span class="g-hook">Remember the answer from <span class="num">2</span> steps ago.</span>
+      </span>
+      <span class="g-pb">—</span>
+    </a>
+
+    <a class="g-row" href="#games" data-draft aria-label="Play Spatial Memory">
+      <span class="g-idx">07</span>
+      <span class="g-mid">
+        <span class="g-name">
+          <svg class="g-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <rect x="3" y="3" width="4.6" height="4.6" rx="0.8"/><rect x="9.7" y="3" width="4.6" height="4.6" rx="0.8"/><rect x="16.4" y="3" width="4.6" height="4.6" rx="0.8"/>
+            <rect x="3" y="9.7" width="4.6" height="4.6" rx="0.8"/><rect x="9.7" y="9.7" width="4.6" height="4.6" rx="0.8" fill="currentColor" stroke="none"/><rect x="16.4" y="9.7" width="4.6" height="4.6" rx="0.8"/>
+            <rect x="3" y="16.4" width="4.6" height="4.6" rx="0.8"/><rect x="9.7" y="16.4" width="4.6" height="4.6" rx="0.8"/><rect x="16.4" y="16.4" width="4.6" height="4.6" rx="0.8"/>
+          </svg>
+          Spatial Memory
+        </span>
+        <span class="g-hook">Positions fade. Your memory doesn't.</span>
+      </span>
+      <span class="g-pb">—</span>
+    </a>
+
+    <a class="g-row" href="#games" data-draft aria-label="Play Devilish Mice">
+      <span class="g-idx">08</span>
+      <span class="g-mid">
+        <span class="g-name">
+          <svg class="g-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+          Devilish Mice
+        </span>
+        <span class="g-hook">Track the mice through the shuffle.</span>
+      </span>
+      <span class="g-pb">—</span>
+    </a>
+
+    <a class="g-row" href="#games" data-draft aria-label="Play House Flow">
+      <span class="g-idx">09</span>
+      <span class="g-mid">
+        <span class="g-name">
+          <svg class="g-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 10v10h12V10"/><path d="M10.5 20v-5.5h3V20"/></svg>
+          House Flow
+        </span>
+        <span class="g-hook">Count who's left when the door stops.</span>
+      </span>
+      <span class="g-pb">—</span>
+    </a>
+
+    <p class="list-note">
+      Personal bests save to this browser the moment you finish a run — the value shown for
+      Reaction Time is sample data from the readout below.
+    </p>
+
+  </section>
+
+  <!-- ============ 04 · result — B's block language blooming in the game's hue ============ -->
+  <div class="container section">
+    <p class="kicker">03 — Sample result</p>
+    <h2>Your result, in context</h2>
+  </div>
+
+  <section id="result" aria-label="Sample result — Reaction Time Test">
+    <div class="res-strip">
+      <span>RESULT — REACTION TIME TEST</span>
+      <span>SAMPLE SESSION · DEMO DATA</span>
+    </div>
+
+    <div class="res-grid">
+      <div class="res-paper reveal">
+        <p class="rp-kick">YOUR TIME — RUN 10 OF 10</p>
+        <p class="rp-score">245<span class="rp-unit">MS</span></p>
+        <p class="rp-delta">28 MS FASTER THAN TYPICAL</p>
+
+        <svg class="spark" viewBox="0 0 560 132" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Sparkline of ten demo runs improving from 312 to 245 milliseconds. Dashed line marks the typical 273 milliseconds.">
+          <line class="spark-typ" x1="8" y1="65" x2="552" y2="65"/>
+          <polyline class="spark-path" pathLength="1" points="16,26 74.7,40 133.3,37 192,52 250.7,66 309.3,65 368,75 426.7,84 485.3,92 544,93"/>
+          <g fill="#242424">
+            <circle class="pt" cx="16" cy="26" r="2.4"/><circle class="pt" cx="74.7" cy="40" r="2.4"/>
+            <circle class="pt" cx="133.3" cy="37" r="2.4"/><circle class="pt" cx="192" cy="52" r="2.4"/>
+            <circle class="pt" cx="250.7" cy="66" r="2.4"/><circle class="pt" cx="309.3" cy="65" r="2.4"/>
+            <circle class="pt" cx="368" cy="75" r="2.4"/><circle class="pt" cx="426.7" cy="84" r="2.4"/>
+            <circle class="pt" cx="485.3" cy="92" r="2.4"/>
+          </g>
+          <circle class="pt" cx="544" cy="93" r="4.6" fill="#242424"/>
+          <text x="14" y="15" font-family="JetBrains Mono, monospace" font-size="11" fill="#6B6963">312</text>
+          <text x="548" y="117" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" font-weight="600" fill="#242424">245</text>
+        </svg>
+        <p class="rp-cap">YOUR LAST 10 RUNS — DEMO DATA · DASHED LINE = TYPICAL 273 MS</p>
+
+        <div class="chips">
+          <span class="chip">RUNS <b>10</b></span>
+          <span class="chip">BEST <b>245 MS</b></span>
+          <span class="chip">VS FIRST RUN <b>−67 MS</b></span>
+        </div>
+      </div>
+
+      <div class="res-side">
+        <h3 class="rs-h">Typical: <span class="num">273</span> ms.</h3>
+        <p class="rs-p">
+          You clicked <span class="num">28</span> ms faster than the typical player — on this
+          device, in this session. The trend across your last ten runs matters more than any
+          single number.
+        </p>
+        <div class="rs-table">
+          <div><span>TYPICAL (MEDIAN)</span><b>273 MS</b></div>
+          <div><span>YOUR RUN</span><b>245 MS</b></div>
+          <div><span>DIFFERENCE</span><b>28 MS FASTER</b></div>
+        </div>
+        <p class="rs-note">
+          SOURCE — HUMANBENCHMARK.COM PUBLIC REACTION-TIME DATA · MEDIAN OF ≈81,000,000 SAMPLES.
+          A REFERENCE VALUE ONLY: NOT A PERCENTILE, NOT A COGNITIVE SCORE.
+        </p>
+        <div class="rs-actions">
+          <button class="btn btn-ink" id="play-again" type="button">
+            PLAY AGAIN
+            <svg width="24" height="16" viewBox="0 0 24 16" aria-hidden="true"><path d="M1 8 H21 M14 2 L21 8 L14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="btn btn-ghost" id="all-games-btn" type="button">ALL GAMES</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="container foot-grid">
+    <div>
+      <span class="brand">
+        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="currentColor">
+          <rect x="1" y="8" width="2.6" height="5" rx="0.8"/>
+          <rect x="5.7" y="4.5" width="2.6" height="8.5" rx="0.8"/>
+          <rect x="10.4" y="1.5" width="2.6" height="11.5" rx="0.8"/>
+        </svg>
+        BRAIN&nbsp;FLOW
+      </span>
+      <p class="foot-tag">Quiet brain games. No accounts, no noise, nothing to install.</p>
+    </div>
+    <nav class="foot-links" aria-label="Footer">
+      <a href="#games">ALL GAMES</a>
+      <a href="#about">ABOUT THE TEST</a>
+      <a href="#result">SAMPLE RESULT</a>
+    </nav>
+    <div class="foot-meta">
+      <span>THE CANVAS STAYS QUIET — A GAME'S HUE ARRIVES ONLY WITH ITS RESULT</span>
+      <span>DATA STAYS IN YOUR BROWSER</span>
+      <span>REFERENCE: HUMANBENCHMARK.COM — PUBLIC DATA</span>
+      <span>© 2026 BRAIN FLOW</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---- hero target zone: idle → wait → go → result (real measured taps).
+     The GO signal is a paper flash; the game's hue is reserved for the result. ---- */
+  var zone = document.getElementById('zone');
+  var zoneNum = document.getElementById('zone-num');
+  var zoneUnit = document.getElementById('zone-unit');
+  var zoneSub = document.getElementById('zone-sub');
+  var state = 'idle';
+  var timer = null;
+  var goAt = 0;
+
+  function render(main, sub, unitMs) {
+    zoneNum.textContent = main;
+    zoneSub.innerHTML = sub;
+    zoneUnit.hidden = !unitMs;
+  }
+
+  function showIdle() {
+    state = 'idle';
+    zone.dataset.state = 'idle';
+    render('TAP TO START',
+      'or press <kbd class="key">SPACE</kbd> · the signal fires after a random delay',
+      false);
+  }
+
+  function arm() {
+    state = 'wait';
+    zone.dataset.state = 'wait';
+    render('WAIT', 'hold — tap the instant the panel turns white', false);
+    timer = window.setTimeout(function () {
+      state = 'go';
+      zone.dataset.state = 'go';
+      render('TAP NOW', 'as fast as you can', false);
+      goAt = (window.performance && performance.now) ? performance.now() : Date.now();
+    }, 1200 + Math.random() * 1800);
+  }
+
+  function showEarly() {
+    state = 'early';
+    zone.dataset.state = 'early';
+    render('TOO SOON', 'false start · tap to try again', false);
+  }
+
+  function showResult() {
+    var now = (window.performance && performance.now) ? performance.now() : Date.now();
+    var ms = Math.max(1, Math.round(now - goAt));
+    state = 'result';
+    zone.dataset.state = 'result';
+    render(String(ms), 'tap to run another', true);
+  }
+
+  zone.addEventListener('click', function () {
+    if (timer) { window.clearTimeout(timer); timer = null; }
+    if (state === 'idle' || state === 'early' || state === 'result') {
+      arm();
+    } else if (state === 'wait') {
+      showEarly();
+    } else if (state === 'go') {
+      showResult();
+    }
+  });
+
+  /* space bar plays from anywhere, unless another control has focus */
+  window.addEventListener('keydown', function (e) {
+    if (e.code !== 'Space' || e.repeat) { return; }
+    var t = e.target;
+    if (t && t !== document.body && t.closest && t.closest('button, a, input, textarea, select, summary')) { return; }
+    e.preventDefault();
+    zone.click();
+  });
+
+  /* ---- config pills (visual state toggle, monkeytype-style) ---- */
+  Array.prototype.forEach.call(document.querySelectorAll('.pill-group'), function (g) {
+    g.addEventListener('click', function (e) {
+      var pill = e.target && e.target.closest ? e.target.closest('.pill') : null;
+      if (!pill || !g.contains(pill)) { return; }
+      Array.prototype.forEach.call(g.querySelectorAll('.pill'), function (p) {
+        p.classList.remove('is-active');
+        p.setAttribute('aria-pressed', 'false');
+      });
+      pill.classList.add('is-active');
+      pill.setAttribute('aria-pressed', 'true');
+    });
+  });
+
+  /* ---- result buttons do what they say ---- */
+  var playAgain = document.getElementById('play-again');
+  var allGames = document.getElementById('all-games-btn');
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var behavior = reduced ? 'auto' : 'smooth';
+
+  playAgain.addEventListener('click', function () {
+    if (timer) { window.clearTimeout(timer); timer = null; }
+    showIdle();
+    zone.scrollIntoView({ behavior: behavior, block: 'center' });
+    zone.focus({ preventScroll: true });
+  });
+
+  allGames.addEventListener('click', function () {
+    document.getElementById('games').scrollIntoView({ behavior: behavior, block: 'start' });
+  });
+
+  /* ---- draft rows: don't navigate ---- */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-draft]'), function (el) {
+    el.addEventListener('click', function (e) { e.preventDefault(); });
+  });
+
+  /* ---- sparkline draws on scroll into view ---- */
+  var reveals = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) {
+          en.target.classList.add('in-view');
+          io.unobserve(en.target);
+        }
+      });
+    }, { threshold: 0.35 });
+    Array.prototype.forEach.call(reveals, function (el) { io.observe(el); });
+  } else {
+    Array.prototype.forEach.call(reveals, function (el) { el.classList.add('in-view'); });
+  }
+})();
+</script>
+
+
+
+</body>
+</html>
