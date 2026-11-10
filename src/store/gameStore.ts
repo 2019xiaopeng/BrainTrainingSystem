@@ -20,9 +20,12 @@ interface GameStore {
   userProfile: UserProfile;
   /** User's saved game configurations */
   gameConfigs: GameConfigs;
+  /** Whether game sound effects are enabled */
+  soundEnabled: boolean;
 
   // Actions
   setNextConfig: (config: Partial<NBackConfig>) => void;
+  setSoundEnabled: (enabled: boolean) => void;
   updateGameConfig: (mode: GameMode, config: Partial<GameConfigs[GameMode]>) => void;
   saveSession: (summary: SessionSummary) => void;
   resetLocalData: () => void;
@@ -178,11 +181,14 @@ export const useGameStore = create<GameStore>()(
       sessionHistory: [],
       userProfile: defaultUserProfile(),
       gameConfigs: defaultGameConfigs(),
+      soundEnabled: true,
 
       setNextConfig: (config) =>
         set((state) => ({
           nextConfig: { ...state.nextConfig, ...config },
         })),
+
+      setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
 
       updateGameConfig: (mode, config) =>
         set((state) => ({
@@ -256,6 +262,7 @@ export const useGameStore = create<GameStore>()(
         sessionHistory: state.sessionHistory,
         userProfile: state.userProfile,
         gameConfigs: state.gameConfigs,
+        soundEnabled: state.soundEnabled,
       }),
       // v7 (auth/economy era) and earlier: keep only the fields that still exist
       migrate: (persistedState: unknown) => {

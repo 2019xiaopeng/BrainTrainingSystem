@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSoundEffects } from '../../hooks/useSoundEffects';
 import type { SessionSummary, SessionHistoryEntry, UserProfile } from '../../types/game';
 
 interface ResultScreenProps {
@@ -9,27 +11,37 @@ interface ResultScreenProps {
   onBackHome: () => void;
 }
 
+const isNewHighScore = (summary: SessionSummary, history: SessionHistoryEntry[]): boolean =>
+  !!summary.score && history.length > 1 &&
+  summary.score > Math.max(...history.slice(0, -1).map((s) => s.score));
+
 /**
  * ResultScreen - 结果展示界面
  */
 export function ResultScreen({ summary, sessionHistory, userProfile, onPlayAgain, onBackHome }: ResultScreenProps) {
   const { t } = useTranslation();
+  const { playFinish, playRecord } = useSoundEffects();
 
   // Check for new achievements
-  const isNewHighScore = summary.score && sessionHistory.length > 1 &&
-    summary.score > Math.max(...sessionHistory.slice(0, -1).map(s => s.score));
+  const newHighScore = isNewHighScore(summary, sessionHistory);
 
   const isNewMaxNLevel = summary.accuracy >= 80 && summary.config.nLevel === userProfile.maxNLevel &&
     sessionHistory.length > 1;
+
+  // Play a jingle on mount: brighter chime for a new high score
+  useEffect(() => {
+    if (newHighScore) playRecord();
+    else playFinish();
+  }, [newHighScore, playRecord, playFinish]);
 
   return (
     <div className="space-y-6 pt-8">
       <h1 className="text-3xl font-light text-zen-700 text-center animate-fade-in">{t('result.title')}</h1>
 
       {/* Achievement Badges */}
-      {(isNewHighScore || isNewMaxNLevel) && (
+      {(newHighScore || isNewMaxNLevel) && (
         <div className="flex gap-2 justify-center animate-bounce">
-          {isNewHighScore && (
+          {newHighScore && (
             <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
               {t('result.newRecord')}
             </div>

@@ -1,7 +1,7 @@
 import { useMemo, useState, type ComponentType } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { HelpCircle, Settings as SettingsIcon, User, Trash2 } from 'lucide-react';
+import { HelpCircle, Settings as SettingsIcon, User, Trash2, Volume2 } from 'lucide-react';
 import { useGameStore } from '../../store/gameStore';
 import { InstructionScreen } from './InstructionScreen';
 
@@ -25,6 +25,8 @@ export function SettingsScreen() {
 
   const sessionCount = useGameStore((s) => s.sessionHistory.length);
   const resetLocalData = useGameStore((s) => s.resetLocalData);
+  const soundEnabled = useGameStore((s) => s.soundEnabled);
+  const setSoundEnabled = useGameStore((s) => s.setSoundEnabled);
   const [confirmReset, setConfirmReset] = useState(false);
 
   const tabs: Array<{ key: SettingsTab; label: string; icon: ComponentType<{ className?: string }> }> = [
@@ -80,6 +82,33 @@ export function SettingsScreen() {
 
       {tab === 'profile' && (
         <div className="space-y-3">
+          <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-zen-700 flex items-center gap-2">
+                  <Volume2 className="w-4 h-4 text-zen-400" />
+                  {t('settings.sound')}
+                </div>
+                <div className="text-xs text-zen-400 mt-1">{t('settings.soundHint')}</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={soundEnabled}
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className={`shrink-0 w-12 h-7 rounded-full p-1 transition-colors ${
+                  soundEnabled ? 'bg-sage-500' : 'bg-zen-200'
+                }`}
+              >
+                <span
+                  className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                    soundEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
           <div className="bg-white rounded-xl p-4 border border-zen-200/50 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
