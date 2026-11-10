@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { phaseMotion } from '../game/arcade';
 import { useReactionGame } from '../../hooks/useReactionGame';
 import type { ReactionPhase } from '../../hooks/useReactionGame';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
@@ -103,13 +104,12 @@ export function ReactionGameScreen() {
           </div>
         )}
 
-        <motion.div
-          key={phase}
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.18 }}
-          className="flex flex-col items-center gap-3 px-6 text-center"
-        >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={phase}
+            {...phaseMotion}
+            className="flex flex-col items-center gap-3 px-6 text-center"
+          >
           {phase === 'idle' && (
             <>
               <div className="text-2xl font-medium">{t('game.reaction.title')}</div>
@@ -156,15 +156,15 @@ export function ReactionGameScreen() {
                 <span className="text-zen-500">
                   {t('game.reaction.best')} <b className="text-zen-700">{result.fastestMs}</b> {t('game.reaction.ms')}
                 </span>
-                <span
-                  className={`px-3 py-1 rounded-full ${
-                    result.isNewBest
-                      ? 'bg-amber-100 text-amber-700 border border-amber-300 font-medium'
-                      : 'text-zen-500'
-                  }`}
-                >
-                  {t('game.reaction.personalBest')} {result.bestMs} {t('game.reaction.ms')}
-                </span>
+                {result.isNewBest ? (
+                  <span className="px-3 py-1 rounded-full bg-sage-100 border border-sage-200 text-sage-700 text-sm font-medium">
+                    ★ {t('game.reaction.personalBest')} {result.bestMs} {t('game.reaction.ms')}
+                  </span>
+                ) : (
+                  <span className="text-zen-500">
+                    {t('game.reaction.personalBest')} {result.bestMs} {t('game.reaction.ms')}
+                  </span>
+                )}
               </div>
               <div className="flex gap-3 mt-2">
                 <button
@@ -175,6 +175,7 @@ export function ReactionGameScreen() {
                   }}
                   className="px-8 py-3 rounded-xl bg-sage-500 text-white font-medium
                     hover:bg-sage-600 active:scale-[0.98] transition-all shadow-sm"
+                autoFocus
                 >
                   {t('game.reaction.again')}
                 </button>
@@ -190,6 +191,7 @@ export function ReactionGameScreen() {
             </div>
           )}
         </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

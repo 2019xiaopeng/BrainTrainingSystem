@@ -243,7 +243,8 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
   // ---- Phase: Covering ----
   useEffect(() => {
     if (phase !== 'covering') return;
-    return scheduleVisible(onCoverComplete, COVER_ANIM_MS);
+    // +50ms grace: a setTimeout can beat the eased flip animation by a frame
+    return scheduleVisible(onCoverComplete, COVER_ANIM_MS + 50);
   }, [phase, onCoverComplete, currentRound]);
 
   // ---- Phase: Pushing (rAF 直写 transform, 零间隔连续) ----
@@ -280,6 +281,16 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
     };
 
     applyProgress(0);
+
+    // shortcut: reduced-motion users skip the slide, take the end state
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      applyProgress(1);
+      if (!phasePushDoneRef.current) {
+        phasePushDoneRef.current = true;
+        onPushAnimComplete();
+      }
+      return;
+    }
 
     let cancelled = false;
     let rafId = 0;
@@ -539,7 +550,7 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
       {/* 阶段指示器 */}
       <div className="text-center py-1">
         <AnimatePresence mode="wait">
-          <motion.div key={`${phase}-${currentRound}-${currentPushIndex}`}
+          <motion.div key={`${phase}-${currentRound}`}
             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }} className="text-xl font-medium text-zen-700">
             {phaseText}
@@ -564,12 +575,14 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="absolute flex items-center justify-center pointer-events-none"
                 style={{ left: BORDER_PAD, top: BORDER_PAD, width: gridW, height: gridH, zIndex: 40 }}>
-                <motion.div key={countdown}
-                  initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 1.3, opacity: 0 }}
-                  className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                  <span className="text-3xl font-bold text-white drop-shadow-lg">{countdown}</span>
-                </motion.div>
+                <AnimatePresence mode="wait">
+                  <motion.div key={countdown}
+                    initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 1.3, opacity: 0 }}
+                    className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                    <span className="text-3xl font-bold text-white drop-shadow-lg">{countdown}</span>
+                  </motion.div>
+                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>

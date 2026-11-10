@@ -439,7 +439,8 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
       {/* 上一题反馈（未作答 = 超时） */}
       {lastResult && (
         <div
-          className={`text-center text-sm font-medium transition-all animate-fade-in
+          key={lastResult.targetStimulusIndex}
+          className={`text-center text-sm font-medium animate-fade-in
             ${lastResult.isCorrect ? 'text-green-600' : 'text-red-500'}`}
         >
           {lastResult.isCorrect

@@ -13,13 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMathSprintGame } from '../../hooks/useMathSprintGame';
 import { useGameStore } from '../../store/gameStore';
 import { NumericKeypad } from '../game/NumericKeypad';
-
-const phaseMotion = {
-  initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -10 },
-  transition: { duration: 0.25 },
-};
+import { phaseMotion, ScoreReveal, PBPill, ProgressBar } from '../game/arcade';
 
 export function MathSprintGameScreen() {
   const { t } = useTranslation();
@@ -51,7 +45,6 @@ export function MathSprintGameScreen() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [phase, inputDigit, backspace, submit]);
 
-  const progress = durationMs > 0 ? Math.max(0, Math.min(1, timeLeftMs / durationMs)) : 0;
   const secondsLeft = Math.ceil(timeLeftMs / 1000);
   const accuracy = attempts > 0 ? Math.round((solved / attempts) * 100) : 0;
 
@@ -67,16 +60,7 @@ export function MathSprintGameScreen() {
           {t('game.quit')}
         </button>
         <h1 className="text-xl font-light text-zen-700">{t('game.mathSprint.title')}</h1>
-        <div
-          className={`px-3 py-1 rounded-full text-xs transition-colors ${
-            isNewBest
-              ? 'bg-sage-200 text-sage-700 font-semibold shadow-sm'
-              : 'bg-zen-100 text-zen-500'
-          }`}
-        >
-          {t('game.mathSprint.personalBest')}
-          <span className="font-mono font-semibold ml-1">{best}</span>
-        </div>
+        <PBPill best={best} isNewBest={isNewBest} label={t('game.mathSprint.personalBest')} />
       </header>
 
       <AnimatePresence mode="wait">
@@ -100,12 +84,7 @@ export function MathSprintGameScreen() {
             </div>
 
             {/* Thin time progress bar (drains left → right) */}
-            <div className="h-1 rounded-full bg-zen-100 overflow-hidden">
-              <div
-                className="h-full bg-sage-400 origin-left transition-transform duration-300 ease-linear"
-                style={{ transform: `scaleX(${progress})` }}
-              />
-            </div>
+            <ProgressBar remainingMs={timeLeftMs} durationMs={durationMs} />
 
             {/* Equation */}
             <div
@@ -149,15 +128,7 @@ export function MathSprintGameScreen() {
                        py-12 px-4 text-center space-y-5"
           >
             <div className="text-sm text-zen-400">{t('game.mathSprint.finished')}</div>
-            <motion.div
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-              className={`font-mono font-semibold leading-none ${isNewBest ? 'text-sage-600' : 'text-zen-700'}`}
-              style={{ fontSize: 'clamp(4rem, 20vw, 6rem)' }}
-            >
-              {solved}
-            </motion.div>
+            <ScoreReveal value={solved} tone={isNewBest ? 'best' : 'normal'} />
             <div className="text-xs text-zen-400">{t('game.mathSprint.solved')}</div>
             <div className="font-mono text-sm text-zen-500">
               {solved} / {attempts} · {accuracy}%
@@ -172,6 +143,7 @@ export function MathSprintGameScreen() {
                 onClick={retry}
                 className="flex-1 py-3 rounded-xl bg-sage-500 text-white text-sm font-medium
                            hover:bg-sage-600 active:scale-95 transition-all"
+              autoFocus
               >
                 {t('game.mathSprint.again')}
               </button>

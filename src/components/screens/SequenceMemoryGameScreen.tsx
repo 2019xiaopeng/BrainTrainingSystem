@@ -12,13 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSequenceMemoryGame } from '../../hooks/useSequenceMemoryGame';
 import { useGameStore } from '../../store/gameStore';
-
-const phaseMotion = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 },
-  transition: { duration: 0.2 },
-};
+import { phaseMotion, ScoreReveal, PBPill } from '../game/arcade';
 
 export function SequenceMemoryGameScreen() {
   const { t } = useTranslation();
@@ -77,16 +71,7 @@ export function SequenceMemoryGameScreen() {
               {t('game.quit')}
             </button>
           )}
-          <div
-            className={`px-3 py-1 rounded-full text-xs transition-colors ${
-              isNewBest
-                ? 'bg-sage-200 text-sage-700 font-semibold shadow-sm'
-                : 'bg-zen-100 text-zen-500'
-            }`}
-          >
-            {t('game.sequence.personalBest')}
-            <span className="font-mono font-semibold ml-1">{best}</span>
-          </div>
+          <PBPill best={best} isNewBest={isNewBest} label={t('game.sequence.personalBest')} />
         </div>
       </header>
 
@@ -151,17 +136,7 @@ export function SequenceMemoryGameScreen() {
                        py-8 px-4 text-center space-y-4"
           >
             <div className="text-sm text-zen-400">{t('game.sequence.gameOver')}</div>
-            <motion.div
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-              className={`font-mono font-semibold leading-none ${
-                isNewBest ? 'text-sage-600' : 'text-zen-700'
-              }`}
-              style={{ fontSize: 'clamp(4rem, 20vw, 6rem)' }}
-            >
-              {finalLength}
-            </motion.div>
+            <ScoreReveal value={finalLength} tone={isNewBest ? 'best' : 'normal'} />
             {isNewBest && (
               <div className="inline-block px-4 py-1 rounded-full bg-sage-100 border border-sage-200 text-sage-700 text-sm">
                 ★ {t('game.sequence.personalBest')} {best}
@@ -173,6 +148,7 @@ export function SequenceMemoryGameScreen() {
                 onClick={retry}
                 className="flex-1 py-3 rounded-xl bg-sage-500 text-white text-sm font-medium
                            hover:bg-sage-600 active:scale-95 transition-all"
+              autoFocus
               >
                 {t('game.sequence.again')}
               </button>
