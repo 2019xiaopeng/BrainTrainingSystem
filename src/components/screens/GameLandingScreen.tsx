@@ -7,6 +7,7 @@ import { useGameStore } from '../../store/gameStore';
 import { MOUSE_DIFFICULTY_MAP } from '../../types/game';
 import { useReactionGame } from '../../hooks/useReactionGame';
 import { useNumberMemoryGame } from '../../hooks/useNumberMemoryGame';
+import { useSequenceMemoryGame } from '../../hooks/useSequenceMemoryGame';
 import { NumericKeypad } from '../game/NumericKeypad';
 import { InstrumentReadout } from '../game/InstrumentReadout';
 
@@ -21,6 +22,7 @@ import { InstrumentReadout } from '../game/InstrumentReadout';
 const MODE_HUE: Record<string, string> = {
   reaction: '#9C5F46',
   numberMemory: '#4A6B8A',
+  sequence: '#2B6E68',
 };
 export function GameLandingScreen() {
   const { slug = '' } = useParams<{ slug: string }>();
@@ -135,6 +137,10 @@ export function GameLandingScreen() {
 
   if (game.mode === 'numberMemory') {
     return <NumberMemoryInstrumentLanding slug={game.slug} helpText={helpText} faqPairs={faqPairs} />;
+  }
+
+  if (game.mode === 'sequence') {
+    return <SequenceInstrumentLanding slug={game.slug} helpText={helpText} faqPairs={faqPairs} />;
   }
 
   return (
@@ -382,6 +388,130 @@ function digitSizeClass(length: number): string {
   if (length <= 8) return 'text-5xl sm:text-6xl';
   if (length <= 12) return 'text-4xl sm:text-5xl';
   return 'text-3xl sm:text-4xl';
+}
+
+/**
+ * Sequence Memory's landing — the grid is the hero, flashing its pattern,
+ * ink readout on the fatal miss (docs/game-dossiers/03-sequence-memory.md).
+ */
+function SequenceInstrumentLanding({
+  slug,
+  helpText,
+  faqPairs,
+}: {
+  slug: string;
+  helpText: string;
+  faqPairs: readonly (readonly [string, string])[];
+}) {
+  const { t } = useTranslation();
+  const gridSize = useGameStore((s) => s.gameConfigs.sequence.gridSize);
+  const sessionHistory = useGameStore((s) => s.sessionHistory);
+  const engine = useSequenceMemoryGame();
+  const { phase, lit, inputIdx, best, finalLength, wrongCell, startGame, retry, pressCell } = engine;
+  const startedRef = useRef(false);
+
+  const ref = getReference('sequence');
+  const size = gridSize;
+  const cells = Array.from({ length: size * size }, (_, i) => i);
+
+  useEffect(() => {
+    if (!startedRef.current) {
+      startedRef.current = true;
+      startGame(gridSize);
+    }
+  }, [startGame, gridSize]);
+
+  const historySeries = sessionHistory
+    .filter((h) => h.mode === 'sequence' && h.totalRounds > 0)
+    .slice(-10)
+    .map((h) => h.totalRounds);
+
+  const cellClass = (i: number): string => {
+    if (i === lit) return 'bg-sage-500 border-sage-600';
+    if (phase === 'finished' && wrongCell === i) return 'bg-rose-300 border-rose-400';
+    if (phase === 'finished') return 'bg-zen-100 border-zen-200';
+    if (phase === 'input' && inputIdx > 0 && i === -2) return '';
+    return 'bg-zen-100 border-zen-200 hover:border-sage-400';
+  };
+
+  const surfaceNote =
+    phase === 'showing' ? t('game.sequence.watch')
+    : phase === 'input' ? t('game.sequence.repeat')
+    : phase === 'feedback' ? t('game.numberMemory.correct')
+    : phase === 'finished' ? t('game.sequence.gameOver')
+    : t('game.sequence.tapToStart');
+
+  return (
+    <article className="max-w-3xl mx-auto pt-6 pb-4 animate-fade-in">
+      <header className="space-y-2">
+        <p className="font-mono text-xs tracking-[0.22em] text-sage-700">SEQUENCE MEMORY — 03</p>
+        <h1 className="text-[clamp(1.4rem,3.4vw,1.75rem)] font-semibold leading-tight text-zen-900">{t('gameLanding.hook.sequence')}</h1>
+        <p className="font-mono text-[12.5px] text-zen-700">
+          {t('game.sequence.personalBest')} <b className="text-sage-700 font-bold">{best > 0 ? best : '—'}</b>
+          {ref && <> · {t('instrument.typical')} <b className="text-sage-700 font-bold">{ref.value} {t('game.sequence.levelsUnit')}</b>{' '}
+            <span className="text-zen-500">({ref.source})</span></>}
+        </p>
+      </header>
+
+      {/* The grid — the page's hero */}
+      <div className="mt-4 min-h-[46vh] sm:min-h-[52vh] rounded-[10px] border-2 border-dashed border-zen-300 bg-zen-100
+        flex flex-col items-center justify-center gap-5 px-4 py-8">
+        <p className="font-mono text-xs text-zen-500">{surfaceNote}</p>
+        <div
+          className="grid gap-2 sm:gap-3 w-full max-w-xs sm:max-w-sm"
+          style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
+        >
+          {cells.map((i) => (
+            <button
+              key={i}
+              type="button"
+              aria-label={String(i + 1)}
+              disabled={phase !== 'input'}
+              onClick={() => pressCell(i)}
+              className={`aspect-square rounded-lg border-2 transition-colors duration-150
+                disabled:cursor-default enabled:cursor-pointer ${cellClass(i)}`}
+            />
+          ))}
+        </div>
+        {phase === 'finished' && (
+          <p className="font-mono text-xs text-zen-500">
+            {t('game.sequence.reached', { level: finalLength })}
+          </p>
+        )}
+      </div>
+
+      {phase === 'finished' && (
+        <InstrumentReadout
+          mode="sequence"
+          hue={MODE_HUE.sequence}
+          score={finalLength}
+          scoreUnit={t('game.sequence.levelsUnit')}
+          scoreCaption={t('instrument.levelsReached')}
+          series={historySeries}
+          onPlayAgain={() => { retry(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          onAllGames={() => document.getElementById('games-index')?.scrollIntoView({ behavior: 'smooth' })}
+        />
+      )}
+
+      <section className="mt-16 pt-6 border-t-2 border-zen-300 space-y-3" aria-labelledby="about-heading">
+        <h2 id="about-heading" className="font-mono text-xs tracking-[0.22em] text-sage-700">{t('gameLanding.aboutTitle')}</h2>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.sequence.1')}</p>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.sequence.2')}</p>
+        <p className="font-mono text-[11px] text-zen-500">{t('gameLanding.about.sequence.source')}</p>
+      </section>
+
+      <div className="mt-10" id="games-index">
+        <LandingGamesIndex currentSlug={slug} />
+      </div>
+      <div className="mt-8">
+        <LandingFaq faqPairs={faqPairs} />
+      </div>
+      <p className="mt-8 font-mono text-[11px] tracking-[0.12em] text-zen-500 text-center">
+        BRAIN FLOW — {t('gameLanding.footerLocal')}
+      </p>
+      <span className="sr-only">{helpText}</span>
+    </article>
+  );
 }
 
 /**

@@ -104,6 +104,9 @@
     },
     "sequence": {
       "title": "Sequence Memory",
+      "levelsUnit": "levels",
+      "tapToStart": "Starting…",
+      "reached": "you repeated {{level}} steps before the miss",
       "personalBest": "Personal Best",
       "level": "Sequence Length",
       "watch": "Watch the flashing order",
@@ -400,7 +403,8 @@
     "metaDescription": "Play {{game}} free online — {{description}}. No download, no sign-up, works on mobile and desktop.",
     "hook": {
       "reaction": "How fast are your reflexes?",
-      "numberMemory": "How many digits can you hold?"
+      "numberMemory": "How many digits can you hold?",
+      "sequence": "Repeat the pattern. One more step every round."
     },
     "reactionSub": "5-tap series · score is your median · Space works too",
     "aboutTitle": "ABOUT THE TEST",
@@ -414,6 +418,11 @@
         "1": "This is a digit-span test: remember the digits, type them back, and the string grows by one every round. Your score is the longest string you recalled correctly.",
         "2": "Online scores run higher than clinical digit-span norms — test-takers are self-selected and often practiced — so read the typical value as a casual benchmark, not a diagnosis. Everything stays in your browser.",
         "source": "typical value source: third-party analysis of humanbenchmark number-memory scores (median 9) · not a clinical norm"
+      },
+      "sequence": {
+        "1": "Squares flash in a growing pattern — watch, then click them back in the same order. Each completed level adds one more step, and one wrong tap ends the run.",
+        "2": "Typical online players reach around level 8. Dedicated practice with memory techniques pushes much higher, so treat the typical value as a casual benchmark. Everything stays in your browser.",
+        "source": "typical value source: third-party analyses of humanbenchmark sequence scores (typical ≈8) · not a clinical norm"
       }
     },
     "footerLocal": "PLAYS IN YOUR BROWSER · DATA STAYS ON YOUR DEVICE"
@@ -429,6 +438,7 @@
     "playAgain": "PLAY AGAIN",
     "allGames": "ALL 9 GAMES",
     "medianOf": "median of {{total}} taps — one fumble won't wreck it",
-    "digitsReached": "longest string recalled correctly this run"
+    "digitsReached": "longest string recalled correctly this run",
+    "levelsReached": "longest pattern fully repeated this run"
   }
 }

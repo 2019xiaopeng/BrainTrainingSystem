@@ -28,6 +28,12 @@ export const REFERENCE_VALUES: Partial<Record<GameMode, ReferenceValue>> = {
     source: 'humanbenchmark data',
     note: 'third-party analysis of humanbenchmark scores (median 9, avg 9.2) — self-selected online population, not clinical digit-span norms',
   },
+  sequence: {
+    value: 8,
+    unit: 'levels',
+    source: 'humanbenchmark data',
+    note: 'third-party analyses of humanbenchmark sequence scores (typical ≈8; 6–8 common adult range) — not a clinical norm',
+  },
 };
 
 export const getReference = (mode: GameMode): ReferenceValue | undefined => REFERENCE_VALUES[mode];
