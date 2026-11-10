@@ -10,11 +10,8 @@ import { MouseGameScreen } from '../screens/MouseGameScreen';
 import { HouseGameScreen } from '../screens/HouseGameScreen';
 import { ReactionGameScreen } from '../screens/ReactionGameScreen';
 import { NumberMemoryGameScreen } from '../screens/NumberMemoryGameScreen';
-<<<<<<< HEAD
-import { StroopGameScreen } from '../screens/StroopGameScreen';
-=======
 import { SequenceMemoryGameScreen } from '../screens/SequenceMemoryGameScreen';
->>>>>>> v6-game-sequence
+import { StroopGameScreen } from '../screens/StroopGameScreen';
 import { buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
 import type { GameMode, HouseSpeed } from '../../types/game';
 
