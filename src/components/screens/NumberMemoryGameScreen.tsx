@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNumberMemoryGame } from '../../hooks/useNumberMemoryGame';
 import { useGameStore } from '../../store/gameStore';
 import { NumericKeypad } from '../game/NumericKeypad';
+import { phaseMotion, ScoreReveal, PBPill } from '../game/arcade';
 
 /** Digits get smaller as the string grows so long spans still fit one line */
 function digitSizeClass(length: number): string {
@@ -21,13 +22,6 @@ function digitSizeClass(length: number): string {
   if (length <= 12) return 'text-5xl sm:text-6xl';
   return 'text-4xl sm:text-5xl';
 }
-
-const phaseMotion = {
-  initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -10 },
-  transition: { duration: 0.25 },
-};
 
 export function NumberMemoryGameScreen() {
   const { t } = useTranslation();
@@ -73,16 +67,7 @@ export function NumberMemoryGameScreen() {
               {t('game.quit')}
             </button>
           )}
-        <div
-          className={`px-3 py-1 rounded-full text-xs transition-colors ${
-            isNewBest
-              ? 'bg-sage-200 text-sage-700 font-semibold shadow-sm'
-              : 'bg-zen-100 text-zen-500'
-          }`}
-        >
-          {t('game.numberMemory.personalBest')}
-          <span className="font-mono font-semibold ml-1">{best}</span>
-        </div>
+          <PBPill best={best} isNewBest={isNewBest} label={t('game.numberMemory.personalBest')} />
         </div>
       </header>
 
@@ -166,15 +151,7 @@ export function NumberMemoryGameScreen() {
                        py-12 px-4 text-center space-y-5"
           >
             <div className="text-sm text-zen-400">{t('game.numberMemory.gameOver')}</div>
-            <motion.div
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-              className={`font-mono font-semibold leading-none ${isNewBest ? 'text-sage-600' : 'text-zen-700'}`}
-              style={{ fontSize: 'clamp(4rem, 20vw, 6rem)' }}
-            >
-              {finalLength}
-            </motion.div>
+            <ScoreReveal value={finalLength} tone={isNewBest ? 'best' : 'normal'} />
             {isNewBest && (
               <div className="inline-block px-4 py-1 rounded-full bg-sage-100 border border-sage-200 text-sage-700 text-sm">
                 ★ {t('game.numberMemory.personalBest')} {best}
@@ -191,6 +168,7 @@ export function NumberMemoryGameScreen() {
                 onClick={retry}
                 className="flex-1 py-3 rounded-xl bg-sage-500 text-white text-sm font-medium
                            hover:bg-sage-600 active:scale-95 transition-all"
+              autoFocus
               >
                 {t('game.numberMemory.again')}
               </button>

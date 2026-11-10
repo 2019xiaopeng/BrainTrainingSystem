@@ -129,7 +129,7 @@ const MoverView = memo(function MoverView({ m, onDone }: { m: Mover; onDone: (id
             key={i}
             src={src}
             alt="person"
-            className="w-14 h-14 sm:w-18 sm:h-18 object-contain drop-shadow-md"
+            className="w-14 h-14 sm:w-[4.5rem] sm:h-[4.5rem] object-contain drop-shadow-md"
           />
         ))}
       </div>

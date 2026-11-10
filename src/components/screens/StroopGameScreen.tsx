@@ -13,6 +13,7 @@ import { motion } from 'framer-motion';
 import { useStroopGame } from '../../hooks/useStroopGame';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
 import { useGameStore } from '../../store/gameStore';
+import { PBPill, ProgressBar, ScoreReveal } from '../game/arcade';
 
 /** Ink classes for the big word — the thing the player must identify */
 const INK_CLASSES = ['text-red-500', 'text-blue-500', 'text-green-500', 'text-yellow-500'];
@@ -116,16 +117,11 @@ export function StroopGameScreen() {
       {/* Header: title + personal best */}
       <header className="flex items-center justify-between">
         <div className="text-xl font-light text-zen-700">{t('game.stroop.title')}</div>
-        <div
-          className={`px-3 py-1 rounded-full text-xs transition-colors ${
-            result?.isNewBest
-              ? 'bg-amber-100 text-amber-700 border border-amber-300 font-semibold shadow-sm'
-              : 'bg-zen-100 text-zen-500'
-          }`}
-        >
-          {t('game.stroop.personalBest')}
-          <span className="font-mono font-semibold ml-1">{result?.best ?? best ?? '—'}</span>
-        </div>
+        <PBPill
+          best={result?.best ?? best ?? 0}
+          isNewBest={Boolean(result?.isNewBest)}
+          label={t('game.stroop.personalBest')}
+        />
       </header>
 
       {phase !== 'finished' && (
@@ -149,12 +145,7 @@ export function StroopGameScreen() {
           </div>
 
           {/* Progress bar (scaleX compositor animation, doesn't trigger layout) */}
-          <div className="w-full h-1.5 bg-zen-200 rounded-full overflow-hidden">
-            <div
-              className="h-full w-full bg-sage-400 origin-left transition-transform duration-200"
-              style={{ transform: `scaleX(${Math.max(0, Math.min(1, timeLeftMs / totalMs))})` }}
-            />
-          </div>
+          <ProgressBar remainingMs={timeLeftMs} durationMs={totalMs} />
         </>
       )}
 
@@ -170,7 +161,8 @@ export function StroopGameScreen() {
           }}
           transition={{ duration: 0.3 }}
           className={`h-44 sm:h-52 rounded-3xl border-2 flex items-center justify-center
-            shadow-sm select-none transition-colors duration-150 ${cardTone}`}
+            shadow-sm select-none transition-colors duration-150 ${cardTone}
+            ${phase === 'finished' ? 'opacity-40' : ''}`}
         >
           <span
             className={`text-6xl sm:text-7xl font-bold tracking-wide ${INK_CLASSES[trial.inkIndex]}`}
@@ -233,7 +225,7 @@ export function StroopGameScreen() {
             rounded-3xl py-8 px-6 text-center"
         >
           <div className="text-sm text-zen-400">{t('game.stroop.finished')}</div>
-          <div className="text-6xl font-bold text-zen-800 tabular-nums">{result.score}</div>
+          <ScoreReveal value={result.score} tone={result.isNewBest ? 'best' : 'normal'} />
           <div className="text-sm text-zen-500 -mt-2">{t('game.stroop.score')}</div>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-sm text-zen-500 tabular-nums">
             <span>
@@ -246,15 +238,11 @@ export function StroopGameScreen() {
               {t('result.accuracy')} <b className="text-zen-700">{result.accuracy}%</b>
             </span>
           </div>
-          <div
-            className={`px-3 py-1 rounded-full text-sm ${
-              result.isNewBest
-                ? 'bg-amber-100 text-amber-700 border border-amber-300 font-medium'
-                : 'text-zen-500'
-            }`}
-          >
-            {t('game.stroop.personalBest')} {result.best}
-          </div>
+          {result.isNewBest && (
+            <div className="px-3 py-1 rounded-full bg-sage-100 border border-sage-200 text-sage-700 text-sm">
+              ★ {t('game.stroop.personalBest')} {result.best}
+            </div>
+          )}
           <div className="flex gap-3 mt-2">
             <button
               onClick={(e) => {
@@ -263,6 +251,7 @@ export function StroopGameScreen() {
               }}
               className="px-8 py-3 rounded-xl bg-sage-500 text-white font-medium
                 hover:bg-sage-600 active:scale-[0.98] transition-all shadow-sm"
+              autoFocus
             >
               {t('game.stroop.again')}
             </button>

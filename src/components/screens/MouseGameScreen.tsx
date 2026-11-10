@@ -243,7 +243,8 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
   // ---- Phase: Covering ----
   useEffect(() => {
     if (phase !== 'covering') return;
-    return scheduleVisible(onCoverComplete, COVER_ANIM_MS);
+    // +50ms grace: a setTimeout can beat the eased flip animation by a frame
+    return scheduleVisible(onCoverComplete, COVER_ANIM_MS + 50);
   }, [phase, onCoverComplete, currentRound]);
 
   // ---- Phase: Pushing (rAF 直写 transform, 零间隔连续) ----
