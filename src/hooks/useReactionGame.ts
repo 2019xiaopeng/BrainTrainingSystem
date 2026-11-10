@@ -19,11 +19,13 @@ import type { NBackConfig, SessionSummary } from '../types/game';
 export type ReactionPhase = 'idle' | 'waiting' | 'ready' | 'tooSoon' | 'feedback' | 'finished';
 
 export interface ReactionResult {
-  /** Average ms across all valid taps — the run's score */
+  /** Median ms across all valid taps — the run's score (one fumble won't wreck it) */
+  medianMs: number;
+  /** Average ms across all valid taps (secondary stat) */
   avgMs: number;
   /** Fastest valid tap this run */
   fastestMs: number;
-  /** Personal best run average after this run (lower wins) */
+  /** Personal best run median after this run (lower wins) */
   bestMs: number;
   /** Whether this run set a new personal best */
   isNewBest: boolean;
@@ -31,7 +33,8 @@ export interface ReactionResult {
   session: SessionSummary;
 }
 
-const BEST_KEY = 'brain-flow-best:reaction';
+// v2: best switched from average to median — different scale, never mix them
+const BEST_KEY = 'brain-flow-best:reaction-v2';
 const WAIT_MIN_MS = 1500;
 const WAIT_MAX_MS = 4000;
 const TOO_SOON_MS = 1200;
@@ -96,11 +99,13 @@ export function useReactionGame(trials: number) {
   const finish = useCallback(() => {
     const times = timesRef.current;
     const avgMs = Math.round(times.reduce((s, ms) => s + ms, 0) / times.length);
+    const sorted = [...times].sort((a, b) => a - b);
+    const medianMs = sorted[Math.floor(sorted.length / 2)];
     const fastestMs = Math.min(...times);
     const prevBest = loadBest();
-    const isNewBest = prevBest === null || avgMs < prevBest;
-    if (isNewBest) saveBest(avgMs);
-    const bestMsNow = isNewBest ? avgMs : prevBest;
+    const isNewBest = prevBest === null || medianMs < prevBest;
+    if (isNewBest) saveBest(medianMs);
+    const bestMsNow = isNewBest ? medianMs : prevBest;
 
     const config: NBackConfig = {
       nLevel: 1,
@@ -129,13 +134,13 @@ export function useReactionGame(trials: number) {
       falseAlarms: 0,
       correctRejects: 0,
       accuracy: 100,
-      avgReactionTimeMs: avgMs,
+      avgReactionTimeMs: medianMs,
       durationMs: Date.now() - runStartedAtRef.current,
       timestamp: Date.now(),
     };
 
     setBestMs(bestMsNow);
-    setResult({ avgMs, fastestMs, bestMs: bestMsNow, isNewBest, session });
+    setResult({ medianMs, avgMs, fastestMs, bestMs: bestMsNow, isNewBest, session });
     go('finished');
   }, [go]);
 

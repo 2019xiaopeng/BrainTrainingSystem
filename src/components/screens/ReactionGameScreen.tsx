@@ -146,9 +146,9 @@ export function ReactionGameScreen() {
           {phase === 'finished' && result && (
             <div className="flex flex-col items-center gap-5">
               <div className="flex flex-col items-center gap-1">
-                <div className="text-sm text-zen-400">{t('game.reaction.avg')}</div>
-                <div className={`text-6xl font-bold tabular-nums ${msColor(result.avgMs)}`}>
-                  {result.avgMs}
+                <div className="text-sm text-zen-400">{t('game.reaction.median')}</div>
+                <div className={`text-6xl font-bold tabular-nums ${msColor(result.medianMs)}`}>
+                  {result.medianMs}
                   <span className="text-xl font-normal text-zen-400 ml-2">{t('game.reaction.ms')}</span>
                 </div>
               </div>

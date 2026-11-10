@@ -49,7 +49,7 @@
     "houseRounds": "挑战轮数:",
     "reaction": "反应力测试",
     "reactionDesc": "变绿立刻点击",
-    "reactionHelp": "等待背景变绿后立刻点击，抢点无效。共 5 次有效点击，取平均反应时间。",
+    "reactionHelp": "等待背景变绿后立刻点击，抢点无效。共 5 次有效点击，取中位数作为成绩——单次失误不会毁掉整局。",
     "startReaction": "开始 反应力测试",
     "numberMemory": "数字记忆",
     "numberMemoryDesc": "记住变长的数字串",
@@ -74,11 +74,16 @@
       "title": "反应力测试",
       "personalBest": "个人最佳",
       "avg": "平均反应",
+      "median": "中位反应",
       "best": "本局最快",
       "tapToStart": "点击任意处开始",
       "waitForGreen": "等待变绿…",
+      "waitForGreenSub": "只在面板变绿后点击",
       "clickNow": "立刻点击！",
+      "clickNowSub": "越快越好",
       "tooSoon": "太早了！这次无效，重新等待",
+      "tooSoonSub": "面板还没变绿——本次不计入成绩",
+      "tapContinue": "点击继续",
       "trialOf": "第 {{current}} / {{total}} 次",
       "ms": "毫秒",
       "again": "再测一次"
@@ -389,6 +394,31 @@
     "faqMobileQ": "手机上能玩吗？",
     "faqMobileA": "可以。所有游戏均为移动端优先设计，在手机、平板和电脑的现代浏览器中均可运行。",
     "allGames": "全部游戏",
-    "metaDescription": "免费在线玩{{game}}——{{description}}。无需下载、无需注册，手机电脑均可畅玩。"
+    "metaDescription": "免费在线玩{{game}}——{{description}}。无需下载、无需注册，手机电脑均可畅玩。",
+    "hook": {
+      "reaction": "你的反应有多快？"
+    },
+    "reactionSub": "5 击连测 · 成绩取中位数 · 支持空格键",
+    "aboutTitle": "关于本测试",
+    "about": {
+      "reaction": {
+        "1": "本测试测量简单视觉反应时：面板在随机延迟后变绿，记录你从变绿到点击的耗时。成绩为 5 次有效点击的中位数——单次失手不会毁掉整局。",
+        "2": "成绩受设备与输入方式影响（游戏鼠标与触屏的回报不同），与典型值的比较仅供参考。一切都在你的浏览器中运行：无账号，数据不离开本机。",
+        "source": "典型值来源：humanbenchmark.com 公开统计（约 8100 万样本的中位数），2026-11 查阅 · 非百分位、非临床标准"
+      }
+    },
+    "footerLocal": "浏览器即玩 · 数据只存本机"
+  },
+  "instrument": {
+    "result": "结果",
+    "yours": "你的成绩",
+    "typical": "典型值",
+    "typicalNone": "典型值",
+    "typicalNoneNote": "该游戏暂无公开参考值——请与自己的历史成绩比较",
+    "history": "最近成绩",
+    "historyNote": "最近 {{count}} 局，右为新——本地数据",
+    "playAgain": "再来一局",
+    "allGames": "全部 9 个游戏",
+    "medianOf": "{{total}} 击的中位数——单次失手不算数"
   }
 }
