@@ -87,23 +87,13 @@ export function TrainPage() {
   }, [isMouseMode, isHouseMode, nbackEngine, mouseEngine, houseEngine, navigate]);
 
   // 渲染
-  // 街机新游戏占位（引擎接入后由各自分支替换此块）
-  if (isArcadeStub) {
-    return (
-      <div className="pt-16 pb-8 text-center space-y-5 animate-fade-in">
-        <div className="text-5xl">{isReactionMode ? '⚡' : '🧠'}</div>
-        <h1 className="text-2xl font-light text-zen-700">
-          {isReactionMode ? t('home.reaction') : t('home.numberMemory')}
-        </h1>
-        <p className="text-sm text-zen-400">{t('game.comingSoon')}</p>
-        <button
-          onClick={() => navigate('/', { replace: true })}
-          className="px-6 py-3 rounded-xl bg-zen-100 text-zen-600 hover:bg-zen-200 transition-all"
-        >
-          {t('result.backHome')}
-        </button>
-      </div>
-    );
+  // 街机新游戏占位（引擎接入后由各自分支替换各自块）
+  if (isReactionMode) {
+    return <ArcadeComingSoon emoji="⚡" title={t('home.reaction')} onBack={() => navigate('/', { replace: true })} />;
+  }
+
+  if (isNumberMemoryMode) {
+    return <ArcadeComingSoon emoji="🧠" title={t('home.numberMemory')} onBack={() => navigate('/', { replace: true })} />;
   }
 
   if (isHouseMode) {
@@ -129,6 +119,23 @@ export function TrainPage() {
     <StageFrame ratio="4 / 3">
       <GameScreen engine={nbackEngine} onQuit={handleQuit} />
     </StageFrame>
+  );
+}
+
+function ArcadeComingSoon({ emoji, title, onBack }: { emoji: string; title: string; onBack: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="pt-16 pb-8 text-center space-y-5 animate-fade-in">
+      <div className="text-5xl">{emoji}</div>
+      <h1 className="text-2xl font-light text-zen-700">{title}</h1>
+      <p className="text-sm text-zen-400">{t('game.comingSoon')}</p>
+      <button
+        onClick={onBack}
+        className="px-6 py-3 rounded-xl bg-zen-100 text-zen-600 hover:bg-zen-200 transition-all"
+      >
+        {t('result.backHome')}
+      </button>
+    </div>
   );
 }
 
