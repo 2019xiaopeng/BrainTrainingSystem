@@ -6,6 +6,8 @@ import { getReference } from '../../lib/referenceValues';
 import { useGameStore } from '../../store/gameStore';
 import { MOUSE_DIFFICULTY_MAP } from '../../types/game';
 import { useReactionGame } from '../../hooks/useReactionGame';
+import { useNumberMemoryGame } from '../../hooks/useNumberMemoryGame';
+import { NumericKeypad } from '../game/NumericKeypad';
 import { InstrumentReadout } from '../game/InstrumentReadout';
 
 /**
@@ -18,6 +20,7 @@ import { InstrumentReadout } from '../game/InstrumentReadout';
 /** Per-mode Morandi identity hue for the readout tick + accents */
 const MODE_HUE: Record<string, string> = {
   reaction: '#9C5F46',
+  numberMemory: '#4A6B8A',
 };
 export function GameLandingScreen() {
   const { slug = '' } = useParams<{ slug: string }>();
@@ -128,6 +131,10 @@ export function GameLandingScreen() {
 
   if (game.mode === 'reaction') {
     return <ReactionInstrumentLanding slug={game.slug} helpText={helpText} faqPairs={faqPairs} />;
+  }
+
+  if (game.mode === 'numberMemory') {
+    return <NumberMemoryInstrumentLanding slug={game.slug} helpText={helpText} faqPairs={faqPairs} />;
   }
 
   return (
@@ -367,4 +374,147 @@ function padTone(state: string): string {
     default:
       return 'bg-zen-100 border-dashed border-zen-300 text-zen-700';
   }
+}
+
+/** Digits shrink as the string grows so long spans still fit one line */
+function digitSizeClass(length: number): string {
+  if (length <= 5) return 'text-6xl sm:text-7xl';
+  if (length <= 8) return 'text-5xl sm:text-6xl';
+  if (length <= 12) return 'text-4xl sm:text-5xl';
+  return 'text-3xl sm:text-4xl';
+}
+
+/**
+ * Number Memory's landing — same instrument pattern: the digit surface is
+ * the hero, keypad below, ink readout on game over
+ * (docs/game-dossiers/02-number-memory.md).
+ */
+function NumberMemoryInstrumentLanding({
+  slug,
+  helpText,
+  faqPairs,
+}: {
+  slug: string;
+  helpText: string;
+  faqPairs: readonly (readonly [string, string])[];
+}) {
+  const { t } = useTranslation();
+  const startDigits = useGameStore((s) => s.gameConfigs.numberMemory.startDigits);
+  const sessionHistory = useGameStore((s) => s.sessionHistory);
+  const engine = useNumberMemoryGame();
+  const { phase, digits, input, best, finalLength, startGame, retry, inputDigit, backspace, submit } = engine;
+  const surfaceRef = useRef<HTMLDivElement>(null);
+  const startedRef = useRef(false);
+
+  const ref = getReference('numberMemory');
+
+  // Autostart once on mount (same guard pattern as the game screen)
+  useEffect(() => {
+    if (!startedRef.current) {
+      startedRef.current = true;
+      startGame(startDigits);
+    }
+  }, [startGame, startDigits]);
+
+  // Enter submits during input
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (phase !== 'input') return;
+      if (e.key === 'Enter') { e.preventDefault(); submit(); }
+      if (e.key === 'Backspace') { e.preventDefault(); backspace(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [phase, submit, backspace]);
+
+  const historySeries = sessionHistory
+    .filter((h) => h.mode === 'numberMemory' && h.totalRounds > 0)
+    .slice(-10)
+    .map((h) => h.totalRounds);
+
+  const playing = phase !== 'finished';
+
+  return (
+    <article className="max-w-3xl mx-auto pt-6 pb-4 animate-fade-in">
+      <header className="space-y-2">
+        <p className="font-mono text-xs tracking-[0.22em] text-sage-700">NUMBER MEMORY — 02</p>
+        <h1 className="text-[clamp(1.4rem,3.4vw,1.75rem)] font-semibold leading-tight text-zen-900">{t('gameLanding.hook.numberMemory')}</h1>
+        <p className="font-mono text-[12.5px] text-zen-700">
+          {t('game.numberMemory.personalBest')} <b className="text-sage-700 font-bold">{best > 0 ? best : '—'}</b>
+          {ref && <> · {t('instrument.typical')} <b className="text-sage-700 font-bold">{ref.value} {t('game.numberMemory.digitsUnit')}</b>{' '}
+            <span className="text-zen-500">({ref.source})</span></>}
+        </p>
+      </header>
+
+      {/* The digit surface — the page's hero */}
+      <div
+        ref={surfaceRef}
+        className={`mt-4 min-h-[46vh] sm:min-h-[52vh] rounded-[10px] border-2 flex flex-col items-center justify-center gap-3 px-4
+          ${phase === 'showing' ? 'bg-zen-900 border-zen-900 text-zen-100' : 'bg-zen-100 border-dashed border-zen-300 text-zen-700'}`}
+      >
+        {phase === 'showing' && (
+          <>
+            <p className={`font-mono font-bold tracking-wider ${digitSizeClass(digits.length)}`}>{digits}</p>
+            <p className="font-mono text-xs text-zen-300">{t('game.numberMemory.memorize')}</p>
+          </>
+        )}
+        {phase === 'input' && (
+          <>
+            <p className={`font-mono font-bold tracking-wider min-h-[1.2em] ${digitSizeClass(Math.max(digits.length, 1))} ${input ? 'text-zen-900' : 'text-zen-400'}`}>
+              {input || '·'.repeat(Math.min(digits.length, 12))}
+            </p>
+            <p className="font-mono text-xs text-zen-500">
+              {t('game.numberMemory.inputHint', { count: digits.length })}
+            </p>
+          </>
+        )}
+        {phase === 'feedback' && (
+          <p className="font-mono text-2xl font-bold text-sage-600">{t('game.numberMemory.correct')}</p>
+        )}
+        {(phase === 'idle') && (
+          <p className="font-bold text-2xl uppercase">{t('game.numberMemory.tapToStart')}</p>
+        )}
+        {phase === 'finished' && (
+          <p className="font-bold text-2xl uppercase text-zen-700">{t('game.numberMemory.gameOver')}</p>
+        )}
+      </div>
+
+      {phase === 'input' && (
+        <div className="mt-3 flex justify-center">
+          <NumericKeypad value={input} onInput={inputDigit} onBackspace={backspace} onSubmit={submit} canInput />
+        </div>
+      )}
+
+      {phase === 'finished' && (
+        <InstrumentReadout
+          mode="numberMemory"
+          hue={MODE_HUE.numberMemory}
+          score={finalLength}
+          scoreUnit={t('game.numberMemory.digitsUnit')}
+          scoreCaption={t('instrument.digitsReached')}
+          series={historySeries}
+          onPlayAgain={() => { retry(); surfaceRef.current?.focus(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          onAllGames={() => document.getElementById('games-index')?.scrollIntoView({ behavior: 'smooth' })}
+        />
+      )}
+
+      <section className="mt-16 pt-6 border-t-2 border-zen-300 space-y-3" aria-labelledby="about-heading">
+        <h2 id="about-heading" className="font-mono text-xs tracking-[0.22em] text-sage-700">{t('gameLanding.aboutTitle')}</h2>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.numberMemory.1')}</p>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.numberMemory.2')}</p>
+        <p className="font-mono text-[11px] text-zen-500">{t('gameLanding.about.numberMemory.source')}</p>
+      </section>
+
+      <div className="mt-10" id="games-index">
+        <LandingGamesIndex currentSlug={slug} />
+      </div>
+      <div className="mt-8">
+        <LandingFaq faqPairs={faqPairs} />
+      </div>
+      <p className="mt-8 font-mono text-[11px] tracking-[0.12em] text-zen-500 text-center">
+        BRAIN FLOW — {t('gameLanding.footerLocal')}
+      </p>
+      {playing && <span className="sr-only">{helpText}</span>}
+    </article>
+  );
 }

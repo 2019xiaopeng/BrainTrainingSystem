@@ -94,9 +94,12 @@
       "level": "Digit Length",
       "memorize": "Memorize these digits",
       "input": "Type the digits you remember",
+      "inputHint": "{{count}} digits — type what you saw, Enter to submit",
+      "digitsUnit": "digits",
+      "tapToStart": "Starting…",
       "correct": "Correct! +1 digit",
       "wrong": "Wrong",
-      "gameOver": "Final digit length",
+      "gameOver": "Game over",
       "again": "Try Again"
     },
     "sequence": {
@@ -396,7 +399,8 @@
     "allGames": "All Games",
     "metaDescription": "Play {{game}} free online — {{description}}. No download, no sign-up, works on mobile and desktop.",
     "hook": {
-      "reaction": "How fast are your reflexes?"
+      "reaction": "How fast are your reflexes?",
+      "numberMemory": "How many digits can you hold?"
     },
     "reactionSub": "5-tap series · score is your median · Space works too",
     "aboutTitle": "ABOUT THE TEST",
@@ -405,6 +409,11 @@
         "1": "This test measures simple visual reaction time: the pad turns green after a random delay, and your tap latency is recorded. Your score is the median of 5 valid taps, so a single fumble won't wreck it.",
         "2": "Scores depend on your device and input method — a gaming mouse and a touchscreen report differently, so compare against the typical value in spirit only. Everything runs and stays in your browser: no account, no data leaving this device.",
         "source": "typical value source: humanbenchmark.com public statistics (median of ≈81M samples), read Nov 2026 · not a percentile, not a cognitive score"
+      },
+      "numberMemory": {
+        "1": "This is a digit-span test: remember the digits, type them back, and the string grows by one every round. Your score is the longest string you recalled correctly.",
+        "2": "Online scores run higher than clinical digit-span norms — test-takers are self-selected and often practiced — so read the typical value as a casual benchmark, not a diagnosis. Everything stays in your browser.",
+        "source": "typical value source: third-party analysis of humanbenchmark number-memory scores (median 9) · not a clinical norm"
       }
     },
     "footerLocal": "PLAYS IN YOUR BROWSER · DATA STAYS ON YOUR DEVICE"
@@ -419,6 +428,7 @@
     "historyNote": "last {{count}} runs, newest on the right — local data",
     "playAgain": "PLAY AGAIN",
     "allGames": "ALL 9 GAMES",
-    "medianOf": "median of {{total}} taps — one fumble won't wreck it"
+    "medianOf": "median of {{total}} taps — one fumble won't wreck it",
+    "digitsReached": "longest string recalled correctly this run"
   }
 }
