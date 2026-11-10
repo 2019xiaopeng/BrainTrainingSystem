@@ -10,6 +10,7 @@ import { MouseGameScreen } from '../screens/MouseGameScreen';
 import { HouseGameScreen } from '../screens/HouseGameScreen';
 import { ReactionGameScreen } from '../screens/ReactionGameScreen';
 import { NumberMemoryGameScreen } from '../screens/NumberMemoryGameScreen';
+import { MathSprintGameScreen } from '../screens/MathSprintGameScreen';
 import { buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
 import type { GameMode, HouseSpeed } from '../../types/game';
 
@@ -112,8 +113,9 @@ export function TrainPage() {
     return <ArcadeComingSoon emoji="🎨" title={t('home.stroop')} onBack={() => navigate('/', { replace: true })} />;
   }
 
+  // 口算冲刺：屏幕组件自管引擎生命周期（挂载即开始，结束时自带结果面板）
   if (isMathMode) {
-    return <ArcadeComingSoon emoji="🧮" title={t('home.mathSprint')} onBack={() => navigate('/', { replace: true })} />;
+    return <MathSprintGameScreen />;
   }
 
   if (isHouseMode) {
