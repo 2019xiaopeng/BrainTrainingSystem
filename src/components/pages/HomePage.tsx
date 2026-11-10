@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../../store/gameStore';
 import { HomeScreen } from '../screens/HomeScreen';
 import { HOUSE_SPEED_MAP, MOUSE_DIFFICULTY_MAP } from '../../types/game';
@@ -12,23 +11,10 @@ import type { GameMode, MouseGameConfig, HouseGameConfig, MouseDifficultyLevel, 
  */
 export function HomePage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { t } = useTranslation();
-  const viewParam = searchParams.get('view');
-  const initialHomeView = viewParam === 'campaign' ? 'campaign' as const : 'training' as const;
-  const { setNextConfig, updateGameConfig, userProfile, nextConfig, recalculateEnergy, consumeEnergy } = useGameStore();
+  const { setNextConfig, updateGameConfig, nextConfig } = useGameStore();
 
   const handleStart = useCallback(
     (nLevel: number, rounds: number, mode: GameMode, gridSize: number, mouseConfig?: MouseGameConfig, houseConfig?: HouseGameConfig) => {
-      // Recalculate energy before checking
-      recalculateEnergy();
-      
-      // Check and consume energy
-      if (!consumeEnergy()) {
-        alert(t('energy.insufficient'));
-        return;
-      }
-      
       // 保存配置到 store，TrainPage 会读取
       if (mode === 'mouse' && mouseConfig) {
         const difficulty =
@@ -67,17 +53,35 @@ export function HomePage() {
         updateGameConfig('spatial', { nLevel, rounds, gridSize });
       }
 
+      if (mode === 'reaction') {
+        updateGameConfig('reaction', { trials: rounds });
+      }
+
+      if (mode === 'numberMemory') {
+        updateGameConfig('numberMemory', { startDigits: rounds });
+      }
+
+      if (mode === 'sequence') {
+        updateGameConfig('sequence', { gridSize });
+      }
+
+      if (mode === 'stroop') {
+        updateGameConfig('stroop', { durationSec: rounds });
+      }
+
+      if (mode === 'mathSprint') {
+        updateGameConfig('mathSprint', { durationSec: rounds });
+      }
+
       setNextConfig({ nLevel, totalRounds: rounds, mode, gridSize });
       navigate(`/train/${mode}`);
     },
-    [setNextConfig, updateGameConfig, navigate, t, recalculateEnergy, consumeEnergy]
+    [setNextConfig, updateGameConfig, navigate]
   );
 
   return (
     <HomeScreen
       initialMode={nextConfig.mode}
-      initialHomeView={initialHomeView}
-      userProfile={userProfile}
       onStart={handleStart}
     />
   );

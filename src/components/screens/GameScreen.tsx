@@ -5,7 +5,12 @@ import type { RoundResult } from '../../types/game';
 import { StatusBar } from '../game/StatusBar';
 import { StimulusCard } from '../game/StimulusCard';
 import { NumericKeypad } from '../game/NumericKeypad';
+import { AnswerCountdown } from '../game/AnswerCountdown';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
+import { scheduleVisible } from '../../lib/scheduleVisible';
+
+/** 答题限时（numeric 模式，超时记为未答） */
+const ANSWER_DEADLINE_MS = 10000;
 
 interface GameScreenProps {
   engine: UseNBackReturn;
@@ -24,6 +29,19 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
   const isNumericMode = engine.config.mode === 'numeric';
   const isSpatialMode = engine.config.mode === 'spatial';
 
+  // 最新 engine 引用：让计时器类 effect 只依赖标量，避免整个 engine 对象进入 deps
+  // （否则任何无关渲染都会重启计时器 / 重播音效）
+  const engineRef = useRef(engine);
+  useEffect(() => {
+    engineRef.current = engine;
+  });
+
+  // 使用 ref 保存最新的状态，避免键盘监听依赖问题
+  const inputValueRef = useRef(inputValue);
+  useEffect(() => {
+    inputValueRef.current = inputValue;
+  }, [inputValue]);
+
   // 提前计算这些值，供 useEffect 使用
   const { currentStimulus, currentIndex, config, results, sequence } = engine;
   const isWarmup = currentIndex < config.nLevel;
@@ -36,41 +54,51 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
   // Manage stimulus visibility for spatial mode
   useEffect(() => {
     if (!isSpatialMode) return;
-    
+
     if (engine.phase === 'playing') {
       // 记忆阶段：方块在整个回合内持续可见闪烁
-      engine.setStimulusVisible(true);
+      engineRef.current.setStimulusVisible(true);
     } else if (engine.phase === 'answering' && isShowingQuestion) {
       // 答题阶段且还有新题：方块持续可见闪烁（玩家需要记住它）
-      engine.setStimulusVisible(true);
+      engineRef.current.setStimulusVisible(true);
     } else if (engine.phase === 'answering' && !isShowingQuestion) {
       // 尾部答题阶段（无新题）：不显示
-      engine.setStimulusVisible(false);
+      engineRef.current.setStimulusVisible(false);
     }
   }, [currentIndex, engine.phase, isSpatialMode, isShowingQuestion]);
 
-  // 记忆阶段自动推进计时器（只在playing阶段）
+  // 切到后台时自动暂停（后台 setTimeout 仍在跑而动画冻结，会导致题目未被看见就推进）
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (!document.hidden) return;
+      const e = engineRef.current;
+      if (e.phase === 'playing' || e.phase === 'answering') e.pauseGame();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, []);
+
+  // 记忆阶段自动推进计时器（只在playing阶段；后台标签页时暂不推进）
   useEffect(() => {
     if (engine.phase !== 'playing') return;
 
-    const timer = setTimeout(() => {
-      engine.advanceToNext();
+    return scheduleVisible(() => {
+      engineRef.current.advanceToNext();
     }, config.stimulusDuration);
-
-    return () => clearTimeout(timer);
-  }, [currentIndex, engine.phase, config.stimulusDuration, engine]);
+  }, [currentIndex, engine.phase, config.stimulusDuration]);
 
   // 键盘事件监听（仅 numeric 模式，answering阶段有效）
   useEffect(() => {
     if (!isNumericMode) return;
-    
+
     const handleKeyDown = (e: KeyboardEvent) => {
+      const eng = engineRef.current;
       // 只在答题阶段且不在暂停状态时响应键盘
-      if (engine.phase !== 'answering') return;
-      
+      if (eng.phase !== 'answering') return;
+
       // 数字键 0-9
       if (/^[0-9]$/.test(e.key)) {
-        if (engine.hasAnsweredThisRound) return;
+        if (eng.hasAnsweredThisRound) return;
         playClick();
         setInputValue((prev) => {
           const newValue = prev + e.key;
@@ -80,16 +108,16 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
       }
       // Backspace 删除
       else if (e.key === 'Backspace') {
-        if (engine.hasAnsweredThisRound) return;
+        if (eng.hasAnsweredThisRound) return;
         setInputValue((prev) => prev.slice(0, -1));
         e.preventDefault();
       }
       // Enter 提交
       else if (e.key === 'Enter') {
-        if (inputValue === '' || engine.hasAnsweredThisRound) return;
-        const answer = parseInt(inputValue, 10);
+        if (inputValueRef.current === '' || eng.hasAnsweredThisRound) return;
+        const answer = parseInt(inputValueRef.current, 10);
         if (!isNaN(answer)) {
-          engine.submitAnswer(answer);
+          eng.submitAnswer(answer);
         }
         e.preventDefault();
       }
@@ -97,19 +125,9 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [engine, inputValue, isNumericMode, playClick]);
+  }, [isNumericMode, playClick]);
 
-  // 使用 ref 保存最新的状态，避免计时器依赖问题
-  const inputValueRef = useRef(inputValue);
-  const lastClickedIndexRef = useRef(lastClickedIndex);
-  useEffect(() => {
-    inputValueRef.current = inputValue;
-  }, [inputValue]);
-  useEffect(() => {
-    lastClickedIndexRef.current = lastClickedIndex;
-  }, [lastClickedIndex]);
-
-  // 答题后播放音效并自动延迟推进（答对0.5s，答错1s）
+  // 答题后播放音效并自动延迟推进（答对0.5s，答错/超时1s）
   useEffect(() => {
     if (engine.phase !== 'answering' || !engine.lastSubmitResult) return;
 
@@ -122,15 +140,23 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
 
     // 答对展示0.5s，答错展示1s，然后自动进入下一题
     const displayDuration = engine.lastSubmitResult.isCorrect ? 500 : 1000;
-    
-    const timer = setTimeout(() => {
-      engine.advanceToNext();
+
+    return scheduleVisible(() => {
+      engineRef.current.advanceToNext();
       setInputValue(''); // 清空输入
       setLastClickedIndex(null); // 清空 spatial 反馈
     }, displayDuration);
+  }, [engine.lastSubmitResult, engine.phase, playCorrect, playWrong]);
 
-    return () => clearTimeout(timer);
-  }, [engine.lastSubmitResult, engine.phase, playCorrect, playWrong, engine]);
+  // 答题限时（numeric 模式）：超时本轮记为未答（miss），走错误反馈路径推进
+  useEffect(() => {
+    if (!isNumericMode || engine.phase !== 'answering' || engine.hasAnsweredThisRound) return;
+
+    return scheduleVisible(() => {
+      const e = engineRef.current;
+      if (e.phase === 'answering' && !e.hasAnsweredThisRound) e.markRoundMissed();
+    }, ANSWER_DEADLINE_MS);
+  }, [isNumericMode, engine.phase, engine.hasAnsweredThisRound, currentIndex]);
 
   const handleNumberInput = useCallback(
     (digit: string) => {
@@ -207,11 +233,13 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
         nLevel={config.nLevel}
       />
 
-      {/* 进度条 */}
+      {/* 进度条（scaleX 合成器动画，不触发 layout） */}
       <div className="w-full h-1.5 bg-zen-200 rounded-full overflow-hidden">
         <div
-          className="h-full bg-sage-400 transition-all duration-300"
-          style={{ width: `${((currentIndex + 1) / (config.totalRounds + config.nLevel)) * 100}%` }}
+          className="h-full w-full bg-sage-400 origin-left transition-transform duration-300"
+          style={{
+            transform: `scaleX(${(currentIndex + 1) / (config.totalRounds + config.nLevel)})`,
+          }}
         />
       </div>
 
@@ -249,7 +277,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
                         key={i}
                         className={`aspect-square rounded-lg transition-all ${
                           engine.isStimulusVisible && i === currentStimulus.gridIndex
-                            ? 'bg-teal-500 shadow-lg scale-105 animate-pulse'
+                            ? 'bg-teal-500 shadow-lg scale-105 animate-pulse-finite'
                             : 'bg-zen-100'
                         }`}
                       />
@@ -282,8 +310,8 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
                       // 显示反馈：仅在提交后显示，选中但未提交不显示错误
                       let cellClass = 'aspect-square rounded-lg transition-all ';
                       if (isAnswered && isCorrectCell && !isCorrectAnswer) {
-                        // 答错后显示正确位置，持续闪烁直到确认下一题
-                        cellClass += 'bg-green-500 shadow-lg animate-pulse';
+                        // 答错后显示正确位置，有限次闪烁直到下一题
+                        cellClass += 'bg-green-500 shadow-lg animate-pulse-finite';
                       } else if (isSelected && isAnswered) {
                         // 已提交：显示反馈颜色
                         cellClass += isCorrectAnswer 
@@ -362,7 +390,7 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
                   let cellClass = 'aspect-square rounded-lg transition-all ';
                   if (isAnswered && isCorrectCell && !lastResult.isCorrect) {
                     // 答错后显示正确位置
-                    cellClass += 'bg-green-500 shadow-lg animate-pulse';
+                    cellClass += 'bg-green-500 shadow-lg animate-pulse-finite';
                   } else if (isSelected && isAnswered) {
                     cellClass += lastResult?.isCorrect 
                       ? 'bg-green-500 shadow-lg' 
@@ -408,13 +436,18 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
         </div>
       )}
 
-      {/* 上一题反馈 */}
+      {/* 上一题反馈（未作答 = 超时） */}
       {lastResult && (
         <div
-          className={`text-center text-sm font-medium transition-all animate-fade-in
+          key={lastResult.targetStimulusIndex}
+          className={`text-center text-sm font-medium animate-fade-in
             ${lastResult.isCorrect ? 'text-green-600' : 'text-red-500'}`}
         >
-          {lastResult.isCorrect ? t('game.correct') : t('game.wrong')}
+          {lastResult.isCorrect
+            ? t('game.correct')
+            : lastResult.userAnswer === null
+              ? `⏱ ${t('result.timeout')}`
+              : t('game.wrong')}
           {lastResult.userAnswer !== null && (
             <span className="text-zen-400 ml-2">
               {t('game.yourAnswer', { user: lastResult.userAnswer, correct: lastResult.correctAnswer })}
@@ -430,6 +463,17 @@ export function GameScreen({ engine, onQuit }: GameScreenProps) {
       <div className="bg-zen-100/50 backdrop-blur-sm rounded-xl p-3 font-mono text-xs text-zen-600 text-center">
         <span>{t('game.score', { correct: correctSoFar, total: results.length })}</span>
       </div>
+
+      {/* 答题倒计时（numeric 模式，答题中且未提交时显示） */}
+      {isNumericMode && engine.phase === 'answering' && !engine.hasAnsweredThisRound && (
+        <div className="flex justify-center">
+          <AnswerCountdown
+            duration={ANSWER_DEADLINE_MS}
+            roundIndex={currentIndex}
+            isPaused={false}
+          />
+        </div>
+      )}
 
       {/* 数字键盘（仅 numeric 模式） */}
       {isNumericMode && (

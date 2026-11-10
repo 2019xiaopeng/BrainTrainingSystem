@@ -1,19 +1,17 @@
 {
   "app": {
     "title": "Brain Flow",
-    "subtitle": "Brain Training System",
-    "backHome": "Back to Home"
+    "subtitle": "Brain Training System"
   },
   "common": {
     "cancel": "Cancel",
-    "gotIt": "Got it",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "total": "Total"
   },
   "home": {
     "freeTraining": "Free Training",
     "campaignMode": "Campaign",
     "profile": "Profile",
-    "streak": "🔥 {{days}} day streak",
     "maxLevel": "Max Level",
     "totalScore": "Total Score",
     "streakDays": "Streak Days",
@@ -45,14 +43,87 @@
     "startMouse": "Start Devilish Mice {{difficulty}} ({{rounds}} rounds)",
     "startNBack": "Start {{n}}-Back {{mode}} Training ({{rounds}} rounds)",
     "startHouse": "Start House Flow {{speed}} ({{rounds}} rounds)",
-    "modeNumeric": "Numeric",
-    "modeSpatial": "Spatial",
     "houseInitial": "🏠 Initial People",
     "houseEvents": "📊 Events",
     "houseSpeed": "⚡ Speed",
-    "houseRounds": "Rounds:"
+    "houseRounds": "Rounds:",
+    "reaction": "Reaction Time Test",
+    "reactionDesc": "Tap the moment it turns green",
+    "reactionHelp": "Wait for the background to turn green, then tap immediately. Early taps don't count. 5 valid taps, averaged.",
+    "startReaction": "Start Reaction Test",
+    "numberMemory": "Number Memory",
+    "numberMemoryDesc": "Recall growing digit strings",
+    "numberMemoryHelp": "Memorize the digits shown and type them back. Each success adds one digit, until you miss.",
+    "startNumberMemory": "Start Number Memory",
+    "sequence": "Sequence Memory",
+    "sequenceDesc": "Repeat the flashing order",
+    "sequenceHelp": "Tiles light up one by one. Remember the order and click them back in the same sequence. Each success adds one step, until you miss.",
+    "startSequence": "Start Sequence Memory",
+    "stroop": "Stroop Test",
+    "stroopDesc": "Pick the ink color in 60s",
+    "stroopHelp": "A color word appears, printed in a different color. Ignore the word's meaning and pick the ink color. As many correct picks as possible in 60 seconds — wrong picks lose points.",
+    "startStroop": "Start Stroop Test",
+    "mathSprint": "Math Sprint",
+    "mathSprintDesc": "60-second mental math",
+    "mathSprintHelp": "Answer as many problems as you can in 60 seconds. Correct answers auto-advance and the difficulty ramps up.",
+    "startMathSprint": "Start Math Sprint"
   },
   "game": {
+    "comingSoon": "This game is coming soon",
+    "reaction": {
+      "title": "Reaction Time Test",
+      "personalBest": "Personal Best",
+      "avg": "Average",
+      "best": "Fastest",
+      "tapToStart": "Tap anywhere to start",
+      "waitForGreen": "Wait for green…",
+      "clickNow": "TAP NOW!",
+      "tooSoon": "Too soon! Tap voided — wait again",
+      "trialOf": "Tap {{current}} / {{total}}",
+      "ms": "ms",
+      "again": "Try Again"
+    },
+    "numberMemory": {
+      "title": "Number Memory",
+      "personalBest": "Personal Best",
+      "level": "Digit Length",
+      "memorize": "Memorize these digits",
+      "input": "Type the digits you remember",
+      "correct": "Correct! +1 digit",
+      "wrong": "Wrong",
+      "gameOver": "Final digit length",
+      "again": "Try Again"
+    },
+    "sequence": {
+      "title": "Sequence Memory",
+      "personalBest": "Personal Best",
+      "level": "Sequence Length",
+      "watch": "Watch the flashing order",
+      "repeat": "Click them in order",
+      "correct": "Correct! +1 step",
+      "wrong": "Wrong order",
+      "gameOver": "Final sequence length",
+      "again": "Try Again"
+    },
+    "stroop": {
+      "title": "Stroop Test",
+      "personalBest": "Personal Best",
+      "score": "Score",
+      "timeLeft": "Time Left",
+      "prompt": "Pick the INK color of the word",
+      "correct": "Correct",
+      "wrong": "Wrong",
+      "finished": "Time's up!",
+      "again": "Try Again"
+    },
+    "mathSprint": {
+      "title": "Math Sprint",
+      "personalBest": "Personal Best",
+      "solved": "Solved",
+      "timeLeft": "Time Left",
+      "finished": "Time's up!",
+      "again": "Try Again"
+    },
     "quit": "← Quit",
     "resume": "▶ Resume",
     "pause": "⏸ Pause",
@@ -84,17 +155,6 @@
     "noClickNeeded": "Memory phase - no click needed"
   },
   "mouse": {
-    "remember": "👀 Remember the mice!",
-    "miceCount": "{{n}} mice total",
-    "doorsClosed": "🚪 Doors closed...",
-    "rememberWhere": "Remember where they are",
-    "catsComing": "🐱 Cats incoming!",
-    "catsPushing": "Cats are pushing...",
-    "whereAreMice": "🐭 Where are the mice?",
-    "findMice": "Find the remaining mice",
-    "perfect": "🎉 Perfect!",
-    "found": "Found {{found}} / {{total}} mice",
-    "tryHarder": "😿 Try harder!",
     "selected": "{{n}} positions selected",
     "clickToSelect": "Click to select mouse positions",
     "confirmAnswer": "Confirm ✓",
@@ -112,16 +172,11 @@
     "roundLabel": "Round {{current}}/{{total}}",
     "correctAnswer": "Correct! There are {{n}} people",
     "wrongAnswer": "There should be {{n}} people",
-    "perfect": "🎉 Perfect!",
-    "tryHarder": "😿 Try harder!",
     "score": "Correct {{correct}} / {{total}} rounds",
     "eventProgress": "Event {{current}} / {{total}}"
   },
   "result": {
     "title": "Training Complete",
-    "syncing": "Syncing to cloud...",
-    "syncFailed": "Cloud sync failed",
-    "rewardsTitle": "Rewards",
     "xp": "XP",
     "brainCoins": "Coins",
     "energy": "Energy",
@@ -132,7 +187,6 @@
     "newRecord": "🏆 New Record!",
     "newLevel": "⭐ New Level Unlocked!",
     "newUnlock": "⭐ Unlocked!",
-    "unlocksTitle": "Unlocks",
     "accuracy": "Accuracy",
     "points": "pts",
     "difficulty": "Difficulty",
@@ -145,33 +199,14 @@
     "playAgain": "Play Again",
     "backHome": "← Back to Home"
   },
-  "unlock": {
-    "numeric": "Unlocked: Numeric {{n}}-Back ({{rounds}} rounds)",
-    "spatialRounds": "Unlocked: Spatial {{n}}-Back ({{rounds}} rounds)",
-    "spatialN": "Unlocked: Spatial {{grid}} to {{n}}-Back",
-    "spatialGrid": "Unlocked: Spatial {{grid}} grid",
-    "mouseDifficulty": "Unlocked: Mouse {{difficulty}}",
-    "mouseMice": "Unlocked: {{count}} mice",
-    "mouseRounds": "Unlocked: {{rounds}} rounds (Mouse)",
-    "houseSpeed": "Unlocked: House {{speed}}",
-    "houseEvents": "Unlocked: {{events}} events (House)",
-    "houseRounds": "Unlocked: {{rounds}} rounds (House)",
-    "houseInitial": "Unlocked: Initial {{count}} (House)"
-  },
   "profile": {
     "title": "Profile",
-    "stats": "Statistics",
     "history": "Training History",
     "noHistory": "No training history yet",
     "startFirst": "Complete your first session to see history here",
-    "level": "Level",
-    "accuracyLabel": "Accuracy",
-    "scoreLabel": "Score",
     "brainRadar": "Brain Radar",
     "noRadarData": "Complete training to unlock radar chart",
     "activityHeatmap": "📅 Activity Heatmap (365 days)",
-    "brainPoints": "Brain Points",
-    "mockDataHint": "Demo data · Your real stats will appear after training",
     "nextRank": "Next: {{rank}}",
     "xpToNext": "{{xp}} XP to next rank",
     "maxRank": "Maximum Rank Reached",
@@ -200,103 +235,30 @@
       }
     },
     "auth": {
-      "guest": "Guest Mode",
-      "authenticated": "Signed In",
-      "linkAccounts": "Link Accounts",
-      "linkGoogle": "Link Google",
-      "guestWarning": "Guest data is stored locally only. Link an account to sync.",
-      "guestLockHint": "You can try training, but stats, check-in, history and settings require an account",
-      "goSignup": "Sign up",
-      "goSignin": "Sign in"
+      "guest": "Guest Mode"
     }
   },
   "nav": {
     "home": "Home",
-    "train": "Train",
     "rank": "Rank",
     "profile": "Profile",
-    "settings": "Settings",
-    "store": "Store",
-    "instruction": "Help"
+    "settings": "Settings"
   },
   "settings": {
     "tabs": {
       "profile": "Profile",
-      "security": "Security",
-      "accounts": "Accounts",
-      "notifications": "Notifications",
       "help": "Help"
     },
-    "accounts": {
-      "hint": "Linking helps sign-in and account recovery",
-      "loginRequired": "Sign in to link accounts"
-    },
-    "general": {
-      "title": "General",
-      "language": "Language",
-      "sound": "Sound Effects",
-      "soundHint": "In-game sound effects",
-      "haptics": "Haptics",
-      "hapticsHint": "Vibration feedback"
-    },
-    "about": {
-      "title": "About",
-      "version": "Version",
-      "privacy": "Privacy Policy",
-      "terms": "Terms of Service",
-      "feedback": "Feedback",
-      "clearCache": "Clear Cache",
-      "clearCacheHint": "Clear local cache and refresh if you encounter issues",
-      "clearCacheConfirm": "Are you sure? This will reset local settings.",
-      "cacheCleared": "Cache cleared"
-    },
+    "localDataCount": "Local data · {{count}} sessions",
+    "resetData": "Clear local data",
+    "resetDataHint": "Deletes training history, scores and configs saved in this browser. Cannot be undone.",
+    "resetDataConfirm": "Confirm",
+    "sound": "Sound Effects",
+    "soundHint": "In-game sound effects",
     "emailVerified": "Verified",
-    "emailNotVerified": "Unverified",
-    "profile": {
-      "displayName": "Display name",
-      "renameHint": "Consume 1 rename card to change your display name",
-      "rename": "Rename",
-      "renamePlaceholder": "2-20 chars",
-      "renameNeedCard": "No rename card, ",
-      "goStore": "Go to store",
-      "renameNoCard": "No rename card. Please purchase first.",
-      "renameInvalid": "Name length must be 2-20",
-      "renameFailed": "Update failed. Please try again.",
-      "renameNetworkError": "Network error. Please try again.",
-      "renameConfirm": "Confirm",
-      "avatar": "Avatar",
-      "avatarHint": "Avatar upload/selection is coming soon"
-    },
-    "security": {
-      "title": "Account security",
-      "changePassword": "Change password",
-      "changeEmail": "Change email",
-      "verifyEmail": "Verify email",
-      "guestHint": "Sign in to change password, verify email, and link accounts",
-      "changeEmailHint": "We will send a code to the new email",
-      "emailPlaceholder": "New email address",
-      "otpPlaceholder": "Verification code (6 digits)",
-      "sendCode": "Send code",
-      "confirmChangeEmail": "Confirm",
-      "emailInvalid": "Invalid email",
-      "emailInUse": "Email is already in use",
-      "otpInvalid": "Invalid or expired code",
-      "changeEmailFailed": "Failed to change email. Please try again.",
-      "changeEmailNetworkError": "Network error. Please try again.",
-      "signOut": "Sign out"
-    },
-    "notifications": {
-      "weeklyReport": "Email notifications",
-      "weeklyReportHint": "Weekly report / premium insights (local toggle for now)"
-    }
+    "emailNotVerified": "Unverified"
   },
   "rank": {
-    "tabs": {
-      "coins": "Score",
-      "level": "Level",
-      "all": "All-time",
-      "week": "Weekly"
-    },
     "errors": {
       "maintenance": "Leaderboard is under maintenance",
       "loginRequired": "Sign in to view the leaderboard",
@@ -315,53 +277,14 @@
     "avgReaction": "Avg {{seconds}}s"
   },
   "sidebar": {
-    "leaderboard": "Leaderboard",
     "history": "History",
     "recentSessions": "Recent Sessions",
-    "noSessions": "No sessions yet",
-    "leaderboardHint": "📊 Resets weekly · Accuracy ≥ 90% to rank",
-    "leaderboardComingSoon": "Leaderboard coming soon",
-    "leaderboardLoginRequired": "Sign in to participate"
-  },
-  "energy": {
-    "in": "",
-    "recoverIn": "Next +1 in {{time}}",
-    "insufficient": "Insufficient energy! Please wait or purchase Energy Potion."
+    "noSessions": "No sessions yet"
   },
   "time": {
     "h": "h",
     "m": "m",
     "s": "s"
-  },
-  "checkin": {
-    "title": "Daily Check-in",
-    "streak": "{{days}} day streak",
-    "done": "Checked in today",
-    "claim": "Claim Reward",
-    "claiming": "Checking in…",
-    "points": "Brain Points"
-  },
-  "store": {
-    "title": "Brain Store",
-    "subtitle": "Redeem items with Brain Points",
-    "points": "BP",
-    "purchaseSuccess": "Purchase successful!",
-    "notEnoughPoints": "Not enough Brain Points",
-    "alreadyOwned": "Already owned",
-    "owned": "Owned",
-    "permanent": "Permanent",
-    "consumable": "Consumable",
-    "earnHint": "\ud83d\udca1 Complete training to earn Brain Points",
-    "energyPotion1": "Energy Potion +1",
-    "energyPotion1Desc": "Instantly restore 1 energy",
-    "energyPotion5": "Energy Potion +5",
-    "energyPotion5Desc": "Instantly restore 5 energy (full)",
-    "streakSaver": "Streak Shield",
-    "streakSaverDesc": "Protect your streak from one missed day",
-    "renameCard": "Rename Card",
-    "renameCardDesc": "Consume 1 rename card to change your display name",
-    "premiumReport": "Premium Analysis",
-    "premiumReportDesc": "Unlock detailed six-dimension cognitive analysis and training recommendations"
   },
   "instruction": {
     "title": "Help & Instructions",
@@ -455,50 +378,17 @@
     "normal": "Normal",
     "fast": "Fast"
   },
-  "campaign": {
-    "chapter": "Chapter {{n}}",
-    "storyButton": "📖 View Story",
-    "modeNumeric": "Numeric Flow",
-    "modeSpatial": "Spatial Flow",
-    "modeMouse": "Mouse Flow",
-    "modeHouse": "House Flow",
-    "paramsNumeric": "{{n}}-Back · {{rounds}} rounds",
-    "paramsSpatial": "{{grid}}×{{grid}} · {{n}}-Back · {{rounds}} rounds",
-    "paramsMouse": "{{count}} mice · {{cols}}×{{rows}} · {{rounds}} rounds",
-    "paramsHouse": "Start {{initial}} · {{events}} events · {{rounds}} rounds",
-    "passCondition": "Pass condition: Accuracy ≥ {{accuracy}}%",
-    "startTraining": "Start Training",
-    "cancel": "Cancel",
-    "lockedHint": "Complete previous levels to unlock",
-    "bossLabel": "BOSS",
-    "newMessage": "New Chapter",
-    "confirmEnter": "Enter Adventure",
-    "startPoint": "START",
-    "passThreshold": "Pass",
-    "bestRecord": "Best"
-  },
-  "campaignResult": {
-    "passed": "Level Cleared!",
-    "failed": "Not Passed",
-    "failGap": "Need {{gap}}% more to pass",
-    "firstClear": "🎉 First Clear",
-    "newBestStars": "⭐ Stars Improved {{prev}}★ → {{now}}★",
-    "passThreshold": "Pass threshold: ≥{{min}}%",
-    "rewards": "Rewards",
-    "xpEarned": "Experience",
-    "baseCoins": "Base Reward",
-    "starBonus": "Star Bonus",
-    "firstClearBonus": "First Clear Bonus",
-    "dailyFirstWin": "Daily First Win",
-    "dailyPerfect": "Daily Perfect",
-    "unlockBonus": "Unlock Bonus",
-    "totalCoins": "Total",
-    "hintTo2Star": "Tip: Reach ≥{{target}}% accuracy for 2★",
-    "hintTo3Star": "Tip: Reach ≥{{target}}% accuracy for 3★",
-    "nextLevel": "Next Level →",
-    "retryFailed": "Try Again",
-    "retryForStars": "Retry for Higher Stars",
-    "playAgain": "Play Again",
-    "backToMap": "Back to Map"
+  "gameLanding": {
+    "playNow": "Play Now",
+    "howToPlay": "How to Play",
+    "faqTitle": "FAQ",
+    "faqFreeQ": "Is Brain Flow free?",
+    "faqFreeA": "Yes. All games are completely free to play, with no downloads and no hidden paywalls.",
+    "faqAccountQ": "Do I need an account?",
+    "faqAccountA": "No. Just open a game and play — your progress is saved locally in your browser, no sign-up required.",
+    "faqMobileQ": "Does it work on mobile?",
+    "faqMobileA": "Yes. Every game is designed mobile-first and runs in any modern browser on phones, tablets and desktops.",
+    "allGames": "All Games",
+    "metaDescription": "Play {{game}} free online — {{description}}. No download, no sign-up, works on mobile and desktop."
   }
 }

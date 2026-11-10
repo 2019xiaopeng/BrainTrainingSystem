@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useNBack } from '../../hooks/useNBack';
 import { useMouseGame } from '../../hooks/useMouseGame';
@@ -7,6 +7,11 @@ import { useGameStore } from '../../store/gameStore';
 import { GameScreen } from '../screens/GameScreen';
 import { MouseGameScreen } from '../screens/MouseGameScreen';
 import { HouseGameScreen } from '../screens/HouseGameScreen';
+import { ReactionGameScreen } from '../screens/ReactionGameScreen';
+import { NumberMemoryGameScreen } from '../screens/NumberMemoryGameScreen';
+import { SequenceMemoryGameScreen } from '../screens/SequenceMemoryGameScreen';
+import { StroopGameScreen } from '../screens/StroopGameScreen';
+import { MathSprintGameScreen } from '../screens/MathSprintGameScreen';
 import { buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
 import type { GameMode, HouseSpeed } from '../../types/game';
 
@@ -17,7 +22,10 @@ import type { GameMode, HouseSpeed } from '../../types/game';
 export function TrainPage() {
   const { mode } = useParams<{ mode: string }>();
   const navigate = useNavigate();
-  const { nextConfig, saveSession, gameConfigs } = useGameStore();
+  // 逐字段订阅：避免整个 store 的任何变化都触发重渲染（会放大子组件的 effect 问题）
+  const nextConfig = useGameStore((s) => s.nextConfig);
+  const saveSession = useGameStore((s) => s.saveSession);
+  const gameConfigs = useGameStore((s) => s.gameConfigs);
   const nbackEngine = useNBack();
   const mouseEngine = useMouseGame();
   const houseEngine = useHouseGame();
@@ -26,6 +34,13 @@ export function TrainPage() {
   const gameMode = (mode as GameMode) || nextConfig.mode;
   const isMouseMode = gameMode === 'mouse';
   const isHouseMode = gameMode === 'house';
+  const isReactionMode = gameMode === 'reaction';
+  const isNumberMemoryMode = gameMode === 'numberMemory';
+  const isSequenceMode = gameMode === 'sequence';
+  const isStroopMode = gameMode === 'stroop';
+  const isMathMode = gameMode === 'mathSprint';
+  const isArcadeStub =
+    isReactionMode || isNumberMemoryMode || isSequenceMode || isStroopMode || isMathMode;
 
   // 自动启动游戏（仅首次mount）
   useEffect(() => {
@@ -40,7 +55,7 @@ export function TrainPage() {
       const hc = gameConfigs.house;
       const houseConfig = buildHouseGameConfig(hc.initialPeople, hc.eventCount, hc.speed as HouseSpeed, hc.rounds);
       houseEngine.startGame(houseConfig);
-    } else {
+    } else if (!isArcadeStub) {
       nbackEngine.startGame(nextConfig);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -48,11 +63,11 @@ export function TrainPage() {
 
   // N-Back 完成 → 保存并跳转结果页
   useEffect(() => {
-    if (!isMouseMode && !isHouseMode && nbackEngine.phase === 'finished' && nbackEngine.summary) {
+    if (!isMouseMode && !isHouseMode && !isArcadeStub && nbackEngine.phase === 'finished' && nbackEngine.summary) {
       saveSession(nbackEngine.summary);
       navigate('/result', { replace: true });
     }
-  }, [isMouseMode, isHouseMode, nbackEngine.phase, nbackEngine.summary, saveSession, navigate]);
+  }, [isMouseMode, isHouseMode, isArcadeStub, nbackEngine.phase, nbackEngine.summary, saveSession, navigate]);
 
   // Mouse 完成 → 保存并跳转结果页
   useEffect(() => {
@@ -79,16 +94,67 @@ export function TrainPage() {
   }, [isMouseMode, isHouseMode, nbackEngine, mouseEngine, houseEngine, navigate]);
 
   // 渲染
+  // Reaction owns its engine lifecycle internally (starts on first tap)
+  if (isReactionMode) {
+    return <ReactionGameScreen />;
+  }
+
+  // 数字记忆：屏幕组件自管引擎生命周期（挂载即开始，结束时自带结果面板）
+  if (isNumberMemoryMode) {
+    return <NumberMemoryGameScreen />;
+  }
+
+  // 顺序记忆：屏幕组件自管引擎生命周期（挂载即开始，结束时自带结果面板）
+  if (isSequenceMode) {
+    return <SequenceMemoryGameScreen />;
+  }
+
+  if (isStroopMode) {
+    return <StroopGameScreen />;
+  }
+
+  // 口算冲刺：屏幕组件自管引擎生命周期（挂载即开始，结束时自带结果面板）
+  if (isMathMode) {
+    return <MathSprintGameScreen />;
+  }
+
   if (isHouseMode) {
     if (houseEngine.phase === 'idle' || houseEngine.phase === 'finished') return null;
-    return <HouseGameScreen engine={houseEngine} onQuit={handleQuit} />;
+    return (
+      <StageFrame ratio="16 / 9">
+        <HouseGameScreen engine={houseEngine} onQuit={handleQuit} />
+      </StageFrame>
+    );
   }
 
   if (isMouseMode) {
     if (mouseEngine.phase === 'idle' || mouseEngine.phase === 'finished') return null;
-    return <MouseGameScreen engine={mouseEngine} onQuit={handleQuit} />;
+    return (
+      <StageFrame ratio="16 / 9">
+        <MouseGameScreen engine={mouseEngine} onQuit={handleQuit} />
+      </StageFrame>
+    );
   }
 
   if (nbackEngine.phase === 'idle' || nbackEngine.phase === 'finished') return null;
-  return <GameScreen engine={nbackEngine} onQuit={handleQuit} />;
+  return (
+    <StageFrame ratio="4 / 3">
+      <GameScreen engine={nbackEngine} onQuit={handleQuit} />
+    </StageFrame>
+  );
+}
+
+function StageFrame({ ratio, children }: { ratio: string; children: ReactNode }) {
+  const width =
+    ratio === '16 / 9'
+      ? 'min(100%, calc((100vh - 180px) * 16 / 9))'
+      : 'min(100%, calc((100vh - 180px) * 4 / 3))';
+
+  return (
+    <div className="w-full flex justify-center">
+      <div style={{ width }} className="min-w-0">
+        {children}
+      </div>
+    </div>
+  );
 }

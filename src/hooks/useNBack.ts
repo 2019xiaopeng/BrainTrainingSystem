@@ -163,11 +163,13 @@ export interface UseNBackReturn {
   /** Whether stimulus is currently visible (for spatial mode input locking) */
   isStimulusVisible: boolean;
   /** Last submit result (for showing correct/incorrect feedback) */
-  lastSubmitResult: { isCorrect: boolean; correctAnswer: number } | null;
+  lastSubmitResult: { isCorrect: boolean; correctAnswer: number; missed?: boolean } | null;
 
   // Actions
   startGame: (overrides?: Partial<NBackConfig>) => void;
   submitAnswer: (answer: number) => void;
+  /** Record the current round as missed (answer deadline expired) and advance via the wrong-answer path */
+  markRoundMissed: () => void;
   advanceToNext: () => void;
   startAnswering: () => void;
   pauseGame: () => void;
@@ -190,11 +192,13 @@ export function useNBack(): UseNBackReturn {
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const [hasAnsweredThisRound, setHasAnsweredThisRound] = useState(false);
   const [isStimulusVisible, setIsStimulusVisible] = useState(true);
-  const [lastSubmitResult, setLastSubmitResult] = useState<{ isCorrect: boolean; correctAnswer: number } | null>(null);
+  const [lastSubmitResult, setLastSubmitResult] = useState<{ isCorrect: boolean; correctAnswer: number; missed?: boolean } | null>(null);
 
   // Refs for timing (not reactive – we only read them in callbacks)
   const startTimeRef = useRef<number>(0);
   const stimulusPresentedAtRef = useRef<number>(0);
+  // Phase to restore on resume (pause may happen during 'playing' or 'answering')
+  const phaseBeforePauseRef = useRef<GamePhase>('answering');
 
   // ---- Derived values ----
   const currentStimulus =
@@ -275,7 +279,7 @@ export function useNBack(): UseNBackReturn {
     // 记忆阶段：只在playing状态下推进
     if (phase === 'playing') {
       const nextIndex = currentIndex + 1;
-      
+
       // 检查是否记忆阶段结束（已经展示了N题）
       if (nextIndex >= config.nLevel) {
         // 记忆阶段结束，等待开始答题
@@ -283,7 +287,7 @@ export function useNBack(): UseNBackReturn {
         setCurrentIndex(nextIndex);
         return;
       }
-      
+
       // 继续记忆阶段
       const now = Date.now();
       setSequence((prev) => {
@@ -296,35 +300,11 @@ export function useNBack(): UseNBackReturn {
       setIsStimulusVisible(true);
       return;
     }
-    
-    // 答题阶段：只在answering状态下推进
-    if (phase !== 'answering') return;
 
-    // If the user didn't answer and we're past the warmup rounds, record a miss
-    // 只要 currentIndex >= config.nLevel，就应该记录miss（包括回答阶段）
-    const targetIndex = currentIndex - config.nLevel;
-    // 检查是否已经有该目标题目的结果（防止自动提交后重复记录）
-    const alreadyAnswered = results.some(r => r.targetStimulusIndex === targetIndex);
-    
-    if (!hasAnsweredThisRound && !alreadyAnswered && currentIndex >= config.nLevel && targetIndex < sequence.length) {
-      const targetStimulus = sequence[targetIndex];
-      
-      // Determine correct answer based on mode
-      const correctAnswer = targetStimulus.type === 'numeric' 
-        ? targetStimulus.answer 
-        : targetStimulus.gridIndex;
-      
-      const missResult: RoundResult = {
-        targetStimulusIndex: targetIndex,
-        targetEquation: targetStimulus.type === 'numeric' ? targetStimulus.equation : undefined,
-        targetGridIndex: targetStimulus.type === 'spatial' ? targetStimulus.gridIndex : undefined,
-        correctAnswer,
-        userAnswer: null,
-        isCorrect: false,
-        reactionTimeMs: null,
-      };
-      setResults((prev) => [...prev, missResult]);
-    }
+    // 答题阶段：只在answering状态下推进。
+    // 未作答的轮次由 markRoundMissed（答题超时）记录，这里只在已作答后推进，
+    // 因此无需再做 miss 兜底（旧代码中的 miss 分支不可达，已删除）。
+    if (phase !== 'answering') return;
 
     const nextIndex = currentIndex + 1;
     // 计算实际需要回答的题目数量（原始题目数）
@@ -337,18 +317,7 @@ export function useNBack(): UseNBackReturn {
       const endTime = Date.now();
       setPhase('finished');
       setCurrentIndex(nextIndex);
-
-      // Build summary with final results
-      setResults((prevResults) => {
-        const finalSummary = buildSummary(
-          config,
-          prevResults,
-          startTimeRef.current,
-          endTime,
-        );
-        setSummary(finalSummary);
-        return prevResults;
-      });
+      setSummary(buildSummary(config, results, startTimeRef.current, endTime));
     } else if (nextIndex >= sequence.length) {
       // 已经展示完所有题目，现在是回答阶段（不再显示新题目）
       // 但玩家仍需要回答最后N道题
@@ -371,10 +340,14 @@ export function useNBack(): UseNBackReturn {
       setIsStimulusVisible(true); // 重置stimulus可见性，为下一轮做准备
       setLastSubmitResult(null); // 重置提交结果
     }
-  }, [phase, currentIndex, sequence, config, hasAnsweredThisRound, results]);
+  }, [phase, currentIndex, sequence, config, results]);
 
   const pauseGame = useCallback(() => {
-    if (phase === 'playing' || phase === 'answering') setPhase('paused');
+    if (phase === 'playing' || phase === 'answering') {
+      // 记住暂停前的阶段，resume 时恢复（否则 playing 阶段暂停会软锁）
+      phaseBeforePauseRef.current = phase;
+      setPhase('paused');
+    }
   }, [phase]);
 
   const startAnswering = useCallback(() => {
@@ -387,25 +360,42 @@ export function useNBack(): UseNBackReturn {
   const resumeGame = useCallback(() => {
     if (phase === 'paused') {
       stimulusPresentedAtRef.current = Date.now();
-      // 恢复到answering状态（因为playing阶段不应该暂停）
-      setPhase('answering');
+      // 恢复到暂停前的阶段（playing 或 answering）
+      setPhase(phaseBeforePauseRef.current);
     }
   }, [phase]);
+
+  /** 答题超时：本轮记为未答（miss），复用错误反馈路径推进 */
+  const markRoundMissed = useCallback(() => {
+    if (phase !== 'answering' || currentIndex < config.nLevel || hasAnsweredThisRound) return;
+
+    const targetIndex = currentIndex - config.nLevel;
+    const targetStimulus = sequence[targetIndex];
+    if (!targetStimulus) return;
+
+    const correctAnswer =
+      targetStimulus.type === 'numeric' ? targetStimulus.answer : targetStimulus.gridIndex;
+
+    const missResult: RoundResult = {
+      targetStimulusIndex: targetIndex,
+      targetEquation: targetStimulus.type === 'numeric' ? targetStimulus.equation : undefined,
+      targetGridIndex: targetStimulus.type === 'spatial' ? targetStimulus.gridIndex : undefined,
+      correctAnswer,
+      userAnswer: null,
+      isCorrect: false,
+      reactionTimeMs: null,
+    };
+
+    setResults((prev) => [...prev, missResult]);
+    setHasAnsweredThisRound(true);
+    setLastSubmitResult({ isCorrect: false, correctAnswer, missed: true });
+  }, [phase, currentIndex, config.nLevel, hasAnsweredThisRound, sequence]);
 
   const endGame = useCallback(() => {
     const endTime = Date.now();
     setPhase('finished');
-    setResults((prevResults) => {
-      const finalSummary = buildSummary(
-        config,
-        prevResults,
-        startTimeRef.current,
-        endTime,
-      );
-      setSummary(finalSummary);
-      return prevResults;
-    });
-  }, [config]);
+    setSummary(buildSummary(config, results, startTimeRef.current, endTime));
+  }, [config, results]);
 
   const resetGame = useCallback(() => {
     setPhase('idle');
@@ -436,6 +426,7 @@ export function useNBack(): UseNBackReturn {
     lastSubmitResult,
     startGame,
     submitAnswer,
+    markRoundMissed,
     advanceToNext,
     startAnswering,
     pauseGame,

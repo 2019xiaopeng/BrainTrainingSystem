@@ -1,16 +1,3 @@
 {
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/api/auth$", "dest": "/api/auth.ts" },
-    { "src": "/api/auth/(.*)", "dest": "/api/auth.ts" },
-    { "src": "/api/admin$", "dest": "/api/admin/[...path].ts" },
-    { "src": "/api/admin/(.*)", "dest": "/api/admin/[...path].ts" },
-    { "src": "/api/campaign$", "dest": "/api/campaign/[...path].ts" },
-    { "src": "/api/campaign/(.*)", "dest": "/api/campaign/[...path].ts" },
-    { "src": "/api/leaderboard$", "dest": "/api/leaderboard/[...path].ts" },
-    { "src": "/api/leaderboard/(.*)", "dest": "/api/leaderboard/[...path].ts" },
-    { "src": "/api/user/email$", "dest": "/api/user/email/[...path].ts" },
-    { "src": "/api/user/email/(.*)", "dest": "/api/user/email/[...path].ts" },
-    { "src": "/(.*)", "dest": "/index.html" }
-  ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

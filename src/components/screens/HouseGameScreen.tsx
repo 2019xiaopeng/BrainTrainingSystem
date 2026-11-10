@@ -18,11 +18,12 @@
 //   - 2 people:  people2.svg
 //   - 3 people:  three people.svg
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { UseHouseGameReturn } from '../../hooks/useHouseGame';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
+import { scheduleVisible } from '../../lib/scheduleVisible';
 
 interface HouseGameScreenProps {
   engine: UseHouseGameReturn;
@@ -74,7 +75,7 @@ const buildMoverIcons = (count: number): string[] => {
   if (count === 1) return [getRandomPerson()];
   if (count === 2) return [getRandomPerson(), getRandomPerson()];
   if (count === 3) return ['/pic/three%20people.svg']; // Explicit 3-person group
-  
+
   // For > 3 (fallback), mix of 3-person group and singles
   const icons: string[] = [];
   let remaining = count;
@@ -89,16 +90,58 @@ const buildMoverIcons = (count: number): string[] => {
   return icons;
 };
 
+// memo：mover 动画进行中不受父组件重渲染影响（animate 为字面量数组，重渲染会重启动画）
+const MoverView = memo(function MoverView({ m, onDone }: { m: Mover; onDone: (id: number) => void }) {
+  return (
+    <motion.div
+      className="absolute left-0 w-full flex justify-center"
+      style={{
+        top: `${50 + m.yOffset}%`,
+        marginTop: '-28px', // 图标高 56px (h-14) 的一半，替代 translateY(-50%)
+        zIndex: 5,
+        pointerEvents: 'none',
+      }}
+      // x 百分比相对容器宽度：-100% = 左画面外，0 = 居中，+100% = 右画面外
+      initial={{
+        x: m.direction === 'enter' ? '-90%' : '6%',
+        opacity: m.direction === 'leave' ? 0 : 1,
+        scale: m.direction === 'leave' ? 0.8 : 1,
+      }}
+      animate={{
+        x: m.direction === 'enter' ? '-18%' : '65%',
+        opacity: m.direction === 'enter'
+          ? [1, 1, 1, 0]
+          : [0, 1, 1, 0],
+        scale: m.direction === 'enter'
+          ? [1, 1, 1, 0.75] // Shrink a bit more on enter
+          : [0.75, 1, 1, 1], // Grow from small on leave
+      }}
+      transition={{
+        duration: MOVER_DURATION_S,
+        ease: 'linear',
+        times: [0, 0.15, 0.85, 1], // Fade out/in earlier/later near the door
+      }}
+      onAnimationComplete={() => onDone(m.id)}
+    >
+      <div className="flex items-center -space-x-4"> {/* Negative overlap */}
+        {m.icons.map((src, i) => (
+          <img
+            key={i}
+            src={src}
+            alt="person"
+            className="w-14 h-14 sm:w-[4.5rem] sm:h-[4.5rem] object-contain drop-shadow-md"
+          />
+        ))}
+      </div>
+    </motion.div>
+  );
+});
+
 // ---- Preload ----
 function preloadAssets() {
   ASSETS.forEach(src => {
     const img = new Image();
     img.src = src;
-  });
-  ['/music/click.wav', '/music/correct.mp3', '/music/wrong.mp3'].forEach(src => {
-    const a = new Audio();
-    a.preload = 'auto';
-    a.src = src;
   });
 }
 
@@ -112,8 +155,21 @@ export function HouseGameScreen({ engine, onQuit }: HouseGameScreenProps) {
   const [scene, setScene] = useState<Scene>('peek');
   const [movers, setMovers] = useState<Mover[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const moverIdRef = useRef(0);
-  const eventTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 已生成 mover 的当前事件序号（防止 effect 重复执行时重复生成 mover / 重播音效）
+  const spawnedEventSeqRef = useRef(-1);
+
+  // 最新 engine 引用：让计时器类 effect 只依赖标量，避免整个 engine 对象进入 deps
+  // （否则任何无关渲染都会重启事件计时器、重复生成 mover、重播音效）
+  const engineRef = useRef(engine);
+  useEffect(() => {
+    engineRef.current = engine;
+  });
+
+  // 使用 ref 保存最新的输入，键盘监听无需随输入变化重新订阅
+  const inputValueRef = useRef(inputValue);
+  useEffect(() => {
+    inputValueRef.current = inputValue;
+  }, [inputValue]);
 
   const removeMover = useCallback((id: number) => {
     setMovers((prev) => prev.filter((m) => m.id !== id));
@@ -133,14 +189,14 @@ export function HouseGameScreen({ engine, onQuit }: HouseGameScreenProps) {
   useEffect(() => {
     if (engine.phase !== 'showing') return;
 
-    const t1 = setTimeout(() => setScene('houseDrop'), PEEK_MS);
-    const t2 = setTimeout(() => {
+    const cancel1 = scheduleVisible(() => setScene('houseDrop'), PEEK_MS);
+    const cancel2 = scheduleVisible(() => {
       setScene('covered');
-      engine.startEvents();
+      engineRef.current.startEvents();
     }, PEEK_MS + HOUSE_DROP_MS);
 
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [engine.phase, engine.currentRound, engine]);
+    return () => { cancel1(); cancel2(); };
+  }, [engine.phase, engine.currentRound]);
 
   // ── Phase: events → create movers + schedule advancement ───────
   useEffect(() => {
@@ -148,64 +204,55 @@ export function HouseGameScreen({ engine, onQuit }: HouseGameScreenProps) {
     const currentEvent = engine.events[engine.currentEventIndex];
     if (!currentEvent) return;
 
-    playClick();
+    // 事件序号（同一 mount 内单调递增）：mover id 由它派生，保证幂等
+    const eventSeq = engine.currentRound * 1000 + engine.currentEventIndex;
+    if (spawnedEventSeqRef.current !== eventSeq) {
+      spawnedEventSeqRef.current = eventSeq;
+      playClick();
 
-    // Create enter mover
-    if (currentEvent.enterCount > 0) {
-      moverIdRef.current += 1;
-      const id = moverIdRef.current;
-      // Target ~45% from top (center is 50%, so -5% offset)
-      const yOffset = -5 + Math.random() * 8;
-      
-      setMovers(prev => [...prev, {
-        id,
-        direction: 'enter',
-        icons: buildMoverIcons(currentEvent.enterCount),
-        yOffset,
-      }]);
-      
-      setTimeout(() => removeMover(id), Math.round(MOVER_DURATION_S * 1000 + 120));
-    }
+      // Create enter mover
+      if (currentEvent.enterCount > 0) {
+        const id = eventSeq * 2;
+        // Target ~45% from top (center is 50%, so -5% offset)
+        const yOffset = -5 + Math.random() * 8;
+        setMovers(prev => prev.some(m => m.id === id) ? prev : [...prev, {
+          id,
+          direction: 'enter',
+          icons: buildMoverIcons(currentEvent.enterCount),
+          yOffset,
+        }]);
+      }
 
-    // Create leave mover
-    if (currentEvent.leaveCount > 0) {
-      moverIdRef.current += 1;
-      const id = moverIdRef.current;
-      // Target ~45% from top (center is 50%, so -5% offset)
-      const yOffset = -5 + Math.random() * 8;
-      
-      setMovers(prev => [...prev, {
-        id,
-        direction: 'leave',
-        icons: buildMoverIcons(currentEvent.leaveCount),
-        yOffset,
-      }]);
-      
-      setTimeout(() => removeMover(id), Math.round(MOVER_DURATION_S * 1000 + 120));
+      // Create leave mover
+      if (currentEvent.leaveCount > 0) {
+        const id = eventSeq * 2 + 1;
+        const yOffset = -5 + Math.random() * 8;
+        setMovers(prev => prev.some(m => m.id === id) ? prev : [...prev, {
+          id,
+          direction: 'leave',
+          icons: buildMoverIcons(currentEvent.leaveCount),
+          yOffset,
+        }]);
+      }
     }
 
     // Schedule next event based on dynamic delay
-    eventTimerRef.current = setTimeout(() => {
-      engine.advanceEvent();
+    // （后台标签页时暂不推进，避免事件在动画冻结时全部溜过去）
+    return scheduleVisible(() => {
+      engineRef.current.advanceEvent();
     }, currentEvent.delayMs);
-
-    return () => {
-      if (eventTimerRef.current) clearTimeout(eventTimerRef.current);
-    };
-  }, [engine.phase, engine.currentEventIndex, engine, playClick, removeMover]);
+  }, [engine.phase, engine.currentEventIndex, engine.events, engine.currentRound, playClick]);
 
   // ── Phase: revealing → house rise → revealed + finishReveal ────
   useEffect(() => {
     if (engine.phase !== 'revealing') return;
     setScene('houseRise');
 
-    const timer = setTimeout(() => {
+    return scheduleVisible(() => {
       setScene('revealed');
-      engine.finishReveal();
+      engineRef.current.finishReveal();
     }, HOUSE_RISE_MS);
-
-    return () => clearTimeout(timer);
-  }, [engine.phase, engine]);
+  }, [engine.phase]);
 
   // ── Phase: feedback → auto-advance after delay ─────────────────
   useEffect(() => {
@@ -214,9 +261,10 @@ export function HouseGameScreen({ engine, onQuit }: HouseGameScreenProps) {
     if (engine.lastRoundResult?.isCorrect) playCorrect();
     else playWrong();
 
-    const timer = setTimeout(() => engine.nextRound(), FEEDBACK_MS);
-    return () => clearTimeout(timer);
-  }, [engine.phase, engine, playCorrect, playWrong, engine.lastRoundResult]);
+    return scheduleVisible(() => {
+      engineRef.current.nextRound();
+    }, FEEDBACK_MS);
+  }, [engine.phase, engine.lastRoundResult, playCorrect, playWrong]);
 
   // ── Keyboard support (answering phase) ─────────────────────────
   useEffect(() => {
@@ -230,16 +278,16 @@ export function HouseGameScreen({ engine, onQuit }: HouseGameScreenProps) {
       } else if (e.key === 'Backspace') {
         setInputValue(prev => prev.slice(0, -1));
         e.preventDefault();
-      } else if (e.key === 'Enter' && inputValue !== '') {
-        const answer = parseInt(inputValue, 10);
-        if (!isNaN(answer)) engine.submitAnswer(answer);
+      } else if (e.key === 'Enter' && inputValueRef.current !== '') {
+        const answer = parseInt(inputValueRef.current, 10);
+        if (!isNaN(answer)) engineRef.current.submitAnswer(answer);
         e.preventDefault();
       }
     };
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [engine.phase, inputValue, engine, playClick]);
+  }, [engine.phase, playClick]);
 
   // ── Input handlers ─────────────────────────────────────────────
   const handleNumberInput = useCallback((digit: string) => {
@@ -325,16 +373,15 @@ export function HouseGameScreen({ engine, onQuit }: HouseGameScreenProps) {
         </div>
       </div>
 
-      {/* ── Progress Bar ── */}
+      {/* ── Progress Bar（scaleX 合成器动画，不触发 layout） ── */}
       <div className="w-full h-1.5 bg-zen-200 rounded-full overflow-hidden">
         <div
-          className="h-full bg-amber-400 transition-all duration-300"
+          className="h-full w-full bg-amber-400 origin-left transition-transform duration-300"
           style={{
-            width: `${(
-              (engine.currentRound +
-                (engine.phase === 'feedback' || engine.phase === 'finished' ? 1 : 0))
-              / engine.config.totalRounds
-            ) * 100}%`,
+            transform: `scaleX(${(
+              engine.currentRound +
+              (engine.phase === 'feedback' || engine.phase === 'finished' ? 1 : 0)
+            ) / engine.config.totalRounds})`,
           }}
         />
       </div>
@@ -441,55 +488,11 @@ export function HouseGameScreen({ engine, onQuit }: HouseGameScreenProps) {
 
         {/* ── Movers (people walking in / out) ──
              z-index 5 → below house (z:10), naturally hidden behind it.
-             Enter: slides from left edge → center (behind house).
-             Leave: starts behind house → slides to right edge. */}
-        <AnimatePresence>
-          {movers.map(m => (
-            <motion.div
-              key={m.id}
-              className="absolute"
-              style={{
-                top: `${50 + m.yOffset}%`, // Center roughly at 50% + offset
-                zIndex: 5,
-                transform: 'translateY(-50%)',
-                pointerEvents: 'none',
-              }}
-              // Enter: starts off-screen left (-14%), ends at center (48%) [stop earlier]
-              // Leave: starts at center (52%), ends off-screen right (114%) [start later]
-              initial={{ 
-                left: m.direction === 'enter' ? '-14%' : '52%',
-                opacity: m.direction === 'leave' ? 0 : 1, 
-                scale: m.direction === 'leave' ? 0.8 : 1, 
-              }}
-              animate={{
-                left: m.direction === 'enter' ? '30%' : '114%',
-                opacity: m.direction === 'enter' 
-                  ? [1, 1, 0] 
-                  : [0, 1, 1, 0], 
-                scale: m.direction === 'enter' 
-                  ? [1, 1, 0.75] // Shrink a bit more on enter
-                  : [0.75, 1, 1], // Grow from small on leave
-              }}
-              transition={{ 
-                duration: MOVER_DURATION_S, 
-                ease: 'linear',
-                times: [0, 0.85, 1] // Fade out/in earlier/later near the door
-              }}
-              onAnimationComplete={() => removeMover(m.id)}
-            >
-              <div className="flex items-center -space-x-4"> {/* Negative overlap */}
-                {m.icons.map((src, i) => (
-                  <img
-                    key={i}
-                    src={src}
-                    alt="person"
-                    className="w-14 h-14 sm:w-18 sm:h-18 object-contain drop-shadow-md" 
-                  />
-                ))}
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+             Enter: 从左侧画面外滑到房门内；Leave: 从房内滑出到右侧画面外。
+             动画结束由 onAnimationComplete 移除（唯一清理机制）。 */}
+        {movers.map(m => (
+          <MoverView key={m.id} m={m} onDone={removeMover} />
+        ))}
 
         {/* ── House Mask ──
              A solid opaque panel covering the center 60% of the game area.

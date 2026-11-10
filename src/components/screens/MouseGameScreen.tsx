@@ -22,6 +22,7 @@ import type { UseMouseGameReturn } from '../../hooks/useMouseGame';
 import { computePushDetails, type PushDetail } from '../../hooks/useMouseGame';
 import type { GridCell, MouseRoundResult } from '../../types/game';
 import { StatusBar } from '../game/StatusBar';
+import { scheduleVisible } from '../../lib/scheduleVisible';
 
 // ---- Constants ----
 const CELL_GAP = 6;
@@ -174,6 +175,26 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
   const gridW = cols * cellSize + (cols - 1) * CELL_GAP;
   const gridH = rows * cellSize + (rows - 1) * CELL_GAP;
 
+  // ---- Helpers（useCallback 稳定引用，供 effect 依赖）----
+  const gridPos = useCallback((flatIdx: number) => ({
+    x: (flatIdx % cols) * step,
+    y: Math.floor(flatIdx / cols) * step,
+  }), [cols, step]);
+
+  const entryPos = useCallback((side: 'left' | 'right' | 'top' | 'bottom', lineIdx: number) => {
+    if (side === 'left') return { x: -step, y: lineIdx * step };
+    if (side === 'right') return { x: cols * step, y: lineIdx * step };
+    if (side === 'top') return { x: lineIdx * step, y: -step };
+    return { x: lineIdx * step, y: rows * step };
+  }, [cols, rows, step]);
+
+  const pushVec = useCallback((side: 'left' | 'right' | 'top' | 'bottom') => {
+    if (side === 'left') return { dx: step, dy: 0 };
+    if (side === 'right') return { dx: -step, dy: 0 };
+    if (side === 'top') return { dx: 0, dy: step };
+    return { dx: 0, dy: -step };
+  }, [step]);
+
   // 外框尺寸: 固定, 所有阶段一致
   const frameW = gridW + BORDER_PAD * 2;
   const frameH = gridH + BORDER_PAD * 2;
@@ -196,16 +217,17 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
   const [selectedCells, setSelectedCells] = useState<Set<number>>(new Set());
 
   // ---- rAF push animation 0→1 ----
-  const [slideProgress, setSlideProgress] = useState(0);
-  const slideStartRef = useRef(0);
-  const rafRef = useRef(0);
+  // 进度存 ref 并直接写 transform（不逐帧 setState，避免整屏重渲染 800ms）
+  const slideProgressRef = useRef(0);
   const phasePushDoneRef = useRef(false);
+  const animalLayerRef = useRef<HTMLDivElement | null>(null);
+  const coverLayerRef = useRef<HTMLDivElement | null>(null);
 
   // ---- Phase: Revealing ----
   useEffect(() => {
     if (phase !== 'revealing') return;
     setSelectedCells(new Set());
-    setSlideProgress(0);
+    slideProgressRef.current = 0;
     phasePushDoneRef.current = false;
 
     const totalSec = Math.ceil(revealDuration / 1000);
@@ -214,33 +236,75 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
     for (let s = 1; s < totalSec; s++) {
       intervals.push(setTimeout(() => setCountdown(totalSec - s), s * 1000));
     }
-    const timer = setTimeout(onRevealComplete, revealDuration);
-    return () => { clearTimeout(timer); intervals.forEach(clearTimeout); };
+    const cancel = scheduleVisible(onRevealComplete, revealDuration);
+    return () => { cancel(); intervals.forEach(clearTimeout); };
   }, [phase, revealDuration, onRevealComplete, currentRound]);
 
   // ---- Phase: Covering ----
   useEffect(() => {
     if (phase !== 'covering') return;
-    const timer = setTimeout(onCoverComplete, COVER_ANIM_MS);
-    return () => clearTimeout(timer);
+    // +50ms grace: a setTimeout can beat the eased flip animation by a frame
+    return scheduleVisible(onCoverComplete, COVER_ANIM_MS + 50);
   }, [phase, onCoverComplete, currentRound]);
 
-  // ---- Phase: Pushing (rAF, 零间隔连续) ----
+  // ---- Phase: Pushing (rAF 直写 transform, 零间隔连续) ----
   useEffect(() => {
     if (phase !== 'pushing' || !puzzle) return;
+    const detail = pushDetails[currentPushIndex];
+    if (!detail) return;
 
     phasePushDoneRef.current = false;
-    slideStartRef.current = performance.now();
-    setSlideProgress(0);
+    slideProgressRef.current = 0;
+
+    const { side, lineIndex } = detail.push;
+    const vec = pushVec(side);
+    const affected = new Set(detail.lineIndices);
+    const entering = entryPos(side, lineIndex);
+    const total = detail.beforeGrid.length;
+
+    // 直接写两个层内子节点的 transform（子节点顺序 = beforeGrid 顺序 + 末尾入场猫）
+    const applyProgress = (t: number) => {
+      const offX = vec.dx * t;
+      const offY = vec.dy * t;
+      for (const layer of [animalLayerRef.current, coverLayerRef.current]) {
+        if (!layer) continue;
+        const kids = layer.children;
+        for (let i = 0; i < total; i++) {
+          const x = (i % cols) * step + (affected.has(i) ? offX : 0);
+          const y = Math.floor(i / cols) * step + (affected.has(i) ? offY : 0);
+          (kids[i] as HTMLElement).style.transform = `translate(${x}px,${y}px)`;
+        }
+        const ex = entering.x + vec.dx * t;
+        const ey = entering.y + vec.dy * t;
+        (kids[total] as HTMLElement).style.transform = `translate(${ex}px,${ey}px)`;
+      }
+    };
+
+    applyProgress(0);
+
+    // shortcut: reduced-motion users skip the slide, take the end state
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      applyProgress(1);
+      if (!phasePushDoneRef.current) {
+        phasePushDoneRef.current = true;
+        onPushAnimComplete();
+      }
+      return;
+    }
 
     let cancelled = false;
+    let rafId = 0;
+    let last = performance.now();
 
     function tick(now: number) {
       if (cancelled) return;
-      const t = Math.min((now - slideStartRef.current) / PUSH_SLIDE_MS, 1);
-      setSlideProgress(t);
+      // 后台标签页 rAF 暂停：恢复首帧的 delta 裁剪到一帧以内，动画相当于暂停而不是跳变
+      const dt = Math.min(now - last, 100);
+      last = now;
+      slideProgressRef.current = Math.min(slideProgressRef.current + dt / PUSH_SLIDE_MS, 1);
+      applyProgress(slideProgressRef.current);
 
-      if (t >= 1) {
+      if (slideProgressRef.current >= 1) {
         if (!phasePushDoneRef.current) {
           phasePushDoneRef.current = true;
           // 零间隔直接下一步
@@ -248,18 +312,17 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
         }
         return;
       }
-      rafRef.current = requestAnimationFrame(tick);
+      rafId = requestAnimationFrame(tick);
     }
 
-    rafRef.current = requestAnimationFrame(tick);
-    return () => { cancelled = true; cancelAnimationFrame(rafRef.current); };
-  }, [phase, currentPushIndex, puzzle, onPushAnimComplete, currentRound]);
+    rafId = requestAnimationFrame(tick);
+    return () => { cancelled = true; cancelAnimationFrame(rafId); };
+  }, [phase, currentPushIndex, puzzle, onPushAnimComplete, currentRound, pushDetails, step, cols, rows, entryPos, pushVec]);
 
   // ---- Phase: Feedback ----
   useEffect(() => {
     if (phase !== 'feedback') return;
-    const timer = setTimeout(onFeedbackComplete, FEEDBACK_MS);
-    return () => clearTimeout(timer);
+    return scheduleVisible(onFeedbackComplete, FEEDBACK_MS);
   }, [phase, onFeedbackComplete, currentRound]);
 
   // ---- Handlers ----
@@ -308,28 +371,13 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
   }
 
   // ---- Helpers ----
-  const gridPos = (flatIdx: number) => ({
-    x: (flatIdx % cols) * step,
-    y: Math.floor(flatIdx / cols) * step,
-  });
-
-  const entryPos = (side: 'left' | 'right' | 'top' | 'bottom', lineIdx: number) => {
-    if (side === 'left') return { x: -step, y: lineIdx * step };
-    if (side === 'right') return { x: cols * step, y: lineIdx * step };
-    if (side === 'top') return { x: lineIdx * step, y: -step };
-    return { x: lineIdx * step, y: rows * step };
-  };
-
-  const pushVec = (side: 'left' | 'right' | 'top' | 'bottom') => {
-    if (side === 'left') return { dx: step, dy: 0 };
-    if (side === 'right') return { dx: -step, dy: 0 };
-    if (side === 'top') return { dx: 0, dy: step };
-    return { dx: 0, dy: -step };
-  };
+  // (gridPos / entryPos / pushVec 定义在上方 effects 之前)
 
   // ==================================================================
   // RENDER: 推挤动画 (双层)
   // 所有坐标 相对于网格原点 (BORDER_PAD, BORDER_PAD)
+  // 初始渲染停在 t=0（before 状态），随后 pushing effect 的 rAF 循环
+  // 直接驱动两个层内子节点的 transform（见上），不再逐帧 setState。
   // ==================================================================
   const renderPushAnimation = () => {
     if (!puzzle || pushDetails.length === 0) return null;
@@ -339,7 +387,7 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
     const { push, beforeGrid, enteringCell, lineIndices } = detail;
     const { side, lineIndex } = push;
     const vec = pushVec(side);
-    const t = slideProgress;
+    const t = 0;
     const offX = vec.dx * t;
     const offY = vec.dy * t;
     const affectedSet = new Set(lineIndices);
@@ -387,7 +435,7 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
     return (
       <>
         {/* ① Animal Layer: z:1, overflow visible (但被外框 overflow:hidden 裁到边框) */}
-        <div className="absolute" style={{
+        <div ref={animalLayerRef} className="absolute" style={{
           left: BORDER_PAD, top: BORDER_PAD,
           width: gridW, height: gridH,
           zIndex: 1, overflow: 'visible',
@@ -396,7 +444,7 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
         </div>
 
         {/* ② Cover Layer: z:2, overflow:hidden = 精确网格区域 */}
-        <div className="absolute" style={{
+        <div ref={coverLayerRef} className="absolute" style={{
           left: BORDER_PAD, top: BORDER_PAD,
           width: gridW, height: gridH,
           zIndex: 2, overflow: 'hidden',
@@ -486,23 +534,23 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
 
   return (
     <div className="space-y-4">
-      {/* 顶栏 */}
-      <StatusBar onQuit={onQuit} onPauseToggle={() => {}} isPaused={false}
+      {/* 顶栏（本模式无暂停概念，不传 onPauseToggle） */}
+      <StatusBar onQuit={onQuit}
         currentRound={currentRound + 1} totalRounds={totalRounds}
         nLevel={mouseConfig.numPushes}
         gameLabel={`🐭×${mouseConfig.numMice} ${mouseConfig.cols}×${mouseConfig.rows}${t('mouse.grid')} ${mouseConfig.numPushes}${t('mouse.push')}`} />
 
-      {/* 进度条 */}
+      {/* 进度条（scaleX 合成器动画，不触发 layout） */}
       <div className="w-full h-1.5 bg-zen-200 rounded-full overflow-hidden">
-        <motion.div className="h-full bg-amber-400" initial={{ width: 0 }}
-          animate={{ width: `${((currentRound + (phase === 'feedback' ? 1 : 0)) / totalRounds) * 100}%` }}
+        <motion.div className="h-full w-full bg-amber-400 origin-left" initial={{ scaleX: 0 }}
+          animate={{ scaleX: (currentRound + (phase === 'feedback' ? 1 : 0)) / totalRounds }}
           transition={{ duration: 0.3 }} />
       </div>
 
       {/* 阶段指示器 */}
       <div className="text-center py-1">
         <AnimatePresence mode="wait">
-          <motion.div key={`${phase}-${currentRound}-${currentPushIndex}`}
+          <motion.div key={`${phase}-${currentRound}`}
             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }} className="text-xl font-medium text-zen-700">
             {phaseText}
@@ -527,12 +575,14 @@ export function MouseGameScreen({ engine, onQuit }: MouseGameScreenProps) {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="absolute flex items-center justify-center pointer-events-none"
                 style={{ left: BORDER_PAD, top: BORDER_PAD, width: gridW, height: gridH, zIndex: 40 }}>
-                <motion.div key={countdown}
-                  initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 1.3, opacity: 0 }}
-                  className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                  <span className="text-3xl font-bold text-white drop-shadow-lg">{countdown}</span>
-                </motion.div>
+                <AnimatePresence mode="wait">
+                  <motion.div key={countdown}
+                    initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 1.3, opacity: 0 }}
+                    className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                    <span className="text-3xl font-bold text-white drop-shadow-lg">{countdown}</span>
+                  </motion.div>
+                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>
