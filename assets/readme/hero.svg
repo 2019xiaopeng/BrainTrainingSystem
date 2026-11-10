@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" width="100%" role="img" aria-label="Brain Flow — free online brain-training mini-games">
+  <title>Brain Flow — free online brain-training mini-games: reaction time, memory, focus and math. No signup, plays in your browser.</title>
+  <!-- Self-contained paper background so it reads correctly in GitHub light AND dark themes -->
+  <rect width="1200" height="420" fill="#FCFBF9"/>
+  <rect x="1" y="1" width="1198" height="418" fill="none" stroke="#DBD7CF" stroke-width="1.5" rx="14"/>
+
+  <!-- Wordmark block -->
+  <text x="72" y="118" font-family="ui-monospace, 'JetBrains Mono', Menlo, monospace" font-size="20" letter-spacing="6" fill="#8D7F6D">BRAIN FLOW</text>
+  <text x="68" y="186" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="58" font-weight="700" fill="#3A352F">Train your brain in 60 seconds.</text>
+  <text x="72" y="232" font-family="ui-sans-serif, system-ui, sans-serif" font-size="24" fill="#6E655B">Free online brain-training mini-games — no signup, plays in your browser.</text>
+  <text x="72" y="278" font-family="ui-monospace, 'JetBrains Mono', Menlo, monospace" font-size="18" letter-spacing="3" fill="#5E7261">9 GAMES · NO BACKEND · LOCAL STORAGE ONLY · MOBILE FIRST</text>
+
+  <!-- 9 game marks strip: one quiet sage line-icon per game -->
+  <g stroke="#5E7261" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Reaction: lightning -->
+    <g transform="translate(96,330)">
+      <path d="M14 4 L6 18 H12 L10 30 L20 15 H13 Z"/>
+      <text x="34" y="16" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" fill="#5C5145" stroke="none">Reaction</text>
+      <text x="34" y="34" font-family="ui-monospace, Menlo, monospace" font-size="14" fill="#A89D8E" stroke="none">245 ms</text>
+    </g>
+    <!-- Number Memory: digits -->
+    <g transform="translate(298,330)">
+      <text x="0" y="22" font-family="ui-monospace, Menlo, monospace" font-size="26" font-weight="700" fill="#5E7261" stroke="none">7 4 2</text>
+      <text x="82" y="16" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" fill="#5C5145" stroke="none">Number</text>
+      <text x="82" y="34" font-family="ui-monospace, Menlo, monospace" font-size="14" fill="#A89D8E" stroke="none">11 digits</text>
+    </g>
+    <!-- Sequence: three dots growing -->
+    <g transform="translate(512,330)">
+      <circle cx="4" cy="22" r="3" fill="#5E7261" stroke="none"/>
+      <circle cx="18" cy="22" r="5"/>
+      <circle cx="36" cy="22" r="7"/>
+      <text x="56" y="16" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" fill="#5C5145" stroke="none">Sequence</text>
+      <text x="56" y="34" font-family="ui-monospace, Menlo, monospace" font-size="14" fill="#A89D8E" stroke="none">step 14</text>
+    </g>
+    <!-- Stroop: overlapping squares -->
+    <g transform="translate(716,330)">
+      <rect x="0" y="8" width="22" height="22" rx="3"/>
+      <rect x="12" y="-2" width="22" height="22" rx="3" transform="rotate(12 23 9)"/>
+      <text x="48" y="16" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" fill="#5C5145" stroke="none">Stroop</text>
+      <text x="48" y="34" font-family="ui-monospace, Menlo, monospace" font-size="14" fill="#A89D8E" stroke="none">score 38</text>
+    </g>
+    <!-- Math: stopwatch -->
+    <g transform="translate(926,330)">
+      <circle cx="15" cy="19" r="12"/>
+      <path d="M15 19 L21 12 M12 3 H18"/>
+      <text x="40" y="16" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" fill="#5C5145" stroke="none">Math</text>
+      <text x="40" y="34" font-family="ui-monospace, Menlo, monospace" font-size="14" fill="#A89D8E" stroke="none">60 s sprint</text>
+    </g>
+  </g>
+  <g stroke="#5E7261" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- N-Back: ticks + return arc -->
+    <g transform="translate(100,392)">
+      <path d="M0 10 V-4 M10 10 V-4 M20 10 V-4"/>
+      <path d="M20 -8 Q10 -20 0 -8" stroke-dasharray="3 3"/>
+      <path d="M3 -11 L0 -8 L4 -6"/>
+      <text x="38" y="8" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" fill="#5C5145" stroke="none">N-Back</text>
+    </g>
+    <!-- Spatial: grid with filled cell -->
+    <g transform="translate(300,378)">
+      <rect x="0" y="0" width="26" height="26" rx="3"/>
+      <path d="M13 0 V26 M0 13 H26"/>
+      <rect x="14.5" y="1.5" width="11" height="11" rx="2" fill="#5E7261" stroke="none"/>
+      <text x="40" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" fill="#5C5145" stroke="none">Spatial</text>
+    </g>
+    <!-- Mice: head + tail -->
+    <g transform="translate(506,382)">
+      <circle cx="10" cy="8" r="4"/>
+      <circle cx="16" cy="14" r="9"/>
+      <path d="M24 20 Q34 24 32 14"/>
+      <text x="48" y="16" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" fill="#5C5145" stroke="none">Mice</text>
+    </g>
+    <!-- House: outline + door -->
+    <g transform="translate(700,378)">
+      <path d="M2 12 L13 2 L24 12 V24 H2 Z"/>
+      <path d="M10 24 V16 H16 V24"/>
+      <text x="40" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" fill="#5C5145" stroke="none">House</text>
+    </g>
+  </g>
+  <!-- quiet corner note -->
+  <text x="1128" y="66" font-family="ui-monospace, Menlo, monospace" font-size="15" fill="#A89D8E" text-anchor="end">v6 · arcade</text>
+</svg>
