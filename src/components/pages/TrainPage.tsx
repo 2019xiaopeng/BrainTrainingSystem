@@ -10,6 +10,7 @@ import { MouseGameScreen } from '../screens/MouseGameScreen';
 import { HouseGameScreen } from '../screens/HouseGameScreen';
 import { ReactionGameScreen } from '../screens/ReactionGameScreen';
 import { NumberMemoryGameScreen } from '../screens/NumberMemoryGameScreen';
+import { StroopGameScreen } from '../screens/StroopGameScreen';
 import { buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
 import type { GameMode, HouseSpeed } from '../../types/game';
 
@@ -109,7 +110,7 @@ export function TrainPage() {
   }
 
   if (isStroopMode) {
-    return <ArcadeComingSoon emoji="🎨" title={t('home.stroop')} onBack={() => navigate('/', { replace: true })} />;
+    return <StroopGameScreen />;
   }
 
   if (isMathMode) {
