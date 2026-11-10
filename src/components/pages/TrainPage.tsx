@@ -10,6 +10,7 @@ import { MouseGameScreen } from '../screens/MouseGameScreen';
 import { HouseGameScreen } from '../screens/HouseGameScreen';
 import { ReactionGameScreen } from '../screens/ReactionGameScreen';
 import { NumberMemoryGameScreen } from '../screens/NumberMemoryGameScreen';
+import { SequenceMemoryGameScreen } from '../screens/SequenceMemoryGameScreen';
 import { buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
 import type { GameMode, HouseSpeed } from '../../types/game';
 
@@ -103,9 +104,9 @@ export function TrainPage() {
     return <NumberMemoryGameScreen />;
   }
 
-  // 街机第二批占位（引擎接入后由各自分支替换各自块）
+  // 顺序记忆：屏幕组件自管引擎生命周期（挂载即开始，结束时自带结果面板）
   if (isSequenceMode) {
-    return <ArcadeComingSoon emoji="🧩" title={t('home.sequence')} onBack={() => navigate('/', { replace: true })} />;
+    return <SequenceMemoryGameScreen />;
   }
 
   if (isStroopMode) {
