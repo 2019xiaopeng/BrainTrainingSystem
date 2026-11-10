@@ -39,7 +39,15 @@ export function ScoreReveal({
 }
 
 /** Personal-best pill (highlights when the run just set a new best). */
-export function PBPill({ best, isNewBest, label }: { best: number; isNewBest: boolean; label: string }) {
+export function PBPill({
+  best,
+  isNewBest,
+  label,
+}: {
+  best: number | null;
+  isNewBest: boolean;
+  label: string;
+}) {
   return (
     <div
       className={`px-3 py-1 rounded-full text-xs transition-colors ${
@@ -49,7 +57,7 @@ export function PBPill({ best, isNewBest, label }: { best: number; isNewBest: bo
       }`}
     >
       {label}
-      <span className="font-mono font-semibold ml-1">{best}</span>
+      <span className="font-mono font-semibold ml-1">{best ?? '—'}</span>
     </div>
   );
 }

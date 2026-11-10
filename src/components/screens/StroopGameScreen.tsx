@@ -118,7 +118,7 @@ export function StroopGameScreen() {
       <header className="flex items-center justify-between">
         <div className="text-xl font-light text-zen-700">{t('game.stroop.title')}</div>
         <PBPill
-          best={result?.best ?? best ?? 0}
+          best={result?.best ?? best ?? null}
           isNewBest={Boolean(result?.isNewBest)}
           label={t('game.stroop.personalBest')}
         />
