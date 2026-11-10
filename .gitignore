@@ -29,3 +29,4 @@ dist-ssr
 # Temporary / IDE-specific
 .temp/
 .trae/
+.claude/worktrees/
