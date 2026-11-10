@@ -8,6 +8,7 @@ import { useGameStore } from '../../store/gameStore';
 import { GameScreen } from '../screens/GameScreen';
 import { MouseGameScreen } from '../screens/MouseGameScreen';
 import { HouseGameScreen } from '../screens/HouseGameScreen';
+import { NumberMemoryGameScreen } from '../screens/NumberMemoryGameScreen';
 import { buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
 import type { GameMode, HouseSpeed } from '../../types/game';
 
@@ -92,8 +93,9 @@ export function TrainPage() {
     return <ArcadeComingSoon emoji="⚡" title={t('home.reaction')} onBack={() => navigate('/', { replace: true })} />;
   }
 
+  // 数字记忆：屏幕组件自管引擎生命周期（挂载即开始，结束时自带结果面板）
   if (isNumberMemoryMode) {
-    return <ArcadeComingSoon emoji="🧠" title={t('home.numberMemory')} onBack={() => navigate('/', { replace: true })} />;
+    return <NumberMemoryGameScreen />;
   }
 
   if (isHouseMode) {
