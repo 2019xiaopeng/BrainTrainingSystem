@@ -8,7 +8,10 @@ import { MOUSE_DIFFICULTY_MAP } from '../../types/game';
 import { useReactionGame } from '../../hooks/useReactionGame';
 import { useNumberMemoryGame } from '../../hooks/useNumberMemoryGame';
 import { useSequenceMemoryGame } from '../../hooks/useSequenceMemoryGame';
+import { useStroopGame } from '../../hooks/useStroopGame';
 import { NumericKeypad } from '../game/NumericKeypad';
+import { ProgressBar } from '../game/arcade';
+import { COLOR_WORDS, INK_CLASSES, SWATCH_CLASSES } from '../../lib/stroop';
 import { InstrumentReadout } from '../game/InstrumentReadout';
 
 /**
@@ -23,6 +26,7 @@ const MODE_HUE: Record<string, string> = {
   reaction: '#9C5F46',
   numberMemory: '#4A6B8A',
   sequence: '#2B6E68',
+  stroop: '#7C5F98',
 };
 export function GameLandingScreen() {
   const { slug = '' } = useParams<{ slug: string }>();
@@ -141,6 +145,10 @@ export function GameLandingScreen() {
 
   if (game.mode === 'sequence') {
     return <SequenceInstrumentLanding slug={game.slug} helpText={helpText} faqPairs={faqPairs} />;
+  }
+
+  if (game.mode === 'stroop') {
+    return <StroopInstrumentLanding slug={game.slug} helpText={helpText} faqPairs={faqPairs} />;
   }
 
   return (
@@ -388,6 +396,156 @@ function digitSizeClass(length: number): string {
   if (length <= 8) return 'text-5xl sm:text-6xl';
   if (length <= 12) return 'text-4xl sm:text-5xl';
   return 'text-3xl sm:text-4xl';
+}
+
+/**
+ * Stroop's landing — the word card is the hero under a shared progress bar;
+ * no typical value (protocols aren't comparable across sites), so the
+ * readout runs history-only (docs/game-dossiers/04-stroop-test.md).
+ */
+function StroopInstrumentLanding({
+  slug,
+  helpText,
+  faqPairs,
+}: {
+  slug: string;
+  helpText: string;
+  faqPairs: readonly (readonly [string, string])[];
+}) {
+  const { t, i18n } = useTranslation();
+  const durationSec = useGameStore((s) => s.gameConfigs.stroop.durationSec);
+  const sessionHistory = useGameStore((s) => s.sessionHistory);
+  const engine = useStroopGame(durationSec);
+  const { phase, trial, score, feedback, timeLeftMs, totalMs, result, best, start, answer } = engine;
+  const startedRef = useRef(false);
+  const savedRef = useRef<unknown>(null);
+
+  const words =
+    COLOR_WORDS[(i18n.resolvedLanguage ?? i18n.language ?? 'en').toLowerCase().startsWith('zh') ? 'zh' : 'en'];
+
+  useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    start();
+  }, [start]);
+
+  // Persist once per finished run (same guard as the game screen)
+  useEffect(() => {
+    const session = result?.session;
+    if (session && session !== savedRef.current) {
+      savedRef.current = session;
+      useGameStore.getState().saveSession(session);
+    }
+  }, [result]);
+
+  // 1-4 keyboard answers while playing
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (phase !== 'playing') return;
+      const n = Number(e.key);
+      if (n >= 1 && n <= 4) answer(n - 1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [phase, answer]);
+
+  const historySeries = sessionHistory
+    .filter((h) => h.mode === 'stroop')
+    .slice(-10)
+    .map((h) => h.score);
+
+  return (
+    <article className="max-w-3xl mx-auto pt-6 pb-4 animate-fade-in">
+      <header className="space-y-2">
+        <p className="font-mono text-xs tracking-[0.22em] text-sage-700">STROOP TEST — 04</p>
+        <h1 className="text-[clamp(1.4rem,3.4vw,1.75rem)] font-semibold leading-tight text-zen-900">{t('gameLanding.hook.stroop')}</h1>
+        <p className="font-mono text-[12.5px] text-zen-700">
+          {t('game.stroop.personalBest')} <b className="text-sage-700 font-bold">{best ?? '—'}</b>
+        </p>
+      </header>
+
+      {phase !== 'finished' && (
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between font-mono text-xs text-zen-700">
+            <span>{t('game.stroop.score')} <b className="text-zen-900 text-base tabular-nums">{score}</b></span>
+            <span className="tabular-nums">{Math.ceil(timeLeftMs / 1000)}s</span>
+          </div>
+          <ProgressBar remainingMs={timeLeftMs} durationMs={totalMs} />
+        </div>
+      )}
+
+      {/* The word card — the hero. Ink = standard stimulus set, theme-exempt. */}
+      <div className={`relative mt-3 h-44 sm:h-52 rounded-[10px] border-2 flex items-center justify-center select-none
+        ${phase === 'finished' ? 'bg-zen-100 border-zen-200 opacity-40' : 'bg-white border-zen-200'}`}>
+        {trial && phase === 'playing' && (
+          <>
+            <span className={`text-6xl sm:text-7xl font-bold tracking-wide ${INK_CLASSES[trial.inkIndex]}`}>
+              {words[trial.wordIndex]}
+            </span>
+            {(feedback === 'correct' || feedback === 'wrong') && (
+              <span
+                aria-hidden="true"
+                className={`absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center
+                  text-sm font-bold text-white ${feedback === 'correct' ? 'bg-emerald-500' : 'bg-rose-500'}`}
+              >
+                {feedback === 'correct' ? '✓' : '✗'}
+              </span>
+            )}
+          </>
+        )}
+        {phase === 'idle' && <p className="font-bold text-2xl uppercase text-zen-700">{t('game.stroop.tapToStart')}</p>}
+        {phase === 'finished' && <p className="font-bold text-2xl uppercase text-zen-700">{t('game.stroop.finished')}</p>}
+      </div>
+
+      {phase === 'playing' && (
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {words.map((name, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => answer(i)}
+              className={`px-4 py-4 rounded-[10px] border-2 text-base font-semibold text-zen-800
+                active:scale-95 transition-all ${SWATCH_CLASSES[i]}`}
+            >
+              {name}
+              <span className="block font-mono text-[10px] text-zen-400 mt-0.5">{i + 1}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {result && (
+        <InstrumentReadout
+          mode="stroop"
+          hue={MODE_HUE.stroop}
+          score={result.score}
+          scoreUnit={t('game.stroop.correctUnit')}
+          scoreCaption={t('instrument.stroopCaption', { attempted: result.attempted, accuracy: result.accuracy })}
+          series={historySeries}
+          onPlayAgain={() => { start(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          onAllGames={() => document.getElementById('games-index')?.scrollIntoView({ behavior: 'smooth' })}
+        />
+      )}
+
+      <section className="mt-16 pt-6 border-t-2 border-zen-300 space-y-3" aria-labelledby="about-heading">
+        <h2 id="about-heading" className="font-mono text-xs tracking-[0.22em] text-sage-700">{t('gameLanding.aboutTitle')}</h2>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.stroop.1')}</p>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.stroop.2')}</p>
+        <p className="font-mono text-[11px] text-zen-500">{t('gameLanding.about.stroop.source')}</p>
+      </section>
+
+      <div className="mt-10" id="games-index">
+        <LandingGamesIndex currentSlug={slug} />
+      </div>
+      <div className="mt-8">
+        <LandingFaq faqPairs={faqPairs} />
+      </div>
+      <p className="mt-8 font-mono text-[11px] tracking-[0.12em] text-zen-500 text-center">
+        BRAIN FLOW — {t('gameLanding.footerLocal')}
+      </p>
+      <span className="sr-only">{helpText}</span>
+    </article>
+  );
 }
 
 /**
