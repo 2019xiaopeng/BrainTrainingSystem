@@ -6,7 +6,7 @@
 export type GamePhase = 'idle' | 'playing' | 'waitingToAnswer' | 'answering' | 'paused' | 'finished';
 
 /** Game mode types */
-export type GameMode = 'numeric' | 'spatial' | 'mouse' | 'house';
+export type GameMode = 'numeric' | 'spatial' | 'mouse' | 'house' | 'reaction' | 'numberMemory';
 
 /** The type of stimulus shown to the player (deprecated, kept for compatibility) */
 export type StimulusType = 'number' | 'position' | 'word';
@@ -180,6 +180,12 @@ export interface GameConfigs {
     eventCount: number;
     speed: HouseSpeed;
     rounds: number;
+  };
+  reaction: {
+    trials: number;
+  };
+  numberMemory: {
+    startDigits: number;
   };
 }
 

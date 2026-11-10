@@ -82,8 +82,12 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
       onStart(1, houseRounds, mode, 0, undefined, hConfig);
     } else if (mode === 'numeric') {
       onStart(numericNLevel, numericRounds, mode, 3);
-    } else {
+    } else if (mode === 'spatial') {
       onStart(spatialNLevel, spatialRounds, mode, gridSize);
+    } else if (mode === 'reaction') {
+      onStart(1, gameConfigs.reaction.trials, mode, 0);
+    } else {
+      onStart(1, gameConfigs.numberMemory.startDigits, 'numberMemory', 0);
     }
   };
 
@@ -175,6 +179,32 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
             <div className="text-2xl mb-1">🏠</div>
             <div className="font-medium text-zen-700 text-sm">{t('home.house')}</div>
             <div className="text-xs text-zen-400 mt-1">{t('home.houseDesc')}</div>
+          </button>
+
+          <button
+            onClick={() => setModeLocal('reaction')}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              mode === 'reaction'
+                ? 'border-rose-400 bg-rose-50'
+                : 'border-zen-200 bg-white hover:border-rose-300'
+            }`}
+          >
+            <div className="text-2xl mb-1">⚡</div>
+            <div className="font-medium text-zen-700 text-sm">{t('home.reaction')}</div>
+            <div className="text-xs text-zen-400 mt-1">{t('home.reactionDesc')}</div>
+          </button>
+
+          <button
+            onClick={() => setModeLocal('numberMemory')}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              mode === 'numberMemory'
+                ? 'border-indigo-400 bg-indigo-50'
+                : 'border-zen-200 bg-white hover:border-indigo-300'
+            }`}
+          >
+            <div className="text-2xl mb-1">🧠</div>
+            <div className="font-medium text-zen-700 text-sm">{t('home.numberMemory')}</div>
+            <div className="text-xs text-zen-400 mt-1">{t('home.numberMemoryDesc')}</div>
           </button>
         </div>
       </div>
@@ -483,11 +513,15 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
                   grid: `${mouseGrid[0]}×${mouseGrid[1]}`,
                   pushes: MOUSE_DIFFICULTY_MAP[mouseDifficulty].pushes
                 })
-              : t('home.houseHelp', {
+              : mode === 'house'
+              ? t('home.houseHelp', {
                   initial: houseInitial,
                   events: houseEvents,
                   speed: t(`speed.${houseSpeed}`)
                 })
+              : mode === 'reaction'
+              ? t('home.reactionHelp')
+              : t('home.numberMemoryHelp')
             }
           </p>
         </div>
@@ -505,6 +539,10 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
           ? t('home.startMouse', { difficulty: MOUSE_DIFFICULTY_MAP[mouseDifficulty].label, rounds: mouseRounds })
           : mode === 'house'
           ? t('home.startHouse', { speed: t(`speed.${houseSpeed}`), rounds: houseRounds })
+          : mode === 'reaction'
+          ? t('home.startReaction')
+          : mode === 'numberMemory'
+          ? t('home.startNumberMemory')
           : t('home.startNBack', {
               n: mode === 'numeric' ? numericNLevel : spatialNLevel,
               mode: mode === 'numeric' ? t('home.numeric') : t('home.spatial'),

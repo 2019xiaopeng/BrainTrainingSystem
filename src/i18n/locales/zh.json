@@ -46,7 +46,42 @@
     "houseInitial": "🏠 初始人数",
     "houseEvents": "📊 事件次数",
     "houseSpeed": "⚡ 速度",
-    "houseRounds": "挑战轮数:"
+    "houseRounds": "挑战轮数:",
+    "reaction": "反应力测试",
+    "reactionDesc": "变绿立刻点击",
+    "reactionHelp": "等待背景变绿后立刻点击，抢点无效。共 5 次有效点击，取平均反应时间。",
+    "startReaction": "开始 反应力测试",
+    "numberMemory": "数字记忆",
+    "numberMemoryDesc": "记住变长的数字串",
+    "numberMemoryHelp": "记住显示的数字串并输入。每记对一次长度加一，直到记错为止。",
+    "startNumberMemory": "开始 数字记忆"
+  },
+  "game": {
+    "comingSoon": "该游戏开发中，即将上线",
+    "reaction": {
+      "title": "反应力测试",
+      "personalBest": "个人最佳",
+      "avg": "平均反应",
+      "best": "本局最快",
+      "tapToStart": "点击任意处开始",
+      "waitForGreen": "等待变绿…",
+      "clickNow": "立刻点击！",
+      "tooSoon": "太早了！这次无效，重新等待",
+      "trialOf": "第 {{current}} / {{total}} 次",
+      "ms": "毫秒",
+      "again": "再测一次"
+    },
+    "numberMemory": {
+      "title": "数字记忆",
+      "personalBest": "个人最佳",
+      "level": "数字长度",
+      "memorize": "记住这串数字",
+      "input": "输入你记住的数字",
+      "correct": "正确！长度 +1",
+      "wrong": "记错了",
+      "gameOver": "最终数字长度",
+      "again": "再挑战"
+    }
   },
   "game": {
     "quit": "← 退出",

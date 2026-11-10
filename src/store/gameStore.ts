@@ -55,6 +55,8 @@ const defaultGameConfigs = (): GameConfigs => ({
   spatial: { nLevel: 1, rounds: 10, gridSize: 3 },
   mouse: { count: 3, grid: [4, 3], difficulty: 'easy', rounds: 3 },
   house: { initialPeople: 3, eventCount: 6, speed: 'easy', rounds: 3 },
+  reaction: { trials: 5 },
+  numberMemory: { startDigits: 3 },
 });
 
 // Score formula: (accuracy * nLevel * totalRounds) / 10

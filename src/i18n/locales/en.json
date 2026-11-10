@@ -46,7 +46,42 @@
     "houseInitial": "🏠 Initial People",
     "houseEvents": "📊 Events",
     "houseSpeed": "⚡ Speed",
-    "houseRounds": "Rounds:"
+    "houseRounds": "Rounds:",
+    "reaction": "Reaction Time Test",
+    "reactionDesc": "Tap the moment it turns green",
+    "reactionHelp": "Wait for the background to turn green, then tap immediately. Early taps don't count. 5 valid taps, averaged.",
+    "startReaction": "Start Reaction Test",
+    "numberMemory": "Number Memory",
+    "numberMemoryDesc": "Recall growing digit strings",
+    "numberMemoryHelp": "Memorize the digits shown and type them back. Each success adds one digit, until you miss.",
+    "startNumberMemory": "Start Number Memory"
+  },
+  "game": {
+    "comingSoon": "This game is coming soon",
+    "reaction": {
+      "title": "Reaction Time Test",
+      "personalBest": "Personal Best",
+      "avg": "Average",
+      "best": "Fastest",
+      "tapToStart": "Tap anywhere to start",
+      "waitForGreen": "Wait for green…",
+      "clickNow": "TAP NOW!",
+      "tooSoon": "Too soon! Tap voided — wait again",
+      "trialOf": "Tap {{current}} / {{total}}",
+      "ms": "ms",
+      "again": "Try Again"
+    },
+    "numberMemory": {
+      "title": "Number Memory",
+      "personalBest": "Personal Best",
+      "level": "Digit Length",
+      "memorize": "Memorize these digits",
+      "input": "Type the digits you remember",
+      "correct": "Correct! +1 digit",
+      "wrong": "Wrong",
+      "gameOver": "Final digit length",
+      "again": "Try Again"
+    }
   },
   "game": {
     "quit": "← Quit",

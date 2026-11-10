@@ -21,6 +21,8 @@ export function RightPanel() {
     spatial: '🎯',
     mouse: '🐭',
     house: '🏠',
+    reaction: '⚡',
+    numberMemory: '🧠',
   };
 
   const modeLabels: Record<string, string> = {
@@ -28,6 +30,8 @@ export function RightPanel() {
     spatial: t('home.spatial'),
     mouse: t('home.mouse'),
     house: t('home.house'),
+    reaction: t('home.reaction'),
+    numberMemory: t('home.numberMemory'),
   };
 
   return (

@@ -53,6 +53,14 @@ export function HomePage() {
         updateGameConfig('spatial', { nLevel, rounds, gridSize });
       }
 
+      if (mode === 'reaction') {
+        updateGameConfig('reaction', { trials: rounds });
+      }
+
+      if (mode === 'numberMemory') {
+        updateGameConfig('numberMemory', { startDigits: rounds });
+      }
+
       setNextConfig({ nLevel, totalRounds: rounds, mode, gridSize });
       navigate(`/train/${mode}`);
     },

@@ -42,13 +42,15 @@ export function ProfileScreen() {
 
   // Mode label mapping
   const modeEmoji: Record<string, string> = {
-    numeric: '🔢', spatial: '🎯', mouse: '🐭', house: '🏠',
+    numeric: '🔢', spatial: '🎯', mouse: '🐭', house: '🏠', reaction: '⚡', numberMemory: '🧠',
   };
   const modeLabels: Record<string, string> = {
     numeric: t('home.numeric'),
     spatial: t('home.spatial'),
     mouse: t('home.mouse'),
     house: t('home.house'),
+    reaction: t('home.reaction'),
+    numberMemory: t('home.numberMemory'),
   };
 
   return (
