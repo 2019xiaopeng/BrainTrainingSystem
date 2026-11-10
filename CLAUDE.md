@@ -41,14 +41,16 @@ src/
 │                           # Actions: setNextConfig, updateGameConfig, saveSession, resetLocalData
 ├── types/game.ts           # All game types + BRAIN_RANK_LEVELS + mouse/house builders
 ├── hooks/                  # useNBack (numeric+spatial), useMouseGame, useHouseGame, useReactionGame,
-│                           #   useNumberMemoryGame, useSoundEffects
-├── lib/                    # cn(), heatmap.ts (generateYearlyHeatmap)
+│                           #   useNumberMemoryGame, useSequenceMemoryGame, useStroopGame,
+│                           #   useMathSprintGame, useSoundEffects
+├── lib/                    # cn(), heatmap.ts (generateYearlyHeatmap), games.ts (SEO catalog + SITE_URL placeholder)
 ├── layouts/MainLayout.tsx  # Desktop 3-col (Sidebar 250px | stage | RightPanel 300px); mobile 1-col + bottom nav
 └── components/
     ├── pages/              # HomePage / TrainPage / ResultPage (route wrappers)
     ├── screens/            # HomeScreen, GameScreen, MouseGameScreen, HouseGameScreen, ReactionGameScreen,
-    │                       # NumberMemoryGameScreen, ResultScreen, ProfileScreen, RankScreen,
-    │                       # SettingsScreen, InstructionScreen (help tab)
+    │                       # NumberMemoryGameScreen, SequenceMemoryGameScreen, StroopGameScreen,
+    │                       # MathSprintGameScreen, GameLandingScreen (SEO /games/:slug), ResultScreen,
+    │                       # ProfileScreen, RankScreen, SettingsScreen, InstructionScreen (help tab)
     ├── game/               # StimulusCard, NumericKeypad, AnswerCountdown (numeric deadline), StatusBar
     ├── profile/            # BrainRankCard, RadarChartWidget, ActivityHeatmap
     ├── layout/             # Sidebar, RightPanel, MobileNav
@@ -75,7 +77,9 @@ src/
 3. ✅ FIXED — hidden-tab desync: `lib/scheduleVisible.ts` (setTimeout that re-checks `document.hidden` every 500ms) guards every House/Mouse/N-Back advance timer; the Mouse push rAF clamps its frame delta so hidden time doesn't fast-forward it; N-Back additionally auto-pauses on `visibilitychange`
 4. ✅ FIXED — answer deadline: numeric mode has a 10s deadline (`ANSWER_DEADLINE_MS`), `AnswerCountdown` is wired into `GameScreen`, and `useNBack.markRoundMissed` records the round as missed (`missedCount` / `result.timeout` now show real numbers). The previously unreachable miss branch in `advanceToNext` was removed
 5. OPEN — engines duplicate the same state-machine shape (5 engines now; revisit unification only if the next game would copy it a 6th time)
-6. Arcade games (reaction/numberMemory) keep personal bests in their own localStorage keys (`brain-flow-best:reaction` / `brain-flow-best:number-memory`), not the store
+6. Arcade games (reaction/numberMemory/sequence/stroop/mathSprint) keep personal bests in their own localStorage keys (`brain-flow-best:<mode>`), not the store
+7. OPEN — orphan i18n keys from deleted features — cleanup deferred, harmless
+8. SEO follow-ups: replace SITE_URL placeholder in lib/games.ts before launch; i18n defaults to zh (first-visit crawlers get Chinese — consider defaulting to browser lang/en); SPA client-rendering means social crawlers see default meta until prerendering/SSG is added; Stroop color words live in a component-local table (see its shortcut comment)
 7. OPEN — orphan i18n keys from deleted features (~100 per locale) — cleanup deferred, harmless
 
 ## 8. Conventions
