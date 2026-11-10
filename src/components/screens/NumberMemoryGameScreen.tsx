@@ -64,6 +64,15 @@ export function NumberMemoryGameScreen() {
       {/* Header: title + personal best */}
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-light text-zen-700">{t('game.numberMemory.title')}</h1>
+        <div className="flex items-center gap-3">
+          {phase !== 'finished' && phase !== 'idle' && (
+            <button
+              onClick={() => navigate('/', { replace: true })}
+              className="text-xs text-zen-400 hover:text-zen-600 transition-colors"
+            >
+              {t('game.quit')}
+            </button>
+          )}
         <div
           className={`px-3 py-1 rounded-full text-xs transition-colors ${
             isNewBest
@@ -73,6 +82,7 @@ export function NumberMemoryGameScreen() {
         >
           {t('game.numberMemory.personalBest')}
           <span className="font-mono font-semibold ml-1">{best}</span>
+        </div>
         </div>
       </header>
 

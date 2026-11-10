@@ -177,6 +177,17 @@ export function StroopGameScreen() {
           >
             {words[trial.wordIndex]}
           </span>
+
+          {/* feedback glyph: correct must not be color-only (color-blind + muted) */}
+          {(feedback === 'correct' || feedback === 'wrong') && (
+            <span
+              aria-hidden="true"
+              className={`absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center
+                text-sm font-bold text-white ${feedback === 'correct' ? 'bg-emerald-500' : 'bg-rose-500'}`}
+            >
+              {feedback === 'correct' ? '✓' : '✗'}
+            </span>
+          )}
         </motion.div>
 
         {phase === 'playing' && (
