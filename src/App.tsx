@@ -15,6 +15,9 @@ const SettingsScreenLazy = lazy(() =>
 const RankScreenLazy = lazy(() =>
   import('./components/screens/RankScreen').then(m => ({ default: m.RankScreen }))
 );
+const GameLandingScreenLazy = lazy(() =>
+  import('./components/screens/GameLandingScreen').then(m => ({ default: m.GameLandingScreen }))
+);
 
 /** Quiet centered placeholder while a lazy route chunk loads */
 function RouteFallback() {
@@ -36,6 +39,15 @@ function App() {
         <Route element={<MainLayout />}>
           {/* 首页 - 模式选择 + 配置 */}
           <Route path="/" element={<HomePage />} />
+          {/* SEO 游戏落地页 */}
+          <Route
+            path="/games/:slug"
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <GameLandingScreenLazy />
+              </Suspense>
+            }
+          />
           {/* 训练 - 游戏进行中 */}
           <Route path="/train/:mode" element={<TrainPage />} />
           {/* 结果 */}

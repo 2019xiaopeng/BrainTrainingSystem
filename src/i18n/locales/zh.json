@@ -377,5 +377,18 @@
     "easy": "慢速",
     "normal": "正常",
     "fast": "快速"
+  },
+  "gameLanding": {
+    "playNow": "开始游戏",
+    "howToPlay": "玩法说明",
+    "faqTitle": "常见问题",
+    "faqFreeQ": "Brain Flow 免费吗？",
+    "faqFreeA": "免费。所有游戏完全免费畅玩，无需下载，也没有隐藏收费。",
+    "faqAccountQ": "需要注册账号吗？",
+    "faqAccountA": "不需要。打开即玩，进度自动保存在本地浏览器中，无需注册登录。",
+    "faqMobileQ": "手机上能玩吗？",
+    "faqMobileA": "可以。所有游戏均为移动端优先设计，在手机、平板和电脑的现代浏览器中均可运行。",
+    "allGames": "全部游戏",
+    "metaDescription": "免费在线玩{{game}}——{{description}}。无需下载、无需注册，手机电脑均可畅玩。"
   }
 }
