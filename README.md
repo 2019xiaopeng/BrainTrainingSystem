@@ -1,75 +1,75 @@
-# Brain Flow — 脑力心流
+<p align="center">
+  <img src="assets/readme/hero.svg" alt="Brain Flow — free online brain-training mini-games: reaction time, memory, focus and math. No signup, plays in your browser." width="900">
+</p>
 
-一个极简风格的 N-Back 脑力训练小游戏（Vite + React + TypeScript），**游客即玩、无后端、纯静态部署**。
+**Brain Flow** is a guest-only arcade of nine 60-second brain mini-games. No accounts, no servers, no downloads — every score lives in your browser's local storage.
 
-> 2026-11 起项目转向出海小游戏矩阵路线：砍掉账号/体力/商城/战役等系统，专注做更多 2-5 分钟的脑力小游戏。
-> 背景与计划见 [docs/pivot-roadmap-2026-11.md](docs/pivot-roadmap-2026-11.md)（路线图）与 [docs/code-audit-2026-11-09.md](docs/code-audit-2026-11-09.md)（转向前的全仓审计）。
+<p align="center">
+  <img src="docs/screenshots/home-desktop.png" alt="Brain Flow home — nine games, one-tap start" width="820">
+</p>
+<p align="center">
+  <img src="docs/screenshots/home-mobile.png" alt="Home on mobile" width="220">
+  <img src="docs/screenshots/landing-desktop.png" alt="Per-game SEO landing page (Reaction Time Test)" width="520">
+  <img src="docs/screenshots/game-desktop.png" alt="Playing the Reaction Time Test" width="260">
+</p>
 
-## 现有游戏
+## The nine games
 
-| 模式 | 说明 |
-|---|---|
-| 🔢 数字心流 | 延迟回忆算术答案（N-Back 魔鬼计算） |
-| 🎯 空间心流 | 网格位置 N-Back（3×3 / 4×4 / 5×5） |
-| 🐭 魔鬼老鼠 | 老鼠路径追踪 + 推挤位移记忆 |
-| 🏠 人来人往 | 动态进出人数心算 |
-| ⚡ 反应力测试 | 变绿即点,5 次取平均(humanbenchmark 风格) |
-| 🧠 数字记忆 | 数字广度测试,记对加一位直到记错 |
-| 🧩 顺序记忆 | 复现格子亮起顺序,每级 +1 步 |
-| 🎨 色词冲突 | 60 秒忽略词义选印刷颜色 |
-| 🧮 口算冲刺 | 60 秒限时口算,难度爬坡 |
+| | Game | One-line hook | Trains |
+|---|---|---|---|
+| ⚡ | **Reaction Time Test** | How fast are your reflexes? | reaction |
+| 7️⃣ | **Number Memory** | How many digits can you hold? | working memory |
+| ⠿ | **Sequence Memory** | Repeat the pattern. One more step every round. | sequencing |
+| ⧉ | **Stroop Test** | Your brain lies to you. Catch it. | inhibition / focus |
+| ⏱ | **Math Sprint** | 60 seconds. No calculator. | arithmetic |
+| ↺ | **N-Back Challenge** | Remember the answer from N steps ago. | working memory |
+| ⊞ | **Spatial Memory** | Positions fade. Your memory doesn't. | spatial recall |
+| 🐭 | **Devilish Mice** | Track the mice through the shuffle. | tracking |
+| 🏠 | **House Flow** | Count who's left when the door stops. | mental updating |
 
-## SEO
+Every game shows a personal best, and timed games compare your result against a published typical value (sourced, never invented — e.g. reaction time median 273 ms from humanbenchmark.com's public aggregate of ≈81M samples).
 
-每个游戏有独立落地页(`/games/reaction-time-test` 等 9 个 SEO slug),含 JSON-LD 结构化数据、站内互链、sitemap.xml 与 robots.txt。上线前需将 `src/lib/games.ts` 中的 `SITE_URL` 占位符替换为真实域名。
+## Why it's built this way
 
-所有参数（N 值、轮数、网格、难度、速度）自由调节，无需解锁。
+- **Zero backend by design.** A static SPA on Vercel — everything (history, XP, brain-rank radar, streaks) is computed locally and persisted to `localStorage`. No accounts to breach, nothing to scale, nothing to pay for at rest.
+- **Instant play.** Landing page → playing in one tap. No onboarding questionnaire, no email wall — the deliberate opposite of the commercial brain-training funnel.
+- **SEO-first distribution.** Every game has its own landing page (`/games/reaction-time-test`, …) with structured data, plus `sitemap.xml` / `robots.txt` and quiet per-game analytics copy.
+- **Honest numbers.** Reference values cite their source; local stats are labelled as gameplay stats, never cognitive scores.
 
-## 技术栈
-
-- **前端**:Vite 7 + React 19 + TypeScript 5.9(strict)
-- **样式**:Tailwind CSS 3(zen/sage 主题色板)
-- **状态**:Zustand 5 + persist(localStorage `brain-flow-storage`,仅本地游客数据)
-- **路由**:react-router-dom v7
-- **动画**:Framer Motion 12
-- **图表**:Recharts(六维脑力雷达)
-- **国际化**:i18next(zh/en)
-- **部署**:Vercel 纯静态(见 `vercel.json` 的 SPA rewrite)
-
-## 快速开始
+## Quick start
 
 ```bash
 npm install
-npm run dev      # 本地开发
-npm run build    # tsc 类型检查 + 生产构建
-npm run preview  # 预览生产构建
-npm run lint     # ESLint
+npm run dev       # local dev server
+npm run build     # type-check + production build
+npm run preview   # serve the production build
+npm run lint
 ```
 
-无需任何环境变量或数据库。
+No environment variables, no database. Deploy is any static host (a `vercel.json` SPA rewrite is included).
 
-## 架构速览
+## Under the hood
+
+React 19 · TypeScript (strict) · Vite 7 · Tailwind CSS 3 (Morandi `zen`/`sage` tokens) · Zustand 5 + persist · react-router v7 · Framer Motion 12 · i18next (en/zh) · Web Audio (synthesized sounds, zero audio assets).
 
 ```
 src/
-├── App.tsx                    # 路由:/ /train/:mode /result /profile /rank /settings
-├── store/gameStore.ts         # 唯一 Zustand store:配置 + 本地历史 + 本地档案
-├── types/game.ts              # 全部游戏类型与常量(N-Back/老鼠/人来人往)
-├── hooks/                     # useNBack / useMouseGame / useHouseGame / useSoundEffects
+├── hooks/          9 game engines (one hook each, shared hidden-tab-safe timer utils)
 ├── components/
-│   ├── pages/                 # 路由包装(Home/Train/Result)
-│   ├── screens/               # 页面级 UI(Home/Game/MouseGame/HouseGame/Result/Profile/Rank/Settings/Instruction)
-│   ├── game/                  # 游戏内组件(StimulusCard/NumericKeypad/AnswerCountdown/StatusBar)
-│   ├── profile/               # BrainRankCard / RadarChartWidget / ActivityHeatmap
-│   └── layout/                # MainLayout 三栏 + Sidebar/RightPanel/MobileNav
-└── lib/                       # cn 工具 / heatmap 聚合
+│   ├── screens/    9 game screens + landing/result/profile/settings
+│   ├── game/       shared arcade vocabulary: phase motion, score reveal, progress bar
+│   └── layout/     responsive 3-column shell + mobile nav
+├── store/          one Zustand store (configs, history, local profile)
+├── lib/            SEO game catalog, heatmap, scheduleVisible timer
+└── types/          all game types + rank table
 ```
 
-**数据模型**:`userProfile`(总分/XP/最高N/连续天数/六维脑力/里程碑)全部由本地 `sessionHistory` 驱动,存在浏览器 localStorage。无服务端。
+Design docs live in [`docs/`](docs/): the pivot roadmap, the full pre-pivot code audit, an animation review, and competitor UI research.
 
-## 开发约定
+## 中文简介
 
-- React 函数组件 + Hooks;严格 TS,禁止 `any`
-- 组件放 `components/`,游戏逻辑放 `hooks/`,类型集中 `types/game.ts`
-- PascalCase 组件名,camelCase 变量;提交信息遵循 conventional commits
-- 新游戏接入:在 `types/game.ts` 定义配置 → `hooks/` 写引擎 → `components/screens/` 写界面 → HomeScreen 加模式入口
+**Brain Flow(脑力心流)** 是一个免登录、无后端的网页脑力小游戏合集:9 个 60 秒小游戏(反应力测试、数字记忆、顺序记忆、色词冲突、口算冲刺、N-Back、空间记忆、魔鬼老鼠、人来人往),成绩全部保存在浏览器本地。技术栈 React 19 + TypeScript + Vite + Tailwind,纯静态部署,每个游戏有独立 SEO 落地页。详见 `docs/` 下的路线图与审计文档。
+
+## License
+
+Copyright © 2026 — **All rights reserved.** This repository and its code are proprietary; use, modification, or redistribution requires explicit written permission from the author (see [LICENSE](LICENSE)).

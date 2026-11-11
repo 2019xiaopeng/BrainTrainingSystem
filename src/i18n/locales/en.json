@@ -49,7 +49,7 @@
     "houseRounds": "Rounds:",
     "reaction": "Reaction Time Test",
     "reactionDesc": "Tap the moment it turns green",
-    "reactionHelp": "Wait for the background to turn green, then tap immediately. Early taps don't count. 5 valid taps, averaged.",
+    "reactionHelp": "Wait for the background to turn green, then tap immediately. Early taps don't count. 5 valid taps — your score is the median, so one fumble won't wreck it.",
     "startReaction": "Start Reaction Test",
     "numberMemory": "Number Memory",
     "numberMemoryDesc": "Recall growing digit strings",
@@ -74,11 +74,16 @@
       "title": "Reaction Time Test",
       "personalBest": "Personal Best",
       "avg": "Average",
+      "median": "Median",
       "best": "Fastest",
       "tapToStart": "Tap anywhere to start",
       "waitForGreen": "Wait for green…",
+      "waitForGreenSub": "tap only when the pad turns green",
       "clickNow": "TAP NOW!",
+      "clickNowSub": "as fast as you can",
       "tooSoon": "Too soon! Tap voided — wait again",
+      "tooSoonSub": "the pad hadn't turned green yet — this tap doesn't count",
+      "tapContinue": "tap to continue",
       "trialOf": "Tap {{current}} / {{total}}",
       "ms": "ms",
       "again": "Try Again"
@@ -89,13 +94,19 @@
       "level": "Digit Length",
       "memorize": "Memorize these digits",
       "input": "Type the digits you remember",
+      "inputHint": "{{count}} digits — type what you saw, Enter to submit",
+      "digitsUnit": "digits",
+      "tapToStart": "Starting…",
       "correct": "Correct! +1 digit",
       "wrong": "Wrong",
-      "gameOver": "Final digit length",
+      "gameOver": "Game over",
       "again": "Try Again"
     },
     "sequence": {
       "title": "Sequence Memory",
+      "levelsUnit": "levels",
+      "tapToStart": "Starting…",
+      "reached": "you repeated {{level}} steps before the miss",
       "personalBest": "Personal Best",
       "level": "Sequence Length",
       "watch": "Watch the flashing order",
@@ -113,6 +124,8 @@
       "prompt": "Pick the INK color of the word",
       "correct": "Correct",
       "wrong": "Wrong",
+      "tapToStart": "Starting…",
+      "correctUnit": "correct",
       "finished": "Time's up!",
       "again": "Try Again"
     },
@@ -389,6 +402,52 @@
     "faqMobileQ": "Does it work on mobile?",
     "faqMobileA": "Yes. Every game is designed mobile-first and runs in any modern browser on phones, tablets and desktops.",
     "allGames": "All Games",
-    "metaDescription": "Play {{game}} free online — {{description}}. No download, no sign-up, works on mobile and desktop."
+    "metaDescription": "Play {{game}} free online — {{description}}. No download, no sign-up, works on mobile and desktop.",
+    "hook": {
+      "reaction": "How fast are your reflexes?",
+      "numberMemory": "How many digits can you hold?",
+      "sequence": "Repeat the pattern. One more step every round.",
+      "stroop": "Your brain lies to you. Catch it."
+    },
+    "reactionSub": "5-tap series · score is your median · Space works too",
+    "aboutTitle": "ABOUT THE TEST",
+    "about": {
+      "reaction": {
+        "1": "This test measures simple visual reaction time: the pad turns green after a random delay, and your tap latency is recorded. Your score is the median of 5 valid taps, so a single fumble won't wreck it.",
+        "2": "Scores depend on your device and input method — a gaming mouse and a touchscreen report differently, so compare against the typical value in spirit only. Everything runs and stays in your browser: no account, no data leaving this device.",
+        "source": "typical value source: humanbenchmark.com public statistics (median of ≈81M samples), read Nov 2026 · not a percentile, not a cognitive score"
+      },
+      "numberMemory": {
+        "1": "This is a digit-span test: remember the digits, type them back, and the string grows by one every round. Your score is the longest string you recalled correctly.",
+        "2": "Online scores run higher than clinical digit-span norms — test-takers are self-selected and often practiced — so read the typical value as a casual benchmark, not a diagnosis. Everything stays in your browser.",
+        "source": "typical value source: third-party analysis of humanbenchmark number-memory scores (median 9) · not a clinical norm"
+      },
+      "sequence": {
+        "1": "Squares flash in a growing pattern — watch, then click them back in the same order. Each completed level adds one more step, and one wrong tap ends the run.",
+        "2": "Typical online players reach around level 8. Dedicated practice with memory techniques pushes much higher, so treat the typical value as a casual benchmark. Everything stays in your browser.",
+        "source": "typical value source: third-party analyses of humanbenchmark sequence scores (typical ≈8) · not a clinical norm"
+      },
+      "stroop": {
+        "1": "The Stroop effect: reading is automatic, so when a color word is printed in a conflicting ink, naming the ink takes measurable effort. Your job is to answer the ink color, not the word — as fast as you can for 60 seconds.",
+        "2": "Stroop scores are not comparable across sites: durations, key mappings and scoring all differ, so we show no typical value — race your own history instead. Everything stays in your browser.",
+        "source": "no published reference: protocols differ across sites — self-history comparison only"
+      }
+    },
+    "footerLocal": "PLAYS IN YOUR BROWSER · DATA STAYS ON YOUR DEVICE"
+  },
+  "instrument": {
+    "result": "RESULT",
+    "yours": "YOURS",
+    "typical": "TYPICAL",
+    "typicalNone": "TYPICAL",
+    "typicalNoneNote": "no published reference for this game — compare against your own history",
+    "history": "YOUR LAST RUNS",
+    "historyNote": "last {{count}} runs, newest on the right — local data",
+    "playAgain": "PLAY AGAIN",
+    "allGames": "ALL 9 GAMES",
+    "medianOf": "median of {{total}} taps — one fumble won't wreck it",
+    "digitsReached": "longest string recalled correctly this run",
+    "levelsReached": "longest pattern fully repeated this run",
+    "stroopCaption": "{{attempted}} attempts · {{accuracy}}% accuracy"
   }
 }
