@@ -16,6 +16,7 @@ import { DEFAULT_CONFIG } from '../types/game';
 import { useGameStore } from '../store/gameStore';
 import { useSoundEffects } from './useSoundEffects';
 import { scheduleVisible } from '../lib/scheduleVisible';
+import { knobsFor, normalizeDifficulty } from '../lib/arcadeDifficulty';
 
 export type HippocampusPhase = 'idle' | 'showing' | 'recall' | 'feedback' | 'finished';
 
@@ -34,20 +35,19 @@ export interface HippocampusResult {
 
 const BEST_KEY = 'brain-flow-best:hippocampus';
 const GRID_SIZE = 5;
-const SHOW_BASE_MS = 900;
-const SHOW_PER_NUMBER_MS = 160;
 const REVEAL_MS = 350;
 const FEEDBACK_MS = 700;
 const MAX_STRIKES = 3;
 
-/** numbers count for a level: 4 numbers at level 1, +1 per level */
-const countForLevel = (level: number): number => 3 + level;
+/** numbers count for a level: startCount numbers at level 1, +1 per level */
+const countForLevel = (level: number, startCount: number): number => startCount + level - 1;
 
-function levelFor(level: number): HippocampusLevel {
+function levelFor(level: number, startCount: number): HippocampusLevel {
   const total = GRID_SIZE * GRID_SIZE;
   const cells: (number | null)[] = new Array(total).fill(null);
   const spots = new Set<number>();
-  while (spots.size < countForLevel(level)) spots.add(Math.floor(Math.random() * total));
+  const count = Math.min(countForLevel(level, startCount), total);
+  while (spots.size < count) spots.add(Math.floor(Math.random() * total));
   [...spots].forEach((spot, i) => { cells[spot] = i + 1; });
   return { cells };
 }
@@ -66,7 +66,7 @@ function readBest(): number {
 export function useHippocampusGame() {
   const [phase, setPhase] = useState<HippocampusPhase>('idle');
   const [level, setLevel] = useState(1);
-  const [current, setCurrent] = useState<HippocampusLevel>(() => levelFor(1));
+  const [current, setCurrent] = useState<HippocampusLevel>(() => levelFor(1, 4));
   const [nextToTap, setNextToTap] = useState(1);
   const [lastRevealed, setLastRevealed] = useState<number | null>(null);
   const [wrongCell, setWrongCell] = useState<number | null>(null);
@@ -125,6 +125,14 @@ export function useHippocampusGame() {
     go('finished');
   }, [go, playFinish, playRecord]);
 
+  // Difficulty knobs from the arcade-difficulty system (normal = old pacing)
+  const knobs = knobsFor('hippocampus', normalizeDifficulty(useGameStore((s) => s.arcadeModes.hippocampus?.difficulty)));
+  const knobsRef = useRef(knobs);
+  // keep refs fresh without writing them during render (React Compiler lint)
+  useEffect(() => {
+    knobsRef.current = knobs;
+  });
+
   const showLevel = useCallback((lvl: number) => {
     levelRef.current = lvl;
     nextRef.current = 1;
@@ -132,7 +140,7 @@ export function useHippocampusGame() {
     setNextToTap(1);
     setWrongCell(null);
     setLastRevealed(null);
-    setCurrent(levelFor(lvl));
+    setCurrent(levelFor(lvl, knobsRef.current.startCount));
     go('showing');
     // showing→recall is armed by the effect below (StrictMode-safe: effect
     // timers re-arm after the double-mount cleanup; imperative arms don't)
@@ -157,7 +165,7 @@ export function useHippocampusGame() {
       armTimer(() => setLastRevealed(null), REVEAL_MS);
       nextRef.current += 1;
       setNextToTap(nextRef.current);
-      if (nextRef.current > countForLevel(levelRef.current)) {
+      if (nextRef.current > countForLevel(levelRef.current, knobsRef.current.startCount)) {
         // level cleared → brief cue; the effect above advances to the next level
         go('feedback');
       }
@@ -174,7 +182,10 @@ export function useHippocampusGame() {
   // Phase-driven timers (StrictMode-safe): showing → recall, feedback → next level
   useEffect(() => {
     if (phase === 'showing') {
-      return scheduleVisible(() => go('recall'), SHOW_BASE_MS + countForLevel(levelRef.current) * SHOW_PER_NUMBER_MS);
+      return scheduleVisible(
+        () => go('recall'),
+        knobsRef.current.showBaseMs + countForLevel(levelRef.current, knobsRef.current.startCount) * knobsRef.current.showPerNumberMs,
+      );
     }
     if (phase === 'feedback') {
       return scheduleVisible(() => showLevel(levelRef.current + 1), FEEDBACK_MS);

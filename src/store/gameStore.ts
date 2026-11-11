@@ -20,6 +20,8 @@ interface GameStore {
   userProfile: UserProfile;
   /** User's saved game configurations */
   gameConfigs: GameConfigs;
+  /** Arcade run-mode (fixed/endless) + difficulty per game mode */
+  arcadeModes: Record<string, import('../types/game').ArcadeModeConfig>;
   /** Whether game sound effects are enabled */
   soundEnabled: boolean;
 
@@ -27,6 +29,7 @@ interface GameStore {
   setNextConfig: (config: Partial<NBackConfig>) => void;
   setSoundEnabled: (enabled: boolean) => void;
   updateGameConfig: (mode: keyof GameConfigs, config: Partial<GameConfigs[keyof GameConfigs]>) => void;
+  setArcadeMode: (mode: string, patch: Partial<import('../types/game').ArcadeModeConfig>) => void;
   saveSession: (summary: SessionSummary) => void;
   resetLocalData: () => void;
 }
@@ -185,6 +188,7 @@ export const useGameStore = create<GameStore>()(
       sessionHistory: [],
       userProfile: defaultUserProfile(),
       gameConfigs: defaultGameConfigs(),
+      arcadeModes: {},
       soundEnabled: true,
 
       setNextConfig: (config) =>
@@ -199,6 +203,14 @@ export const useGameStore = create<GameStore>()(
           gameConfigs: {
             ...state.gameConfigs,
             [mode]: { ...state.gameConfigs[mode], ...config },
+          },
+        })),
+
+      setArcadeMode: (mode, patch) =>
+        set((state) => ({
+          arcadeModes: {
+            ...state.arcadeModes,
+            [mode]: { ...(state.arcadeModes[mode] ?? { runMode: 'fixed' as const, difficulty: 'normal' as const }), ...patch },
           },
         })),
 

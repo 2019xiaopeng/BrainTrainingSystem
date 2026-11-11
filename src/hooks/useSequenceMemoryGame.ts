@@ -21,11 +21,10 @@ import { DEFAULT_CONFIG } from '../types/game';
 import { useGameStore } from '../store/gameStore';
 import { useSoundEffects } from './useSoundEffects';
 import { scheduleVisible } from '../lib/scheduleVisible';
+import { ARCADE_LIVES, knobsFor, normalizeDifficulty, normalizeRunMode } from '../lib/arcadeDifficulty';
 
 // ---- Constants ----
 const BEST_KEY = 'brain-flow-best:sequence-memory';
-const LIT_MS = 600;
-const GAP_MS = 250;
 const FEEDBACK_MS = 800;
 const PICK_FLASH_MS = 200;
 const MIN_GRID = 3;
@@ -67,6 +66,8 @@ interface LevelResult {
 }
 
 export interface UseSequenceMemoryGameReturn {
+  /** Lives remaining (fixed = 1, endless = 3) */
+  livesLeft: number;
   phase: SequenceMemoryPhase;
   /** Cell indices of the current level's sequence (grid is size×size) */
   sequence: number[];
@@ -110,27 +111,39 @@ export function useSequenceMemoryGame(): UseSequenceMemoryGameReturn {
 
   const { playClick, playCorrect, playWrong, playFinish, playRecord } = useSoundEffects();
 
+  // Difficulty knobs + lives (fixed = 1, endless = 3 with same-level replay)
+  const knobs = knobsFor('sequence', normalizeDifficulty(useGameStore((s) => s.arcadeModes.sequence?.difficulty)));
+  const lives = ARCADE_LIVES[normalizeRunMode(useGameStore((s) => s.arcadeModes.sequence?.runMode))];
+  const [livesLeft, setLivesLeft] = useState(lives);
+  const livesRef = useRef(lives);
+  const knobsRef = useRef(knobs);
+  // keep refs fresh without writing them during render (React Compiler lint)
+  useEffect(() => {
+    knobsRef.current = knobs;
+  });
+
   // ---- Phase timers (scheduleVisible: never advance while tab hidden) ----
 
-  // One step of the showing phase: light sequence[showIdx] for LIT_MS,
-  // keep the trailing GAP_MS dark, then advance. Keyed on scalars only;
+  // One step of the showing phase: light sequence[showIdx] for litMs,
+  // keep the trailing gapMs dark, then advance. Keyed on scalars only;
   // the light-on runs inside a 0ms timer so a re-run (StrictMode) can
   // never double-fire a flash or its sound.
   useEffect(() => {
     if (phase !== 'showing') return;
+    const { litMs, gapMs } = knobsRef.current;
     if (showIdx >= sequence.length) {
       // Whole sequence presented → let the trailing gap play, then input
       return scheduleVisible(() => {
         inputStartRef.current = Date.now();
         setPhase('input');
-      }, GAP_MS);
+      }, gapMs);
     }
     const on = scheduleVisible(() => {
       setLit(sequence[showIdx]);
       playClick();
     }, 0);
-    const off = scheduleVisible(() => setLit(-1), LIT_MS);
-    const next = scheduleVisible(() => setShowIdx((i) => i + 1), LIT_MS + GAP_MS);
+    const off = scheduleVisible(() => setLit(-1), litMs);
+    const next = scheduleVisible(() => setShowIdx((i) => i + 1), litMs + gapMs);
     return () => {
       on();
       off();
@@ -196,8 +209,8 @@ export function useSequenceMemoryGame(): UseSequenceMemoryGameReturn {
         mode: 'sequence',
         nLevel: final,
         totalRounds: attempts,
-        stimulusDuration: LIT_MS,
-        interStimulusInterval: GAP_MS,
+        stimulusDuration: knobsRef.current.litMs,
+        interStimulusInterval: knobsRef.current.gapMs,
         stimulusType: 'number',
         gridSize: gridSizeRef.current,
       },
@@ -230,6 +243,8 @@ export function useSequenceMemoryGame(): UseSequenceMemoryGameReturn {
 
   const startGame = useCallback((gridSize: number) => {
     gridSizeRef.current = Math.max(MIN_GRID, Math.min(MAX_GRID, Math.round(gridSize)));
+    livesRef.current = lives;
+    setLivesLeft(lives);
     resultsRef.current = [];
     savedRef.current = false;
     startTimeRef.current = Date.now();
@@ -240,9 +255,11 @@ export function useSequenceMemoryGame(): UseSequenceMemoryGameReturn {
     setInputIdx(0);
     setShowIdx(0);
     setLit(-1);
-    setSequence([randomCell(gridSizeRef.current)]);
+    // difficulty preset sets the starting length (normal = 1, the classic)
+    const startLen = Math.max(1, knobsRef.current.startLevel);
+    setSequence(Array.from({ length: startLen }, () => randomCell(gridSizeRef.current)));
     setPhase('showing');
-  }, []);
+  }, [lives]);
 
   const retry = useCallback(() => startGame(gridSizeRef.current), [startGame]);
 
@@ -269,6 +286,18 @@ export function useSequenceMemoryGame(): UseSequenceMemoryGameReturn {
           reactionTimeMs: Date.now() - inputStartRef.current,
         });
         setWrongCell(cell);
+        if (livesRef.current > 1) {
+          // endless: lose a life, replay the SAME length with a fresh sequence
+          livesRef.current -= 1;
+          setLivesLeft(livesRef.current);
+          return scheduleVisible(() => {
+            setWrongCell(null);
+            setInputIdx(0);
+            setShowIdx(0);
+            setSequence(Array.from({ length: sequence.length }, () => randomCell(gridSizeRef.current)));
+            setPhase('showing');
+          }, 800);
+        }
         finishGame();
       }
     },
@@ -283,6 +312,7 @@ export function useSequenceMemoryGame(): UseSequenceMemoryGameReturn {
     best,
     isNewBest,
     finalLength,
+    livesLeft,
     wrongCell,
     startGame,
     retry,

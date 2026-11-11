@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GAME_CATALOG, SITE_URL, getGameBySlug } from '../../lib/games';
 import { getReference } from '../../lib/referenceValues';
+import { normalizeRunMode, reactionTrialsFor } from '../../lib/arcadeDifficulty';
 import { useGameStore } from '../../store/gameStore';
 import { MOUSE_DIFFICULTY_MAP } from '../../types/game';
 import { useReactionGame } from '../../hooks/useReactionGame';
@@ -334,7 +335,10 @@ function ReactionInstrumentLanding({
   faqPairs: readonly (readonly [string, string])[];
 }) {
   const { t } = useTranslation();
-  const trials = useGameStore((s) => s.gameConfigs.reaction.trials);
+  const trials = reactionTrialsFor(
+    normalizeRunMode(useGameStore((s) => s.arcadeModes.reaction?.runMode)),
+    useGameStore((s) => s.gameConfigs.reaction.trials),
+  );
   const sessionHistory = useGameStore((s) => s.sessionHistory);
   const engine = useReactionGame(trials);
   const { phase, doneCount, lastMs, result, bestMs, start, tap } = engine;
@@ -739,7 +743,7 @@ function StroopInstrumentLanding({
   const durationSec = useGameStore((s) => s.gameConfigs.stroop.durationSec);
   const sessionHistory = useGameStore((s) => s.sessionHistory);
   const engine = useStroopGame(durationSec);
-  const { phase, trial, score, feedback, timeLeftMs, totalMs, result, best, start, answer } = engine;
+  const { phase, trial, score, feedback, timeLeftMs, totalMs, isEndless, livesLeft, result, best, start, answer } = engine;
   const startedRef = useRef(false);
   const savedRef = useRef<unknown>(null);
 
@@ -791,9 +795,13 @@ function StroopInstrumentLanding({
         <div className="mt-4 space-y-3">
           <div className="flex items-center justify-between font-mono text-xs text-zen-700">
             <span>{t('game.stroop.score')} <b className="text-zen-900 text-base tabular-nums">{score}</b></span>
-            <span className="tabular-nums">{Math.ceil(timeLeftMs / 1000)}s</span>
+            {isEndless ? (
+              <span className="text-base tracking-widest text-rose-400">{'♥'.repeat(livesLeft)}{'♡'.repeat(Math.max(0, 3 - livesLeft))}</span>
+            ) : (
+              <span className="tabular-nums">{Math.ceil(timeLeftMs / 1000)}s</span>
+            )}
           </div>
-          <ProgressBar remainingMs={timeLeftMs} durationMs={totalMs} />
+          {!isEndless && <ProgressBar remainingMs={timeLeftMs} durationMs={totalMs} />}
         </div>
       )}
 

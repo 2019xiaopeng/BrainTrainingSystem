@@ -19,11 +19,10 @@ import { DEFAULT_CONFIG } from '../types/game';
 import { useGameStore } from '../store/gameStore';
 import { useSoundEffects } from './useSoundEffects';
 import { scheduleVisible } from '../lib/scheduleVisible';
+import { ARCADE_LIVES, knobsFor, normalizeDifficulty, normalizeRunMode } from '../lib/arcadeDifficulty';
 
 // ---- Constants ----
 const BEST_KEY = 'brain-flow-best:number-memory';
-const SHOW_BASE_MS = 1000;
-const SHOW_PER_DIGIT_MS = 400;
 const FEEDBACK_MS = 900;
 const MAX_INPUT_LEN = 30;
 const MIN_START_DIGITS = 1;
@@ -69,6 +68,8 @@ interface LevelResult {
 }
 
 export interface UseNumberMemoryGameReturn {
+  /** Lives remaining (fixed = 1, endless = 3) */
+  livesLeft: number;
   phase: NumberMemoryPhase;
   /** Current digit string (during play: the target; after game over: the failed one) */
   digits: string;
@@ -106,15 +107,28 @@ export function useNumberMemoryGame(): UseNumberMemoryGameReturn {
 
   const { playCorrect, playWrong, playFinish, playRecord } = useSoundEffects();
 
+  // Difficulty knobs + lives (fixed = 1 life, endless = 3; endless replays
+  // the same length on a miss) — docs/arcade-difficulty-system.md
+  const knobs = knobsFor('numberMemory', normalizeDifficulty(useGameStore((s) => s.arcadeModes.numberMemory?.difficulty)));
+  const lives = ARCADE_LIVES[normalizeRunMode(useGameStore((s) => s.arcadeModes.numberMemory?.runMode))];
+  const [livesLeft, setLivesLeft] = useState(lives);
+  const livesRef = useRef(lives);
+  const knobsRef = useRef(knobs);
+  // keep refs fresh without writing them during render (React Compiler lint)
+  useEffect(() => {
+    knobsRef.current = knobs;
+    livesRef.current = lives;
+  });
+
   // ---- Phase timers (scheduleVisible: never advance while tab hidden) ----
 
-  // showing → input when the memorize window (1000ms + 400ms/digit) is up
+  // showing → input when the memorize window (per-difficulty) is up
   useEffect(() => {
     if (phase !== 'showing' || digits === '') return;
     return scheduleVisible(() => {
       inputStartRef.current = Date.now();
       setPhase('input');
-    }, SHOW_BASE_MS + SHOW_PER_DIGIT_MS * digits.length);
+    }, knobsRef.current.showBaseMs + knobsRef.current.showPerDigitMs * digits.length);
   }, [phase, digits]);
 
   // feedback (correct) → next level after a brief cue
@@ -162,8 +176,8 @@ export function useNumberMemoryGame(): UseNumberMemoryGameReturn {
         mode: 'numberMemory',
         nLevel: final,
         totalRounds: attempts,
-        stimulusDuration: SHOW_BASE_MS,
-        interStimulusInterval: SHOW_PER_DIGIT_MS,
+        stimulusDuration: knobsRef.current.showBaseMs,
+        interStimulusInterval: knobsRef.current.showPerDigitMs,
         stimulusType: 'number',
         gridSize: 3,
       },
@@ -195,8 +209,13 @@ export function useNumberMemoryGame(): UseNumberMemoryGameReturn {
   // ---- Actions ----
 
   const startGame = useCallback((startDigits: number) => {
-    const sd = Math.max(MIN_START_DIGITS, Math.min(startDigits, MAX_START_DIGITS));
+    // difficulty preset may raise the floor; the caller's config still wins if higher
+    const sd = Math.max(
+      MIN_START_DIGITS,
+      Math.min(Math.max(startDigits, knobsRef.current.startDigits), MAX_START_DIGITS),
+    );
     startDigitsRef.current = sd;
+      setLivesLeft(lives);
     resultsRef.current = [];
     savedRef.current = false;
     startTimeRef.current = Date.now();
@@ -206,7 +225,7 @@ export function useNumberMemoryGame(): UseNumberMemoryGameReturn {
     setInput('');
     setDigits(generateDigits(sd));
     setPhase('showing');
-  }, []);
+  }, [lives]);
 
   const retry = useCallback(() => startGame(startDigitsRef.current), [startGame]);
 
@@ -236,10 +255,18 @@ export function useNumberMemoryGame(): UseNumberMemoryGameReturn {
     if (isCorrect) {
       playCorrect();
       setPhase('feedback');
+    } else if (livesRef.current > 1) {
+      // endless: lose a life, replay the SAME length with a fresh string
+      livesRef.current -= 1;
+      setLivesLeft(livesRef.current);
+      playWrong();
+      setDigits(generateDigits(digits.length));
+      setInput('');
+      setPhase('showing');
     } else {
       finishGame();
     }
-  }, [phase, input, digits, playCorrect, finishGame]);
+  }, [phase, input, digits, playCorrect, playWrong, finishGame]);
 
   return {
     phase,
@@ -248,6 +275,7 @@ export function useNumberMemoryGame(): UseNumberMemoryGameReturn {
     best,
     isNewBest,
     finalLength,
+    livesLeft,
     startGame,
     retry,
     inputDigit,

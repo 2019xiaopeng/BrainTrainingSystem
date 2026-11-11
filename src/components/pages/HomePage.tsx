@@ -66,7 +66,7 @@ export function HomePage() {
       }
 
       if (mode === 'stroop') {
-        updateGameConfig('stroop', { durationSec: rounds });
+        // duration now comes from the difficulty preset (arcade-difficulty system)
       }
 
       setNextConfig({ nLevel, totalRounds: rounds, mode, gridSize });

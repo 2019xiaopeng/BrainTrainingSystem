@@ -506,5 +506,44 @@
     "digitsReached": "longest string recalled correctly this run",
     "levelsReached": "longest pattern fully repeated this run",
     "stroopCaption": "{{attempted}} attempts · {{accuracy}}% accuracy"
+  },
+  "arcade": {
+    "runMode": "Mode",
+    "modeFixed": "Fixed challenge",
+    "modeEndless": "Endless",
+    "difficulty": "Difficulty",
+    "diff": {
+      "easy": "Easy",
+      "normal": "Normal",
+      "hard": "Hard"
+    },
+    "summary": {
+      "reaction": {
+        "fixed": "Standard 5-tap protocol — score is the median of 5",
+        "endless": "15-tap marathon — score is the median of 15"
+      },
+      "numberMemory": {
+        "fixed": "One life: a single miss ends the run",
+        "endless": "3 lives: a miss replays the same length"
+      },
+      "sequence": {
+        "fixed": "One life: one wrong tap ends the run",
+        "endless": "3 lives: a miss replays the same length"
+      },
+      "stroop": {
+        "fixed": "Timed sprint: score settles when the clock runs out",
+        "endless": "3 lives, no clock: wrong answers cost a life"
+      },
+      "colorPerception": {
+        "fixed": "One life: one wrong tap ends the run",
+        "endless": "3 lives: a miss replays the same level"
+      },
+      "hippocampus": {
+        "fixed": "Three strikes and you're out",
+        "endless": "Three strikes and you're out"
+      }
+    },
+    "lives": "lives",
+    "strikes": "strikes"
   }
 }

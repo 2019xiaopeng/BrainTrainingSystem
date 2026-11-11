@@ -10,6 +10,7 @@
 // Personal best lives in localStorage (brain-flow-best:color-perception).
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ARCADE_LIVES, knobsFor, normalizeDifficulty, normalizeRunMode } from '../lib/arcadeDifficulty';
 import type { NBackConfig, SessionSummary } from '../types/game';
 import { useGameStore } from '../store/gameStore';
 import { useSoundEffects } from './useSoundEffects';
@@ -66,8 +67,21 @@ function readBest(): number {
 }
 
 export function useColorPerceptionGame() {
+  // Arcade difficulty system: fixed = 1 life, endless = 3 (miss replays the
+  // same level); difficulty sets the starting level
+  const runMode = normalizeRunMode(useGameStore((s) => s.arcadeModes.colorPerception?.runMode));
+  const lives = ARCADE_LIVES[runMode];
+  const knobs = knobsFor('colorPerception', normalizeDifficulty(useGameStore((s) => s.arcadeModes.colorPerception?.difficulty)));
+
   const [phase, setPhase] = useState<ColorPerceptionPhase>('idle');
   const [level, setLevel] = useState(1);
+  const [livesLeft, setLivesLeft] = useState(lives);
+  const livesRef = useRef(lives);
+  const knobsRef = useRef(knobs);
+  // keep refs fresh without writing them during render (React Compiler lint)
+  useEffect(() => {
+    knobsRef.current = knobs;
+  });
   const [current, setCurrent] = useState<ColorLevel>(() => levelFor(1));
   const [wrongFlash, setWrongFlash] = useState(false);
   const [finalLevel, setFinalLevel] = useState(0);
@@ -113,15 +127,17 @@ export function useColorPerceptionGame() {
   }, [playFinish, playRecord]);
 
   const start = useCallback(() => {
-    levelRef.current = 1;
+    levelRef.current = Math.max(1, knobsRef.current.startLevel);
+    livesRef.current = lives;
     savedRef.current = false;
-    setLevel(1);
-    setCurrent(levelFor(1));
+    setLevel(levelRef.current);
+    setLivesLeft(lives);
+    setCurrent(levelFor(levelRef.current));
     setWrongFlash(false);
     setFinalLevel(0);
     setIsNewBest(false);
     setPhase('playing');
-  }, []);
+  }, [lives]);
 
   const tap = useCallback((index: number) => {
     if (phase !== 'playing') return;
@@ -129,6 +145,13 @@ export function useColorPerceptionGame() {
       playClick();
       levelRef.current += 1;
       setLevel(levelRef.current);
+      setCurrent(levelFor(levelRef.current));
+    } else if (livesRef.current > 1) {
+      // endless: lose a life, fresh board at the SAME level
+      livesRef.current -= 1;
+      setLivesLeft(livesRef.current);
+      playWrong();
+      setWrongFlash(true);
       setCurrent(levelFor(levelRef.current));
     } else {
       playWrong();
@@ -140,5 +163,5 @@ export function useColorPerceptionGame() {
   // Never fire anything after unmount (sounds are instant, nothing scheduled)
   useEffect(() => () => { savedRef.current = true; }, []);
 
-  return { phase, level, current, wrongFlash, finalLevel, best, isNewBest, start, tap };
+  return { phase, level, current, wrongFlash, finalLevel, best, isNewBest, livesLeft, start, tap };
 }

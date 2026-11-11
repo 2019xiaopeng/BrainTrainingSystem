@@ -31,7 +31,7 @@ export function StroopGameScreen() {
   const engine = useStroopGame(durationSec);
   const {
     phase, trial, trialIndex, score, feedback,
-    timeLeftMs, totalMs, result, best, start, answer,
+    timeLeftMs, totalMs, isEndless, livesLeft, result, best, start, answer,
   } = engine;
   const { playClick, playWrong, playFinish, playRecord } = useSoundEffects();
 
@@ -111,26 +111,32 @@ export function StroopGameScreen() {
 
       {phase !== 'finished' && (
         <>
-          {/* HUD: score + countdown */}
+          {/* HUD: score + (fixed) countdown / (endless) lives */}
           <div className="flex items-center justify-between text-sm text-zen-500">
             <span>
               {t('game.stroop.score')}{' '}
               <b className="text-zen-800 text-lg tabular-nums">{score}</b>
             </span>
-            <span>
-              {t('game.stroop.timeLeft')}{' '}
-              <b
-                className={`text-lg tabular-nums ${
-                  timeLeftMs <= 5000 ? 'text-rose-500' : 'text-zen-800'
-                }`}
-              >
-                {formatClock(timeLeftMs)}
-              </b>
-            </span>
+            {isEndless ? (
+              <span className="font-mono text-lg tracking-widest text-rose-400" aria-label={t('arcade.lives')}>
+                {'♥'.repeat(livesLeft)}{'♡'.repeat(Math.max(0, 3 - livesLeft))}
+              </span>
+            ) : (
+              <span>
+                {t('game.stroop.timeLeft')}{' '}
+                <b
+                  className={`text-lg tabular-nums ${
+                    timeLeftMs <= 5000 ? 'text-rose-500' : 'text-zen-800'
+                  }`}
+                >
+                  {formatClock(timeLeftMs)}
+                </b>
+              </span>
+            )}
           </div>
 
-          {/* Progress bar (scaleX compositor animation, doesn't trigger layout) */}
-          <ProgressBar remainingMs={timeLeftMs} durationMs={totalMs} />
+          {/* Progress bar (fixed mode only) */}
+          {!isEndless && <ProgressBar remainingMs={timeLeftMs} durationMs={totalMs} />}
         </>
       )}
 

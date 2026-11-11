@@ -7,6 +7,7 @@ import { useReactionGame } from '../../hooks/useReactionGame';
 import type { ReactionPhase } from '../../hooks/useReactionGame';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
 import { useGameStore } from '../../store/gameStore';
+import { normalizeRunMode, reactionTrialsFor } from '../../lib/arcadeDifficulty';
 
 /**
  * ReactionGameScreen - 反应力测试
@@ -31,7 +32,10 @@ const msColor = (ms: number): string =>
 export function ReactionGameScreen() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const trials = useGameStore((s) => s.gameConfigs.reaction.trials);
+  const trials = reactionTrialsFor(
+    normalizeRunMode(useGameStore((s) => s.arcadeModes.reaction?.runMode)),
+    useGameStore((s) => s.gameConfigs.reaction.trials),
+  );
   const engine = useReactionGame(trials);
   const { playClick, playFinish, playRecord } = useSoundEffects();
   const { phase, doneCount, lastMs, result, bestMs, start, tap } = engine;

@@ -14,6 +14,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { scheduleVisible } from '../lib/scheduleVisible';
+import { knobsFor, normalizeDifficulty, normalizeRunMode } from '../lib/arcadeDifficulty';
+import { useGameStore } from '../store/gameStore';
 import type { NBackConfig, RoundResult, SessionSummary } from '../types/game';
 
 export type StroopPhase = 'idle' | 'playing' | 'finished';
@@ -76,7 +78,18 @@ function saveBest(score: number): void {
 }
 
 export function useStroopGame(durationSec: number) {
-  const totalMs = clampDurationMs(durationSec);
+  // Arcade difficulty system: fixed = timed challenge (preset duration wins),
+  // endless = no clock, 3 lives, wrong answers cost one
+  const stroopCfg = useGameStore((s) => s.arcadeModes.stroop);
+  const runMode = normalizeRunMode(stroopCfg?.runMode);
+  const isEndless = runMode === 'endless';
+  const knobs = knobsFor('stroop', normalizeDifficulty(stroopCfg?.difficulty));
+  const totalMs = clampDurationMs(knobs.durationSec);
+  const durationSecUsed = durationSec; // kept for call-compat; preset wins
+  void durationSecUsed;
+
+  const [livesLeft, setLivesLeft] = useState(3);
+  const livesRef = useRef(3);
 
   const [phase, setPhase] = useState<StroopPhase>('idle');
   const [trial, setTrial] = useState<StroopTrial>(() => randomTrial());
@@ -184,6 +197,8 @@ export function useStroopGame(durationSec: number) {
     cancelFeedbackRef.current?.();
     roundsRef.current = [];
     scoreRef.current = 0;
+    livesRef.current = 3;
+    setLivesLeft(3);
     remainingMsRef.current = totalMs;
     runStartedAtRef.current = Date.now();
     setScore(0);
@@ -212,18 +227,25 @@ export function useStroopGame(durationSec: number) {
       setScore(scoreRef.current);
       setAttempted(roundsRef.current.length);
       setFeedback(isCorrect ? 'correct' : 'wrong');
+      if (!isCorrect && isEndless) {
+        livesRef.current -= 1;
+        setLivesLeft(livesRef.current);
+        if (livesRef.current <= 0) {
+          finishRef.current();
+          return 'wrong';
+        }
+      }
       cancelFeedbackRef.current?.();
       cancelFeedbackRef.current = scheduleVisible(() => setFeedback(null), FEEDBACK_MS);
       nextTrial();
       return isCorrect ? 'correct' : 'wrong';
     },
-    [nextTrial],
+    [nextTrial, isEndless],
   );
 
-  // Countdown: one scheduleVisible chain, paused on hidden / resumed on visible
-  // so a hidden tab never eats the clock (deltas only count visible time).
+  // Countdown: fixed mode only (endless runs on lives, no clock)
   useEffect(() => {
-    if (phase !== 'playing') return;
+    if (phase !== 'playing' || isEndless) return;
     lastTickAtRef.current = performance.now();
 
     const tick = () => {
@@ -261,7 +283,7 @@ export function useStroopGame(durationSec: number) {
       cancelTickRef.current = null;
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [phase]);
+  }, [phase, isEndless]);
 
   // Never fire the feedback flash clear after unmount
   useEffect(() => () => cancelFeedbackRef.current?.(), []);
@@ -275,6 +297,8 @@ export function useStroopGame(durationSec: number) {
     feedback,
     timeLeftMs,
     totalMs,
+    isEndless,
+    livesLeft,
     result,
     best,
     start,

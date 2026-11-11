@@ -506,5 +506,44 @@
     "digitsReached": "本局正确复述的最长位数",
     "levelsReached": "本局完整复述的最长序列",
     "stroopCaption": "{{attempted}} 次作答 · 准确率 {{accuracy}}%"
+  },
+  "arcade": {
+    "runMode": "模式",
+    "modeFixed": "固定挑战",
+    "modeEndless": "无限模式",
+    "difficulty": "难度",
+    "diff": {
+      "easy": "简单",
+      "normal": "中等",
+      "hard": "困难"
+    },
+    "summary": {
+      "reaction": {
+        "fixed": "标准 5 击协议——成绩为 5 击中位数",
+        "endless": "15 击马拉松——成绩为 15 击中位数"
+      },
+      "numberMemory": {
+        "fixed": "一条命:错一次即终局,看你能背到多少位",
+        "endless": "3 条命:记错同长度重试一次"
+      },
+      "sequence": {
+        "fixed": "一条命:点错一次即终局",
+        "endless": "3 条命:点错同长度重试一次"
+      },
+      "stroop": {
+        "fixed": "限时冲刺:时间到即结算",
+        "endless": "3 条命无限时:答错扣一命"
+      },
+      "colorPerception": {
+        "fixed": "一条命:点错一次即终局",
+        "endless": "3 条命:点错同级重来"
+      },
+      "hippocampus": {
+        "fixed": "三振出局:错 3 次结束",
+        "endless": "三振出局:错 3 次结束"
+      }
+    },
+    "lives": "命",
+    "strikes": "失误"
   }
 }

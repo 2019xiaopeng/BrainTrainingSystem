@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GAME_CATALOG } from '../../lib/games';
+import { DIFFICULTY_HIDDEN, normalizeDifficulty, normalizeRunMode } from '../../lib/arcadeDifficulty';
 import { useGameStore } from '../../store/gameStore';
 import type { GameMode, MouseDifficultyLevel } from '../../types/game';
 import { getBrainRank, MOUSE_GRID_PRESETS, MOUSE_DIFFICULTY_MAP, buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
@@ -286,6 +287,9 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
       {/* 配置面板 */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-zen-200 space-y-4">
         <h2 className="text-lg font-medium text-zen-600">{t('home.config')}</h2>
+
+        {/* ===== 街机模式配置(模式 + 难度) ===== */}
+        {ARCADE_MODES.includes(mode) && <ArcadeConfigPanel mode={mode} />}
 
         {/* ===== N-Back 模式配置 ===== */}
         {isNBackMode && (
@@ -659,5 +663,66 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
         </div>
       </section>
     </div>
+  );
+}
+
+/** Arcade games that get the mode+difficulty panel */
+const ARCADE_MODES: GameMode[] = ['reaction', 'numberMemory', 'sequence', 'stroop', 'colorPerception', 'hippocampus'];
+
+/**
+ * ArcadeConfigPanel — the shared run-mode (⚡ fixed / ∞ endless) + difficulty
+ * picker for arcade games (docs/arcade-difficulty-system.md). Reaction shows
+ * the mode picker only (protocol fairness — difficulty never tunes a measurement).
+ */
+function ArcadeConfigPanel({ mode }: { mode: GameMode }) {
+  const { t } = useTranslation();
+  const cfg = useGameStore((s) => s.arcadeModes[mode]);
+  const setArcadeMode = useGameStore((s) => s.setArcadeMode);
+  const runMode = normalizeRunMode(cfg?.runMode);
+  const difficulty = normalizeDifficulty(cfg?.difficulty);
+  const showDifficulty = !DIFFICULTY_HIDDEN.includes(mode);
+
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3 flex-wrap">
+        <label className="text-sm text-zen-500 w-16">{t('arcade.runMode')}</label>
+        <div className="flex gap-1.5">
+          <SegButton active={runMode === 'fixed'} onClick={() => setArcadeMode(mode, { runMode: 'fixed' })}>
+            ⚡ {t('arcade.modeFixed')}
+          </SegButton>
+          <SegButton active={runMode === 'endless'} onClick={() => setArcadeMode(mode, { runMode: 'endless' })}>
+            ∞ {t('arcade.modeEndless')}
+          </SegButton>
+        </div>
+      </div>
+      {showDifficulty && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="text-sm text-zen-500 w-16">{t('arcade.difficulty')}</label>
+          <div className="flex gap-1.5">
+            {(['easy', 'normal', 'hard'] as const).map((d) => (
+              <SegButton key={d} active={difficulty === d} onClick={() => setArcadeMode(mode, { difficulty: d })}>
+                {t(`arcade.diff.${d}`)}
+              </SegButton>
+            ))}
+          </div>
+        </div>
+      )}
+      <p className="text-xs text-zen-400">{t(`arcade.summary.${mode}.${runMode}`)}</p>
+    </div>
+  );
+}
+
+/** Shared segment button for the arcade config panel */
+function SegButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+        active ? 'bg-sage-500 text-white shadow-sm' : 'bg-zen-100 text-zen-600 hover:bg-zen-200'
+      }`}
+    >
+      {children}
+    </button>
   );
 }

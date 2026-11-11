@@ -195,6 +195,12 @@ export interface GameConfigs {
   };
 }
 
+/** Arcade run-mode/difficulty overrides, stored per game mode key */
+export interface ArcadeModeConfig {
+  runMode: 'fixed' | 'endless';
+  difficulty: 'easy' | 'normal' | 'hard';
+}
+
 // ------------------------------------------------------------
 // Configuration
 // ------------------------------------------------------------
