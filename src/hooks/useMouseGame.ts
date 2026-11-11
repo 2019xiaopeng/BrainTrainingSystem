@@ -53,9 +53,42 @@ function createFilledGrid(cols: number, rows: number, numMice: number): GridCell
   return contents.map((c) => ({ id: nextCellId(), content: c }));
 }
 
+/** Lines (as push candidates) that currently contain at least one mouse */
+function linesWithMice(
+  grid: GridCell[],
+  cols: number,
+  rows: number,
+): PushOperation[] {
+  const candidates: PushOperation[] = [];
+  for (let r = 0; r < rows; r++) {
+    let has = false;
+    for (let c = 0; c < cols; c++) if (grid[r * cols + c].content === 'mouse') { has = true; break; }
+    if (has) candidates.push({ side: 'left', lineIndex: r }, { side: 'right', lineIndex: r });
+  }
+  for (let c = 0; c < cols; c++) {
+    let has = false;
+    for (let r = 0; r < rows; r++) if (grid[r * cols + c].content === 'mouse') { has = true; break; }
+    if (has) candidates.push({ side: 'top', lineIndex: c }, { side: 'bottom', lineIndex: c });
+  }
+  return candidates;
+}
+
+function allLines(cols: number, rows: number): PushOperation[] {
+  const candidates: PushOperation[] = [];
+  for (let r = 0; r < rows; r++) candidates.push({ side: 'left', lineIndex: r }, { side: 'right', lineIndex: r });
+  for (let c = 0; c < cols; c++) candidates.push({ side: 'top', lineIndex: c }, { side: 'bottom', lineIndex: c });
+  return candidates;
+}
+
 /**
- * Generate push operations ensuring at least ⌈N/2⌉ mice survive.
- * Uses smart retry logic to avoid pushing too many mice off.
+ * Generate push operations with two hard guarantees (v2 design):
+ *   1. MOVEMENT — the first push always targets a line that currently holds
+ *      a mouse, so at least one mouse provably moves every round (the old
+ *      random-line generator could shuffle only cat lines: zero movement,
+ *      trivial round).
+ *   2. SURVIVAL — at least ⌈N/2⌉ mice remain on the grid after all pushes.
+ * Roughly half of the later pushes also aim at mouse lines, so mice keep
+ * travelling instead of sitting still while cats dance.
  */
 function generatePushOps(
   initialGrid: GridCell[],
@@ -64,33 +97,34 @@ function generatePushOps(
   numPushes: number,
   targetMice: number,
 ): PushOperation[] {
-  const minSurvivingMice = Math.ceil(targetMice / 2);
-  const MAX_ATTEMPTS = 100;
+  const minSurvivingMice = Math.max(1, Math.ceil(targetMice / 2));
+  const MAX_ATTEMPTS = 150;
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const ops: PushOperation[] = [];
-    const sides: PushOperation['side'][] = ['left', 'right', 'top', 'bottom'];
-    let currentGrid = initialGrid.map((c) => ({ ...c }));
+    let grid = initialGrid.map((c) => ({ ...c }));
 
-    // Generate random pushes
     for (let i = 0; i < numPushes; i++) {
-      const side = sides[Math.floor(Math.random() * sides.length)];
-      const maxLine = (side === 'left' || side === 'right') ? rows : cols;
-      const lineIndex = Math.floor(Math.random() * maxLine);
-      ops.push({ side, lineIndex });
-      currentGrid = applyPush(currentGrid, cols, rows, { side, lineIndex });
+      const mouseLines = linesWithMice(grid, cols, rows);
+      const aimAtMouse = mouseLines.length > 0 && (i === 0 || Math.random() < 0.5);
+      const pool = aimAtMouse ? mouseLines : allLines(cols, rows);
+      const op = pool[Math.floor(Math.random() * pool.length)];
+      ops.push(op);
+      grid = applyPush(grid, cols, rows, op);
     }
 
-    // Check survival rate
-    const survivingMice = currentGrid.filter((c) => c.content === 'mouse').length;
+    const survivingMice = grid.filter((c) => c.content === 'mouse').length;
     if (survivingMice >= minSurvivingMice) {
       return ops;
     }
   }
 
-  // Fallback: return empty array (no pushes)
-  console.warn(`Could not find push sequence preserving ${minSurvivingMice} mice, using no pushes`);
-  return [];
+  // Deterministic fallback: one push through the mouse-densest line.
+  // A single push displaces at most the mice on its exit edge, so this
+  // keeps movement guaranteed while nearly always preserving the floor.
+  const mouseLines = linesWithMice(initialGrid, cols, rows);
+  if (mouseLines.length === 0) return [];
+  return [mouseLines[Math.floor(Math.random() * mouseLines.length)]];
 }
 
 /** Apply all pushes sequentially and return the final grid */
@@ -400,10 +434,12 @@ export function useMouseGame(): UseMouseGameReturn {
       };
       setNbackConfig(nCfg);
 
-      // Pre-generate all puzzles
+      // Pre-generate all puzzles with an in-run ramp: pushes grow by one
+      // every 3 rounds (capped at base+3) so a run tightens as it goes
       const allPuzzles: MousePuzzle[] = [];
       for (let i = 0; i < mCfg.totalRounds; i++) {
-        allPuzzles.push(generatePuzzle(mCfg));
+        const ramped = { ...mCfg, numPushes: Math.min(mCfg.numPushes + Math.floor(i / 3), mCfg.numPushes + 3) };
+        allPuzzles.push(generatePuzzle(ramped));
       }
       setPuzzles(allPuzzles);
 

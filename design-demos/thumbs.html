@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brain Flow UI Refresh — 6 direction thumbnails</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;padding:24px;background:#e9e7e2;font-family:Inter,system-ui,sans-serif}
+  h1{font-size:16px;font-weight:600;color:#5c5145;margin:0 0 4px}
+  p.sub{font-size:12px;color:#8d7f6d;margin:0 0 20px}
+  .grid{display:grid;grid-template-columns:repeat(3,480px);gap:20px;justify-content:center}
+  @media(max-width:1560px){.grid{grid-template-columns:repeat(2,480px)}}
+  @media(max-width:1060px){.grid{grid-template-columns:480px}}
+  .cell{width:480px;height:300px;overflow:hidden;position:relative;border-radius:6px;box-shadow:0 4px 16px rgba(58,53,47,.14)}
+  .cell .tag{position:absolute;left:10px;bottom:10px;z-index:9;font:600 10px Inter;letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;border-radius:99px;background:rgba(255,255,255,.85);color:#5c5145}
+  /* 1 Hara white gallery */
+  .hara{background:#FCFBF9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+  .hara .seal{width:44px;height:44px;border:1.5px solid #798c79;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#798c79;font:700 15px 'JetBrains Mono'}
+  .hara h2{font-size:26px;font-weight:600;color:#3a352f;margin:0;letter-spacing:.01em}
+  .hara .hook{font-size:13px;color:#a89d8e;margin:0}
+  .hara button{margin-top:6px;font:600 13px Inter;color:#fff;background:#798c79;border:0;border-radius:2px;padding:9px 30px}
+  .hara .meta{position:absolute;bottom:14px;font:400 10px 'JetBrains Mono';color:#c4beb2;letter-spacing:.14em}
+  /* 2 Dumbar */
+  .dumbar{background:#F2F1EC;display:grid;grid-template-columns:150px 1fr;font-family:'Space Grotesk',Inter,sans-serif}
+  .dumbar .left{background:#2B6E68;display:flex;align-items:flex-end;padding:16px}
+  .dumbar .left span{color:#F2F1EC;font-weight:700;font-size:38px;line-height:.9}
+  .dumbar .right{padding:22px 20px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+  .dumbar .kicker{font:700 10px 'Space Grotesk';letter-spacing:.16em;color:#C25E3A}
+  .dumbar h2{margin:0;font-size:27px;font-weight:700;color:#242424;line-height:1.05}
+  .dumbar .hook{font-size:12.5px;color:#6b6b6b;max-width:250px}
+  .dumbar .chips{display:flex;gap:6px;margin-top:8px}
+  .dumbar .chips i{width:26px;height:26px;border-radius:4px;display:block}
+  .dumbar button{margin-top:10px;align-self:flex-start;font:700 13px 'Space Grotesk';background:#242424;color:#fff;border:0;padding:10px 26px;border-radius:3px}
+  /* 3 HB utilitarian */
+  .hb{background:#f7f6f4;padding:28px 32px;display:flex;flex-direction:column;justify-content:center;gap:10px}
+  .hb h2{margin:0;font-size:22px;color:#3a352f;font-weight:600}
+  .hb .row{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #dbd7cf;padding:7px 0}
+  .hb .row b{font:600 14px Inter;color:#5c5145}
+  .hb .row span{font:400 12px Inter;color:#8d7f6d}
+  .hb .row em{font:700 12px 'JetBrains Mono';font-style:normal;color:#798c79}
+  /* 4 Lumosity cards */
+  .lumo{background:#FBFAF8;padding:20px 22px;display:flex;flex-direction:column;gap:12px}
+  .lumo .stats{display:flex;gap:14px}
+  .lumo .stats div{font:700 15px Inter;color:#798c79}
+  .lumo .stats div small{display:block;font:400 9.5px Inter;color:#a89d8e;letter-spacing:.04em}
+  .lumo .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .lumo .card{border:1px solid #e7ebe7;border-radius:10px;padding:10px 8px;background:#fff;display:flex;flex-direction:column;gap:6px;align-items:center}
+  .lumo .card i{width:30px;height:30px;border-radius:8px;display:block}
+  .lumo .card b{font:600 10px Inter;color:#5c5145;text-align:center}
+  .lumo button{align-self:flex-start;font:600 12px Inter;background:#798c79;color:#fff;border:0;border-radius:99px;padding:8px 18px}
+  /* 5 Dark editorial */
+  .dark{background:#1E211E;padding:26px 30px;display:flex;flex-direction:column;justify-content:center;gap:10px}
+  .dark .kick{font:400 10px 'JetBrains Mono';letter-spacing:.2em;color:#6F7A6F}
+  .dark h2{margin:0;font:600 24px Inter;color:#E8EAE6;letter-spacing:-.01em}
+  .dark .num{font:700 44px 'JetBrains Mono';color:#9FE870;line-height:1}
+  .dark .num small{font:400 11px 'JetBrains Mono';color:#6F7A6F;margin-left:8px;letter-spacing:.08em}
+  .dark .bar{height:3px;background:#333833;border-radius:2px;overflow:hidden;width:220px}
+  .dark .bar i{display:block;height:100%;width:72%;background:#9FE870}
+  .dark button{align-self:flex-start;margin-top:6px;font:600 12px 'JetBrains Mono';color:#1E211E;background:#9FE870;border:0;padding:9px 22px;border-radius:2px}
+  /* 6 Republic book jacket */
+  .rep{background:#EFE6D5;padding:16px}
+  .rep .frame{border:1.5px solid #2E4057;height:100%;box-sizing:border-box;padding:26px 22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;position:relative}
+  .rep .frame::before{content:"";position:absolute;inset:4px;border:.5px solid #2E405766}
+  .rep .vtitle{writing-mode:vertical-rl;font:600 15px 'Cormorant Garamond',serif;color:#2E4057;position:absolute;right:14px;top:14px;letter-spacing:.3em}
+  .rep h2{margin:0;font:600 24px 'Cormorant Garamond',serif;color:#2E4057;text-align:center}
+  .rep .hook{font:400 12px Inter;color:#6b5f4d}
+  .rep .stamp{width:34px;height:34px;border:1.5px solid #A63D2F;color:#A63D2F;display:flex;align-items:center;justify-content:center;font:700 13px 'JetBrains Mono';border-radius:3px}
+</style>
+</head>
+<body>
+<h1>Brain Flow · UI Refresh — 六方向缩略图</h1>
+<p class="sub">同一内容(Reaction Time Test 落地页首屏)在六种设计语言下的样子。完整版将做 #1 / #2 / #5。</p>
+<div class="grid">
+  <div class="cell hara"><div class="seal">⚡</div><h2>Reaction Time Test</h2><p class="hook">How fast are your reflexes?</p><button>Play now</button><div class="meta">9 GAMES · NO SIGNUP · IN YOUR BROWSER</div><span class="tag">1 · Hara 白盒</span></div>
+  <div class="cell dumbar"><div class="left"><span>REACT</span></div><div class="right"><div class="kicker">BRAIN FLOW / 01</div><h2>Reaction Time Test</h2><div class="hook">How fast are your reflexes? Tap the moment it turns green.</div><div class="chips"><i style="background:#2B6E68"></i><i style="background:#C25E3A"></i><i style="background:#8A6FA8"></i><i style="background:#B08A3E"></i></div><button>PLAY — FREE</button></div><span class="tag">2 · Dumbar 色相系统</span></div>
+  <div class="cell hb"><h2>Reaction Time Test</h2><div class="row"><b>Reaction Time</b><span>How fast are your reflexes?</span><em>247ms</em></div><div class="row"><b>Number Memory</b><span>How many digits can you hold?</span><em>11</em></div><div class="row"><b>Stroop Test</b><span>Your brain lies to you. Catch it.</span><em>38</em></div><span class="tag">3 · HB 工具列表</span></div>
+  <div class="cell lumo"><div class="stats"><div>9<small>GAMES</small></div><div>0<small>SIGNUPS</small></div><div>60s<small>PER SESSION</small></div></div><div class="cards"><div class="card"><i style="background:#95a795"></i><b>Reaction</b></div><div class="card"><i style="background:#ad9a8f"></i><b>Number</b></div><div class="card"><i style="background:#b4c2b4"></i><b>Sequence</b></div><div class="card"><i style="background:#c7b9b1"></i><b>Stroop</b></div></div><button>Play Reaction Time →</button><span class="tag">4 · Lumosity 目录卡</span></div>
+  <div class="cell dark"><div class="kick">BRAIN FLOW — REACTION TIME TEST</div><h2>How fast are your reflexes?</h2><div class="num">245<small>MS · TYPICAL 273</small></div><div class="bar"><i></i></div><button>PLAY NOW</button><span class="tag">5 · Dark Editorial</span></div>
+  <div class="cell rep"><div class="frame"><div class="vtitle">BRAIN FLOW</div><div class="stamp">⚡</div><h2>Reaction Time Test</h2><div class="hook">How fast are your reflexes?</div><span class="tag" style="background:#EFE6D5">6 · 民国书衣</span></div></div>
+</div>
+</body>
+</html>

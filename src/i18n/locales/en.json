@@ -49,7 +49,7 @@
     "houseRounds": "Rounds:",
     "reaction": "Reaction Time Test",
     "reactionDesc": "Tap the moment it turns green",
-    "reactionHelp": "Wait for the background to turn green, then tap immediately. Early taps don't count. 5 valid taps, averaged.",
+    "reactionHelp": "Wait for the background to turn green, then tap immediately. Early taps don't count. 5 valid taps — your score is the median, so one fumble won't wreck it.",
     "startReaction": "Start Reaction Test",
     "numberMemory": "Number Memory",
     "numberMemoryDesc": "Recall growing digit strings",
@@ -63,10 +63,15 @@
     "stroopDesc": "Pick the ink color in 60s",
     "stroopHelp": "A color word appears, printed in a different color. Ignore the word's meaning and pick the ink color. As many correct picks as possible in 60 seconds — wrong picks lose points.",
     "startStroop": "Start Stroop Test",
-    "mathSprint": "Math Sprint",
-    "mathSprintDesc": "60-second mental math",
-    "mathSprintHelp": "Answer as many problems as you can in 60 seconds. Correct answers auto-advance and the difficulty ramps up.",
-    "startMathSprint": "Start Math Sprint"
+    "startMathSprint": "Start Math Sprint",
+    "colorPerception": "Color Perception Test",
+    "colorPerceptionDesc": "Spot the odd shade",
+    "colorPerceptionHelp": "One tile in the grid is a slightly different shade — tap it. Every level the grid grows and the difference shrinks. One wrong tap ends the run.",
+    "startColorPerception": "Start Color Test",
+    "hippocampus": "Hippocampus Test",
+    "hippocampusDesc": "Recall numbers by position",
+    "hippocampusHelp": "Numbers flash at random positions, then hide. Tap them in ascending order from memory. Each level adds a number; 3 wrong taps end the run.",
+    "startHippocampus": "Start Hippocampus Test"
   },
   "game": {
     "comingSoon": "This game is coming soon",
@@ -74,11 +79,16 @@
       "title": "Reaction Time Test",
       "personalBest": "Personal Best",
       "avg": "Average",
+      "median": "Median",
       "best": "Fastest",
       "tapToStart": "Tap anywhere to start",
       "waitForGreen": "Wait for green…",
+      "waitForGreenSub": "tap only when the pad turns green",
       "clickNow": "TAP NOW!",
+      "clickNowSub": "as fast as you can",
       "tooSoon": "Too soon! Tap voided — wait again",
+      "tooSoonSub": "the pad hadn't turned green yet — this tap doesn't count",
+      "tapContinue": "tap to continue",
       "trialOf": "Tap {{current}} / {{total}}",
       "ms": "ms",
       "again": "Try Again"
@@ -89,13 +99,19 @@
       "level": "Digit Length",
       "memorize": "Memorize these digits",
       "input": "Type the digits you remember",
+      "inputHint": "{{count}} digits — type what you saw, Enter to submit",
+      "digitsUnit": "digits",
+      "tapToStart": "Starting…",
       "correct": "Correct! +1 digit",
       "wrong": "Wrong",
-      "gameOver": "Final digit length",
+      "gameOver": "Game over",
       "again": "Try Again"
     },
     "sequence": {
       "title": "Sequence Memory",
+      "levelsUnit": "levels",
+      "tapToStart": "Starting…",
+      "reached": "you repeated {{level}} steps before the miss",
       "personalBest": "Personal Best",
       "level": "Sequence Length",
       "watch": "Watch the flashing order",
@@ -113,14 +129,8 @@
       "prompt": "Pick the INK color of the word",
       "correct": "Correct",
       "wrong": "Wrong",
-      "finished": "Time's up!",
-      "again": "Try Again"
-    },
-    "mathSprint": {
-      "title": "Math Sprint",
-      "personalBest": "Personal Best",
-      "solved": "Solved",
-      "timeLeft": "Time Left",
+      "tapToStart": "Starting…",
+      "correctUnit": "correct",
       "finished": "Time's up!",
       "again": "Try Again"
     },
@@ -152,7 +162,30 @@
     "confirm": "✓ Confirm",
     "observePosition": "Observe position...",
     "canClick": "✓ Click now",
-    "noClickNeeded": "Memory phase - no click needed"
+    "noClickNeeded": "Memory phase - no click needed",
+    "colorPerception": {
+      "title": "Color Perception Test",
+      "personalBest": "Personal Best",
+      "level": "Level",
+      "grid": "Grid",
+      "prompt": "tap the tile with the different shade",
+      "gameOver": "Game over",
+      "levelsCleared": "levels cleared",
+      "levelsUnit": "levels",
+      "again": "Try Again"
+    },
+    "hippocampus": {
+      "title": "Hippocampus Test",
+      "personalBest": "Personal Best",
+      "level": "Level",
+      "memorize": "memorize the number positions",
+      "recall": "tap {{next}} next",
+      "levelClear": "correct — next level",
+      "gameOver": "Game over",
+      "levelsCleared": "highest level completed",
+      "levelsUnit": "levels",
+      "again": "Try Again"
+    }
   },
   "mouse": {
     "selected": "{{n}} positions selected",
@@ -389,6 +422,89 @@
     "faqMobileQ": "Does it work on mobile?",
     "faqMobileA": "Yes. Every game is designed mobile-first and runs in any modern browser on phones, tablets and desktops.",
     "allGames": "All Games",
-    "metaDescription": "Play {{game}} free online — {{description}}. No download, no sign-up, works on mobile and desktop."
+    "metaDescription": "Play {{game}} free online — {{description}}. No download, no sign-up, works on mobile and desktop.",
+    "hook": {
+      "reaction": "How fast are your reflexes?",
+      "numberMemory": "How many digits can you hold?",
+      "sequence": "Repeat the pattern. One more step every round.",
+      "stroop": "Your brain lies to you. Catch it.",
+      "nBack": "Remember the answer from N steps ago.",
+      "mouse": "Track the mice through the shuffle.",
+      "spatial": "Positions fade. Your memory doesn't.",
+      "house": "Count who's left when the door stops.",
+      "colorPerception": "One shade is different. Find it.",
+      "hippocampus": "Numbers flash once. Recall them in order."
+    },
+    "maxN": "MAX N",
+    "daysStreak": "DAY STREAK",
+    "protocolNote": "full session runs in the game screen — settings are free to tune",
+    "reactionSub": "5-tap series · score is your median · Space works too",
+    "aboutTitle": "ABOUT THE TEST",
+    "about": {
+      "reaction": {
+        "1": "This test measures simple visual reaction time: the pad turns green after a random delay, and your tap latency is recorded. Your score is the median of 5 valid taps, so a single fumble won't wreck it.",
+        "2": "Scores depend on your device and input method — a gaming mouse and a touchscreen report differently, so compare against the typical value in spirit only. Everything runs and stays in your browser: no account, no data leaving this device.",
+        "source": "typical value source: humanbenchmark.com public statistics (median of ≈81M samples), read Nov 2026 · not a percentile, not a cognitive score"
+      },
+      "numberMemory": {
+        "1": "This is a digit-span test: remember the digits, type them back, and the string grows by one every round. Your score is the longest string you recalled correctly.",
+        "2": "Online scores run higher than clinical digit-span norms — test-takers are self-selected and often practiced — so read the typical value as a casual benchmark, not a diagnosis. Everything stays in your browser.",
+        "source": "typical value source: third-party analysis of humanbenchmark number-memory scores (median 9) · not a clinical norm"
+      },
+      "sequence": {
+        "1": "Squares flash in a growing pattern — watch, then click them back in the same order. Each completed level adds one more step, and one wrong tap ends the run.",
+        "2": "Typical online players reach around level 8. Dedicated practice with memory techniques pushes much higher, so treat the typical value as a casual benchmark. Everything stays in your browser.",
+        "source": "typical value source: third-party analyses of humanbenchmark sequence scores (typical ≈8) · not a clinical norm"
+      },
+      "stroop": {
+        "1": "The Stroop effect: reading is automatic, so when a color word is printed in a conflicting ink, naming the ink takes measurable effort. Your job is to answer the ink color, not the word — as fast as you can for 60 seconds.",
+        "2": "Stroop scores are not comparable across sites: durations, key mappings and scoring all differ, so we show no typical value — race your own history instead. Everything stays in your browser.",
+        "source": "no published reference: protocols differ across sites — self-history comparison only"
+      },
+      "nBack": {
+        "1": "The classic working-memory trainer: a stream of numbers flows past, and you judge whether the current one matches the one from N steps back. Raise N when it gets comfortable — 2-back is a workout, 3-back is a wall.",
+        "2": "Sessions pause safely in a hidden tab, and every parameter (N, rounds, timing) is free to tune. Everything runs and stays in your browser."
+      },
+      "mouse": {
+        "1": "Mice hide among cats on a grid; covers drop, then cats shove rows and columns around. Your job is to track the mice through every shuffle and find them again.",
+        "2": "This is a pure attention-tracking workout — grid size, mice count and push count all scale with your settings. Everything runs and stays in your browser."
+      },
+      "spatial": {
+        "1": "N-Back over positions instead of numbers: a cell lights on the grid, and you judge whether it is the same cell as N steps back.",
+        "2": "Spatial N-Back trains the same working-memory buffer through a different sense. Grid size, N and rounds are all free to tune. Everything stays in your browser."
+      },
+      "house": {
+        "1": "People stream in and out of a house. Keep a running count through every entry and exit, then report who's left when the door stops.",
+        "2": "Mental updating — holding and adjusting a number under a stream of changes. Event count and speed scale freely. Everything stays in your browser."
+      },
+      "selfBuilt": {
+        "source": "self-built protocol — no published reference; compare against your own history"
+      },
+      "colorPerception": {
+        "1": "A shade-discrimination test in the Kuku Kube tradition: a grid of near-identical tiles hides exactly one odd shade. Tap it — every level the grid grows and the difference shrinks toward the just-noticeable limit.",
+        "2": "Performance varies with screen quality and ambient light more than most tests — calibrate nothing, trust your own trend line. Everything stays in your browser."
+      },
+      "hippocampus": {
+        "1": "Numbers appear at random grid positions for a moment, then hide — tap them back in ascending order, purely from memory. Each level adds a number, three wrong taps end the run.",
+        "2": "The format follows the chimp-test lineage from the 2007 Ayumu studies, where young chimpanzees beat adult humans at exactly this task. Typical humans land around level 6.",
+        "source": "typical value source: humanbenchmark chimp-test FAQ (levels 5–7 average) · casual benchmark, not a clinical norm"
+      }
+    },
+    "footerLocal": "PLAYS IN YOUR BROWSER · DATA STAYS ON YOUR DEVICE"
+  },
+  "instrument": {
+    "result": "RESULT",
+    "yours": "YOURS",
+    "typical": "TYPICAL",
+    "typicalNone": "TYPICAL",
+    "typicalNoneNote": "no published reference for this game — compare against your own history",
+    "history": "YOUR LAST RUNS",
+    "historyNote": "last {{count}} runs, newest on the right — local data",
+    "playAgain": "PLAY AGAIN",
+    "allGames": "ALL 9 GAMES",
+    "medianOf": "median of {{total}} taps — one fumble won't wreck it",
+    "digitsReached": "longest string recalled correctly this run",
+    "levelsReached": "longest pattern fully repeated this run",
+    "stroopCaption": "{{attempted}} attempts · {{accuracy}}% accuracy"
   }
 }

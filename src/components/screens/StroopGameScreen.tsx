@@ -15,24 +15,9 @@ import { useSoundEffects } from '../../hooks/useSoundEffects';
 import { useGameStore } from '../../store/gameStore';
 import { PBPill, ProgressBar, ScoreReveal } from '../game/arcade';
 
-/** Ink classes for the big word — the thing the player must identify */
-const INK_CLASSES = ['text-red-500', 'text-blue-500', 'text-green-500', 'text-yellow-500'];
+/** Stimulus tables live in lib/stroop.ts (shared with the landing pad) */
+import { COLOR_WORDS, INK_CLASSES, SWATCH_CLASSES } from '../../lib/stroop';
 
-/** Soft swatches behind the neutral-ink labels (the button itself never
- *  spells its color in its own color — that would invert the challenge) */
-const SWATCH_CLASSES = [
-  'bg-red-50 border-red-200 hover:border-red-400',
-  'bg-blue-50 border-blue-200 hover:border-blue-400',
-  'bg-green-50 border-green-200 hover:border-green-400',
-  'bg-yellow-50 border-yellow-200 hover:border-yellow-400',
-];
-
-// shortcut: color names are game content the locale files don't carry (the
-// registration scaffold added no color keys); add locale keys when a third language lands
-const COLOR_WORDS: Record<'zh' | 'en', string[]> = {
-  zh: ['红', '蓝', '绿', '黄'],
-  en: ['Red', 'Blue', 'Green', 'Yellow'],
-};
 
 function formatClock(ms: number): string {
   const s = Math.max(0, Math.ceil(ms / 1000));
