@@ -29,6 +29,16 @@ const MODE_HUE: Record<string, string> = {
   sequence: '#2B6E68',
   stroop: '#7C5F98',
   mathSprint: '#84663B',
+  numeric: '#5F7040',
+  mouse: '#6B6B3B',
+  spatial: '#9C5346',
+  house: '#7A6A42',
+};
+
+/** Catalog order index per mode, for the "NAME — NN" kicker */
+const MODE_INDEX: Record<string, number> = {
+  reaction: 1, numberMemory: 2, sequence: 3, stroop: 4, mathSprint: 5,
+  numeric: 6, mouse: 7, spatial: 8, house: 9,
 };
 export function GameLandingScreen() {
   const { slug = '' } = useParams<{ slug: string }>();
@@ -158,28 +168,98 @@ export function GameLandingScreen() {
   }
 
   return (
-    <article className="space-y-6 pt-8 pb-4 animate-fade-in">
-      <header className="text-center space-y-3">
-        <div className="text-5xl" aria-hidden="true">{game.emoji}</div>
-        <h1 className="text-4xl font-light text-zen-700 tracking-wider">{title}</h1>
-        <p className="text-sm text-zen-400">{description}</p>
+    <ProtocolInstrumentLanding
+      mode={game.mode}
+      slug={game.slug}
+      title={title}
+      description={description}
+      helpText={helpText}
+      onPlay={handlePlay}
+      faqPairs={faqPairs}
+      jsonLd={jsonLd}
+    />
+  );
+}
+
+/**
+ * Protocol landing for the deep self-built games (06-09): instrument-styled
+ * kicker/hook/protocol/CTA. The complex engines stay on /train — the landing
+ * sells the protocol and hands off (docs/game-dossiers/06-09).
+ */
+function ProtocolInstrumentLanding({
+  mode,
+  slug,
+  title,
+  description,
+  helpText,
+  onPlay,
+  faqPairs,
+  jsonLd,
+}: {
+  mode: string;
+  slug: string;
+  title: string;
+  description: string;
+  helpText: string;
+  onPlay: () => void;
+  faqPairs: readonly (readonly [string, string])[];
+  jsonLd: object;
+}) {
+  const { t } = useTranslation();
+  const userProfile = useGameStore((s) => s.userProfile);
+  const hue = MODE_HUE[mode] ?? '#8D7F6D';
+  const idx = MODE_INDEX[mode] ?? 0;
+
+  // Per-mode local stat: deep games show the store's own milestone stats
+  const stat =
+    mode === 'numeric' || mode === 'spatial'
+      ? `${t('gameLanding.maxN')} ${userProfile.maxNLevel}`
+      : `${t('gameLanding.daysStreak')} ${userProfile.daysStreak}`;
+
+  return (
+    <article className="max-w-3xl mx-auto pt-6 pb-4 animate-fade-in">
+      <header className="space-y-2">
+        <p className="font-mono text-xs tracking-[0.22em] text-sage-700 flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-[2px] inline-block" style={{ backgroundColor: hue }} aria-hidden="true" />
+          {title.toUpperCase()} — {String(idx).padStart(2, '0')}
+        </p>
+        <h1 className="text-[clamp(1.4rem,3.4vw,1.75rem)] font-semibold leading-tight text-zen-900">
+          {t(`gameLanding.hook.${mode === 'numeric' ? 'nBack' : mode === 'house' ? 'house' : mode}`)}
+        </h1>
+        <p className="font-mono text-[12.5px] text-zen-700">{stat}</p>
+        <p className="text-sm text-zen-700">{description}</p>
+      </header>
+
+      <div className="mt-5 min-h-[30vh] rounded-[10px] border-2 border-dashed border-zen-300 bg-zen-100
+        flex flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+        <p className="text-sm text-zen-700 max-w-[52ch] leading-relaxed">{helpText}</p>
         <Link
-          to={`/train/${game.mode}`}
-          onClick={handlePlay}
-          className="inline-block px-10 py-4 rounded-xl bg-sage-500 text-white text-lg font-medium
-                     hover:bg-sage-600 active:scale-[0.98] transition-all shadow-sm"
+          to={`/train/${mode}`}
+          onClick={onPlay}
+          className="font-mono font-bold text-sm tracking-[0.06em] rounded bg-zen-900 text-zen-50 px-8 py-4
+            hover:bg-sage-700 transition-colors"
         >
           ▶ {t('gameLanding.playNow')}
         </Link>
-      </header>
+        <p className="font-mono text-[11px] text-zen-500">{t('gameLanding.protocolNote')}</p>
+      </div>
 
-      <section className="bg-white rounded-xl p-6 shadow-sm border border-zen-200" aria-labelledby="how-to-play-heading">
-        <h2 id="how-to-play-heading" className="text-lg font-medium text-zen-600 mb-3">{t('gameLanding.howToPlay')}</h2>
-        <p className="text-sm text-zen-500 leading-relaxed">{helpText}</p>
+      <section className="mt-12 pt-6 border-t-2 border-zen-300 space-y-3" aria-labelledby="about-heading">
+        <h2 id="about-heading" className="font-mono text-xs tracking-[0.22em] text-sage-700">{t('gameLanding.aboutTitle')}</h2>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t(`gameLanding.about.${mode === 'numeric' ? 'nBack' : mode}.1`)}</p>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t(`gameLanding.about.${mode === 'numeric' ? 'nBack' : mode}.2`)}</p>
+        <p className="font-mono text-[11px] text-zen-500">{t('gameLanding.about.selfBuilt.source')}</p>
       </section>
 
-      <LandingFaq faqPairs={faqPairs} />
-      <LandingGamesIndex currentSlug={game.slug} />
+      <div className="mt-10" id="games-index">
+        <LandingGamesIndex currentSlug={slug} />
+      </div>
+      <div className="mt-8">
+        <LandingFaq faqPairs={faqPairs} />
+      </div>
+      <p className="mt-8 font-mono text-[11px] tracking-[0.12em] text-zen-500 text-center">
+        BRAIN FLOW — {t('gameLanding.footerLocal')}
+      </p>
       <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
     </article>
   );

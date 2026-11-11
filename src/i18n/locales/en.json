@@ -410,8 +410,15 @@
       "numberMemory": "How many digits can you hold?",
       "sequence": "Repeat the pattern. One more step every round.",
       "stroop": "Your brain lies to you. Catch it.",
-      "mathSprint": "60 seconds. No calculator."
+      "mathSprint": "60 seconds. No calculator.",
+      "nBack": "Remember the answer from N steps ago.",
+      "mouse": "Track the mice through the shuffle.",
+      "spatial": "Positions fade. Your memory doesn't.",
+      "house": "Count who's left when the door stops."
     },
+    "maxN": "MAX N",
+    "daysStreak": "DAY STREAK",
+    "protocolNote": "full session runs in the game screen — settings are free to tune",
     "reactionSub": "5-tap series · score is your median · Space works too",
     "aboutTitle": "ABOUT THE TEST",
     "about": {
@@ -439,6 +446,25 @@
         "1": "Mental arithmetic under a 60-second clock: type your answer, Enter to submit. Questions start easy and get harder the more you solve — the difficulty curve is ours, so there is no published typical score; race your own history.",
         "2": "A hidden or backgrounded tab never pauses your clock unfairly — the timer only counts visible time. Everything runs and stays in your browser.",
         "source": "no published reference: proprietary difficulty curve — self-history comparison only"
+      },
+      "nBack": {
+        "1": "The classic working-memory trainer: a stream of numbers flows past, and you judge whether the current one matches the one from N steps back. Raise N when it gets comfortable — 2-back is a workout, 3-back is a wall.",
+        "2": "Sessions pause safely in a hidden tab, and every parameter (N, rounds, timing) is free to tune. Everything runs and stays in your browser."
+      },
+      "mouse": {
+        "1": "Mice hide among cats on a grid; covers drop, then cats shove rows and columns around. Your job is to track the mice through every shuffle and find them again.",
+        "2": "This is a pure attention-tracking workout — grid size, mice count and push count all scale with your settings. Everything runs and stays in your browser."
+      },
+      "spatial": {
+        "1": "N-Back over positions instead of numbers: a cell lights on the grid, and you judge whether it is the same cell as N steps back.",
+        "2": "Spatial N-Back trains the same working-memory buffer through a different sense. Grid size, N and rounds are all free to tune. Everything stays in your browser."
+      },
+      "house": {
+        "1": "People stream in and out of a house. Keep a running count through every entry and exit, then report who's left when the door stops.",
+        "2": "Mental updating — holding and adjusting a number under a stream of changes. Event count and speed scale freely. Everything stays in your browser."
+      },
+      "selfBuilt": {
+        "source": "self-built protocol — no published reference; compare against your own history"
       }
     },
     "footerLocal": "PLAYS IN YOUR BROWSER · DATA STAYS ON YOUR DEVICE"
