@@ -42,6 +42,27 @@ export function RightPanel() {
     hippocampus: t('home.hippocampus'),
   };
 
+  /** Per-mode stat line — "N-Back" only makes sense for the real N-Back modes */
+  const detailLine = (mode: string, s: (typeof recentSessions)[number]): string => {
+    switch (mode) {
+      case 'numeric':
+      case 'spatial':
+        return `${s.nLevel}-Back · ${s.totalRounds}R`;
+      case 'reaction':
+        return s.avgReactionTimeMs ? `${s.avgReactionTimeMs} ms · median` : '';
+      case 'numberMemory':
+        return `${s.totalRounds} digits`;
+      case 'sequence':
+      case 'hippocampus':
+      case 'colorPerception':
+        return `${s.totalRounds} levels`;
+      case 'stroop':
+        return `${s.score} correct`;
+      default:
+        return `${s.totalRounds}R`;
+    }
+  };
+
   return (
     <div className="p-4 space-y-4">
       <div className="space-y-2">
@@ -85,7 +106,7 @@ export function RightPanel() {
                 </div>
                 {/* Row 2: Details */}
                 <div className="flex justify-between text-xs text-zen-400">
-                  <span className="font-mono">{session.nLevel}-Back · {session.totalRounds}R</span>
+                  <span className="font-mono">{detailLine(session.mode || 'numeric', session)}</span>
                   <span>+{session.score} {t('result.points')}</span>
                 </div>
                 {/* Row 3: Time + RT */}

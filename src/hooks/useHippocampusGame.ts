@@ -134,8 +134,9 @@ export function useHippocampusGame() {
     setLastRevealed(null);
     setCurrent(levelFor(lvl));
     go('showing');
-    armTimer(() => go('recall'), SHOW_BASE_MS + countForLevel(lvl) * SHOW_PER_NUMBER_MS);
-  }, [armTimer, go]);
+    // showing→recall is armed by the effect below (StrictMode-safe: effect
+    // timers re-arm after the double-mount cleanup; imperative arms don't)
+  }, [go]);
 
   const start = useCallback(() => {
     strikesRef.current = 0;
@@ -157,9 +158,8 @@ export function useHippocampusGame() {
       nextRef.current += 1;
       setNextToTap(nextRef.current);
       if (nextRef.current > countForLevel(levelRef.current)) {
-        // level cleared → brief cue, next level
+        // level cleared → brief cue; the effect above advances to the next level
         go('feedback');
-        armTimer(() => showLevel(levelRef.current + 1), FEEDBACK_MS);
       }
     } else {
       playWrong();
@@ -169,7 +169,18 @@ export function useHippocampusGame() {
       setStrikes(strikesRef.current);
       if (strikesRef.current >= MAX_STRIKES) finish();
     }
-  }, [phase, current, armTimer, go, showLevel, finish, playClick, playWrong]);
+  }, [phase, current, armTimer, go, finish, playClick, playWrong]);
+
+  // Phase-driven timers (StrictMode-safe): showing → recall, feedback → next level
+  useEffect(() => {
+    if (phase === 'showing') {
+      return scheduleVisible(() => go('recall'), SHOW_BASE_MS + countForLevel(levelRef.current) * SHOW_PER_NUMBER_MS);
+    }
+    if (phase === 'feedback') {
+      return scheduleVisible(() => showLevel(levelRef.current + 1), FEEDBACK_MS);
+    }
+    return undefined;
+  }, [phase, go, showLevel]);
 
   // Never fire timers after unmount
   useEffect(() => () => timerRef.current?.(), []);

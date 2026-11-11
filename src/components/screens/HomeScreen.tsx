@@ -75,30 +75,33 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
     ? (mode === 'numeric' ? numericNLevel < numericRounds : spatialNLevel < spatialRounds)
     : true;
 
-  const handleStart = () => {
-    if (mode === 'mouse') {
+  /** Start a game directly for any mode (also powers double-click on tiles) */
+  const startFor = (target: GameMode) => {
+    if (target === 'mouse') {
       const mConfig = buildMouseGameConfig(effectiveMouseCount, mouseGrid, mouseDifficulty, mouseRounds);
-      onStart(1, mouseRounds, mode, mouseGrid[0], mConfig);
-    } else if (mode === 'house') {
+      onStart(1, mouseRounds, target, mouseGrid[0], mConfig);
+    } else if (target === 'house') {
       const hConfig = buildHouseGameConfig(houseInitial, houseEvents, houseSpeed, houseRounds);
-      onStart(1, houseRounds, mode, 0, undefined, hConfig);
-    } else if (mode === 'numeric') {
-      onStart(numericNLevel, numericRounds, mode, 3);
-    } else if (mode === 'spatial') {
-      onStart(spatialNLevel, spatialRounds, mode, gridSize);
-    } else if (mode === 'reaction') {
-      onStart(1, gameConfigs.reaction.trials, mode, 0);
-    } else if (mode === 'numberMemory') {
-      onStart(1, gameConfigs.numberMemory.startDigits, mode, 0);
-    } else if (mode === 'sequence') {
-      onStart(1, 1, mode, gameConfigs.sequence.gridSize);
-    } else if (mode === 'stroop') {
-      onStart(1, gameConfigs.stroop.durationSec, mode, 0);
+      onStart(1, houseRounds, target, 0, undefined, hConfig);
+    } else if (target === 'numeric') {
+      onStart(numericNLevel, numericRounds, target, 3);
+    } else if (target === 'spatial') {
+      onStart(spatialNLevel, spatialRounds, target, gridSize);
+    } else if (target === 'reaction') {
+      onStart(1, gameConfigs.reaction.trials, target, 0);
+    } else if (target === 'numberMemory') {
+      onStart(1, gameConfigs.numberMemory.startDigits, target, 0);
+    } else if (target === 'sequence') {
+      onStart(1, 1, target, gameConfigs.sequence.gridSize);
+    } else if (target === 'stroop') {
+      onStart(1, gameConfigs.stroop.durationSec, target, 0);
     } else {
       // colorPerception / hippocampus: endless-level games, no numeric config
-      onStart(1, 1, mode, 0);
+      onStart(1, 1, target, 0);
     }
   };
+
+  const handleStart = () => startFor(mode);
 
   return (
     <div className="space-y-6 pt-8">
@@ -140,6 +143,7 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => setModeLocal('numeric')}
+            onDoubleClick={() => startFor('numeric')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'numeric'
                 ? 'border-sage-500 bg-sage-50'
@@ -153,6 +157,7 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
 
           <button
             onClick={() => setModeLocal('spatial')}
+            onDoubleClick={() => startFor('spatial')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'spatial'
                 ? 'border-teal-500 bg-teal-50'
@@ -166,6 +171,7 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
 
           <button
             onClick={() => setModeLocal('mouse')}
+            onDoubleClick={() => startFor('mouse')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'mouse'
                 ? 'border-amber-500 bg-amber-50'
@@ -179,6 +185,7 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
 
           <button
             onClick={() => setModeLocal('house')}
+            onDoubleClick={() => startFor('house')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'house'
                 ? 'border-purple-500 bg-purple-50'
@@ -192,6 +199,7 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
 
           <button
             onClick={() => setModeLocal('reaction')}
+            onDoubleClick={() => startFor('reaction')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'reaction'
                 ? 'border-rose-400 bg-rose-50'
@@ -205,6 +213,7 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
 
           <button
             onClick={() => setModeLocal('numberMemory')}
+            onDoubleClick={() => startFor('numberMemory')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'numberMemory'
                 ? 'border-indigo-400 bg-indigo-50'
@@ -218,6 +227,7 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
 
           <button
             onClick={() => setModeLocal('sequence')}
+            onDoubleClick={() => startFor('sequence')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'sequence'
                 ? 'border-cyan-500 bg-cyan-50'
@@ -231,6 +241,7 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
 
           <button
             onClick={() => setModeLocal('stroop')}
+            onDoubleClick={() => startFor('stroop')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'stroop'
                 ? 'border-pink-400 bg-pink-50'
@@ -244,6 +255,7 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
 
           <button
             onClick={() => setModeLocal('colorPerception')}
+            onDoubleClick={() => startFor('colorPerception')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'colorPerception'
                 ? 'border-lime-500 bg-lime-50'
@@ -257,6 +269,7 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
 
           <button
             onClick={() => setModeLocal('hippocampus')}
+            onDoubleClick={() => startFor('hippocampus')}
             className={`p-4 rounded-xl border-2 transition-all ${
               mode === 'hippocampus'
                 ? 'border-lime-500 bg-lime-50'
