@@ -95,7 +95,8 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
     } else if (mode === 'stroop') {
       onStart(1, gameConfigs.stroop.durationSec, mode, 0);
     } else {
-      onStart(1, gameConfigs.mathSprint.durationSec, 'mathSprint', 0);
+      // colorPerception / hippocampus: endless-level games, no numeric config
+      onStart(1, 1, mode, 0);
     }
   };
 
@@ -242,16 +243,29 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
           </button>
 
           <button
-            onClick={() => setModeLocal('mathSprint')}
+            onClick={() => setModeLocal('colorPerception')}
             className={`p-4 rounded-xl border-2 transition-all ${
-              mode === 'mathSprint'
+              mode === 'colorPerception'
                 ? 'border-lime-500 bg-lime-50'
                 : 'border-zen-200 bg-white hover:border-lime-300'
             }`}
           >
-            <div className="text-2xl mb-1">🧮</div>
-            <div className="font-medium text-zen-700 text-sm">{t('home.mathSprint')}</div>
-            <div className="text-xs text-zen-400 mt-1">{t('home.mathSprintDesc')}</div>
+            <div className="text-2xl mb-1">🌈</div>
+            <div className="font-medium text-zen-700 text-sm">{t('home.colorPerception')}</div>
+            <div className="text-xs text-zen-400 mt-1">{t('home.colorPerceptionDesc')}</div>
+          </button>
+
+          <button
+            onClick={() => setModeLocal('hippocampus')}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              mode === 'hippocampus'
+                ? 'border-lime-500 bg-lime-50'
+                : 'border-zen-200 bg-white hover:border-lime-300'
+            }`}
+          >
+            <div className="text-2xl mb-1">🔢</div>
+            <div className="font-medium text-zen-700 text-sm">{t('home.hippocampus')}</div>
+            <div className="text-xs text-zen-400 mt-1">{t('home.hippocampusDesc')}</div>
           </button>
         </div>
       </div>
@@ -574,7 +588,9 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
               ? t('home.sequenceHelp')
               : mode === 'stroop'
               ? t('home.stroopHelp')
-              : t('home.mathSprintHelp')
+              : mode === 'colorPerception'
+              ? t('home.colorPerceptionHelp')
+              : t('home.hippocampusHelp')
             }
           </p>
         </div>
@@ -600,8 +616,10 @@ export function HomeScreen({ initialMode, onStart }: HomeScreenProps) {
           ? t('home.startSequence')
           : mode === 'stroop'
           ? t('home.startStroop')
-          : mode === 'mathSprint'
-          ? t('home.startMathSprint')
+          : mode === 'colorPerception'
+          ? t('home.startColorPerception')
+          : mode === 'hippocampus'
+          ? t('home.startHippocampus')
           : t('home.startNBack', {
               n: mode === 'numeric' ? numericNLevel : spatialNLevel,
               mode: mode === 'numeric' ? t('home.numeric') : t('home.spatial'),

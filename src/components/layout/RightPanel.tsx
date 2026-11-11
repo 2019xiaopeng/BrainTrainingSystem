@@ -25,7 +25,8 @@ export function RightPanel() {
     numberMemory: '🧠',
     sequence: '🧩',
     stroop: '🎨',
-    mathSprint: '🧮',
+    colorPerception: '🌈',
+    hippocampus: '🔢',
   };
 
   const modeLabels: Record<string, string> = {
@@ -37,7 +38,8 @@ export function RightPanel() {
     numberMemory: t('home.numberMemory'),
     sequence: t('home.sequence'),
     stroop: t('home.stroop'),
-    mathSprint: t('home.mathSprint'),
+    colorPerception: t('home.colorPerception'),
+    hippocampus: t('home.hippocampus'),
   };
 
   return (

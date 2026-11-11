@@ -26,7 +26,7 @@ interface GameStore {
   // Actions
   setNextConfig: (config: Partial<NBackConfig>) => void;
   setSoundEnabled: (enabled: boolean) => void;
-  updateGameConfig: (mode: GameMode, config: Partial<GameConfigs[GameMode]>) => void;
+  updateGameConfig: (mode: keyof GameConfigs, config: Partial<GameConfigs[keyof GameConfigs]>) => void;
   saveSession: (summary: SessionSummary) => void;
   resetLocalData: () => void;
 }
@@ -59,7 +59,6 @@ const defaultGameConfigs = (): GameConfigs => ({
   numberMemory: { startDigits: 3 },
   sequence: { gridSize: 3 },
   stroop: { durationSec: 60 },
-  mathSprint: { durationSec: 60 },
 });
 
 // Score formula: (accuracy * nLevel * totalRounds) / 10

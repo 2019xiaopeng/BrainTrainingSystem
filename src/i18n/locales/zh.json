@@ -63,10 +63,15 @@
     "stroopDesc": "60 秒选出文字颜色",
     "stroopHelp": "屏幕显示颜色词，但字的颜色与词义不同。请忽略词义，选出文字的印刷颜色。60 秒内答对越多越好，答错扣分。",
     "startStroop": "开始 色词冲突",
-    "mathSprint": "口算冲刺",
-    "mathSprintDesc": "60 秒限时口算",
-    "mathSprintHelp": "60 秒内连续答题，答对自动下一题，难度逐渐上升。答对越多得分越高。",
-    "startMathSprint": "开始 口算冲刺"
+    "startMathSprint": "开始 口算冲刺",
+    "colorPerception": "色觉挑战",
+    "colorPerceptionDesc": "找出不同色的色块",
+    "colorPerceptionHelp": "网格中有一块颜色略有不同——点它。每升一级网格变大、色差变小。点错一次即结束。",
+    "startColorPerception": "开始色觉挑战",
+    "hippocampus": "海马体测试",
+    "hippocampusDesc": "按位置记住数字",
+    "hippocampusHelp": "数字在随机位置闪现后隐藏，凭记忆按从小到大顺序点击。每级多一个数字，点错 3 次结束。",
+    "startHippocampus": "开始海马体测试"
   },
   "game": {
     "comingSoon": "该游戏开发中，即将上线",
@@ -129,16 +134,6 @@
       "finished": "时间到！",
       "again": "再来一次"
     },
-    "mathSprint": {
-      "title": "口算冲刺",
-      "personalBest": "个人最佳",
-      "solved": "答对题数",
-      "solvedUnit": "题",
-      "tapToStart": "即将开始…",
-      "timeLeft": "剩余时间",
-      "finished": "时间到！",
-      "again": "再来一次"
-    },
     "quit": "← 退出",
     "resume": "▶ 继续",
     "pause": "⏸ 暂停",
@@ -167,7 +162,30 @@
     "confirm": "✓ 确认",
     "observePosition": "观察位置...",
     "canClick": "✓ 可以点击",
-    "noClickNeeded": "记忆阶段 - 无需点击"
+    "noClickNeeded": "记忆阶段 - 无需点击",
+    "colorPerception": {
+      "title": "色觉挑战",
+      "personalBest": "个人最佳",
+      "level": "等级",
+      "grid": "网格",
+      "prompt": "点击颜色不同的那一块",
+      "gameOver": "游戏结束",
+      "levelsCleared": "已通过等级",
+      "levelsUnit": "级",
+      "again": "再挑战"
+    },
+    "hippocampus": {
+      "title": "海马体测试",
+      "personalBest": "个人最佳",
+      "level": "等级",
+      "memorize": "记住数字位置",
+      "recall": "下一个点 {{next}}",
+      "levelClear": "正确——进入下一级",
+      "gameOver": "游戏结束",
+      "levelsCleared": "完成的最高等级",
+      "levelsUnit": "级",
+      "again": "再挑战"
+    }
   },
   "mouse": {
     "selected": "已选择 {{n}} 个位置",
@@ -410,11 +428,12 @@
       "numberMemory": "你能记住多少位数字？",
       "sequence": "复述序列，每轮加一步。",
       "stroop": "你的大脑会说谎。抓住它。",
-      "mathSprint": "60 秒。不许用计算器。",
       "nBack": "记住 N 步之前的那个答案。",
       "mouse": "在乾坤大挪移里盯住老鼠。",
       "spatial": "位置会消逝，你的记忆不会。",
-      "house": "门停下时，数数屋里还剩谁。"
+      "house": "门停下时，数数屋里还剩谁。",
+      "colorPerception": "有一块颜色不一样。找到它。",
+      "hippocampus": "数字只闪一次。按顺序回忆。"
     },
     "maxN": "最高 N",
     "daysStreak": "连续天数",
@@ -442,11 +461,6 @@
         "2": "各站 Stroop 协议差异大（时长/按键/计分都不同），成绩跨站不可比，因此我们不设典型值——请与自己的历史赛跑。一切都在浏览器本地运行。",
         "source": "无公开参考值：各站协议不同——仅与自己的历史成绩比较"
       },
-      "mathSprint": {
-        "1": "60 秒时钟下的心算：输入答案，回车提交。题目由易到难、越解越难——难度曲线是我们自研的，因此没有公开典型分；请与自己的历史赛跑。",
-        "2": "隐藏或后台的标签页不会让你吃暗亏——计时器只累计可见时间。一切都在浏览器本地运行。",
-        "source": "无公开参考值：自研难度曲线——仅与自己的历史成绩比较"
-      },
       "nBack": {
         "1": "经典工作记忆训练：数字流依次出现，你判断当前数字是否与 N 步之前相同。轻松了就升 N——2-back 是锻炼，3-back 是一堵墙。",
         "2": "隐藏标签页会安全暂停，全部参数（N/轮数/节奏）免费可调。一切都在浏览器本地运行。"
@@ -465,6 +479,15 @@
       },
       "selfBuilt": {
         "source": "自研协议——无公开参考值；请与自己的历史成绩比较"
+      },
+      "colorPerception": {
+        "1": "Kuku Kube 传统的色差辨别测试：一堆几乎同色的色块里藏着唯一一块异色。点击它——每升一级，网格变大、色差向可辨极限收窄。",
+        "2": "这个测试比大多数测试更受屏幕质量与环境光影响——别校准什么，只信自己的趋势线。一切都在浏览器本地运行。"
+      },
+      "hippocampus": {
+        "1": "数字在网格随机位置短暂出现后隐藏——完全凭记忆按从小到大顺序点回。每级多一个数字，点错三次结束。",
+        "2": "此形式源自 2007 年 Ayumu 研究的黑猩猩测试谱系——年轻黑猩猩在这项任务上赢过成年人类。人类典型水平约 6 级。",
+        "source": "典型值来源：humanbenchmark 黑猩猩测试 FAQ（5–7 级为平均）· 休闲基准，非临床标准"
       }
     },
     "footerLocal": "浏览器即玩 · 数据只存本机"

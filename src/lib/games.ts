@@ -27,7 +27,8 @@ export const GAME_CATALOG: GameCatalogEntry[] = [
   { slug: 'number-memory', mode: 'numberMemory', emoji: '🧠', titleKey: 'home.numberMemory', descKey: 'home.numberMemoryDesc', category: 'memory' },
   { slug: 'sequence-memory', mode: 'sequence', emoji: '🧩', titleKey: 'home.sequence', descKey: 'home.sequenceDesc', category: 'memory' },
   { slug: 'stroop-test', mode: 'stroop', emoji: '🎨', titleKey: 'home.stroop', descKey: 'home.stroopDesc', category: 'focus' },
-  { slug: 'math-sprint', mode: 'mathSprint', emoji: '🧮', titleKey: 'home.mathSprint', descKey: 'home.mathSprintDesc', category: 'math' },
+  { slug: 'color-perception-test', mode: 'colorPerception', emoji: '🌈', titleKey: 'home.colorPerception', descKey: 'home.colorPerceptionDesc', category: 'focus' },
+  { slug: 'hippocampus-test', mode: 'hippocampus', emoji: '🔢', titleKey: 'home.hippocampus', descKey: 'home.hippocampusDesc', category: 'memory' },
 ];
 
 export const getGameBySlug = (slug: string): GameCatalogEntry | undefined =>

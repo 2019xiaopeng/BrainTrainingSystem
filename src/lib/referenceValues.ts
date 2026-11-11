@@ -34,6 +34,12 @@ export const REFERENCE_VALUES: Partial<Record<GameMode, ReferenceValue>> = {
     source: 'humanbenchmark data',
     note: 'third-party analyses of humanbenchmark sequence scores (typical ≈8; 6–8 common adult range) — not a clinical norm',
   },
+  hippocampus: {
+    value: 6,
+    unit: 'levels',
+    source: 'humanbenchmark FAQ',
+    note: 'the chimp-test FAQ lists levels 5–7 as average human performance — casual benchmark, not a clinical norm',
+  },
 };
 
 export const getReference = (mode: GameMode): ReferenceValue | undefined => REFERENCE_VALUES[mode];

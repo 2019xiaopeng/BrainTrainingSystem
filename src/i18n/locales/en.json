@@ -63,10 +63,15 @@
     "stroopDesc": "Pick the ink color in 60s",
     "stroopHelp": "A color word appears, printed in a different color. Ignore the word's meaning and pick the ink color. As many correct picks as possible in 60 seconds — wrong picks lose points.",
     "startStroop": "Start Stroop Test",
-    "mathSprint": "Math Sprint",
-    "mathSprintDesc": "60-second mental math",
-    "mathSprintHelp": "Answer as many problems as you can in 60 seconds. Correct answers auto-advance and the difficulty ramps up.",
-    "startMathSprint": "Start Math Sprint"
+    "startMathSprint": "Start Math Sprint",
+    "colorPerception": "Color Perception Test",
+    "colorPerceptionDesc": "Spot the odd shade",
+    "colorPerceptionHelp": "One tile in the grid is a slightly different shade — tap it. Every level the grid grows and the difference shrinks. One wrong tap ends the run.",
+    "startColorPerception": "Start Color Test",
+    "hippocampus": "Hippocampus Test",
+    "hippocampusDesc": "Recall numbers by position",
+    "hippocampusHelp": "Numbers flash at random positions, then hide. Tap them in ascending order from memory. Each level adds a number; 3 wrong taps end the run.",
+    "startHippocampus": "Start Hippocampus Test"
   },
   "game": {
     "comingSoon": "This game is coming soon",
@@ -129,16 +134,6 @@
       "finished": "Time's up!",
       "again": "Try Again"
     },
-    "mathSprint": {
-      "title": "Math Sprint",
-      "personalBest": "Personal Best",
-      "solved": "Solved",
-      "solvedUnit": "solved",
-      "tapToStart": "Starting…",
-      "timeLeft": "Time Left",
-      "finished": "Time's up!",
-      "again": "Try Again"
-    },
     "quit": "← Quit",
     "resume": "▶ Resume",
     "pause": "⏸ Pause",
@@ -167,7 +162,30 @@
     "confirm": "✓ Confirm",
     "observePosition": "Observe position...",
     "canClick": "✓ Click now",
-    "noClickNeeded": "Memory phase - no click needed"
+    "noClickNeeded": "Memory phase - no click needed",
+    "colorPerception": {
+      "title": "Color Perception Test",
+      "personalBest": "Personal Best",
+      "level": "Level",
+      "grid": "Grid",
+      "prompt": "tap the tile with the different shade",
+      "gameOver": "Game over",
+      "levelsCleared": "levels cleared",
+      "levelsUnit": "levels",
+      "again": "Try Again"
+    },
+    "hippocampus": {
+      "title": "Hippocampus Test",
+      "personalBest": "Personal Best",
+      "level": "Level",
+      "memorize": "memorize the number positions",
+      "recall": "tap {{next}} next",
+      "levelClear": "correct — next level",
+      "gameOver": "Game over",
+      "levelsCleared": "highest level completed",
+      "levelsUnit": "levels",
+      "again": "Try Again"
+    }
   },
   "mouse": {
     "selected": "{{n}} positions selected",
@@ -410,11 +428,12 @@
       "numberMemory": "How many digits can you hold?",
       "sequence": "Repeat the pattern. One more step every round.",
       "stroop": "Your brain lies to you. Catch it.",
-      "mathSprint": "60 seconds. No calculator.",
       "nBack": "Remember the answer from N steps ago.",
       "mouse": "Track the mice through the shuffle.",
       "spatial": "Positions fade. Your memory doesn't.",
-      "house": "Count who's left when the door stops."
+      "house": "Count who's left when the door stops.",
+      "colorPerception": "One shade is different. Find it.",
+      "hippocampus": "Numbers flash once. Recall them in order."
     },
     "maxN": "MAX N",
     "daysStreak": "DAY STREAK",
@@ -442,11 +461,6 @@
         "2": "Stroop scores are not comparable across sites: durations, key mappings and scoring all differ, so we show no typical value — race your own history instead. Everything stays in your browser.",
         "source": "no published reference: protocols differ across sites — self-history comparison only"
       },
-      "mathSprint": {
-        "1": "Mental arithmetic under a 60-second clock: type your answer, Enter to submit. Questions start easy and get harder the more you solve — the difficulty curve is ours, so there is no published typical score; race your own history.",
-        "2": "A hidden or backgrounded tab never pauses your clock unfairly — the timer only counts visible time. Everything runs and stays in your browser.",
-        "source": "no published reference: proprietary difficulty curve — self-history comparison only"
-      },
       "nBack": {
         "1": "The classic working-memory trainer: a stream of numbers flows past, and you judge whether the current one matches the one from N steps back. Raise N when it gets comfortable — 2-back is a workout, 3-back is a wall.",
         "2": "Sessions pause safely in a hidden tab, and every parameter (N, rounds, timing) is free to tune. Everything runs and stays in your browser."
@@ -465,6 +479,15 @@
       },
       "selfBuilt": {
         "source": "self-built protocol — no published reference; compare against your own history"
+      },
+      "colorPerception": {
+        "1": "A shade-discrimination test in the Kuku Kube tradition: a grid of near-identical tiles hides exactly one odd shade. Tap it — every level the grid grows and the difference shrinks toward the just-noticeable limit.",
+        "2": "Performance varies with screen quality and ambient light more than most tests — calibrate nothing, trust your own trend line. Everything stays in your browser."
+      },
+      "hippocampus": {
+        "1": "Numbers appear at random grid positions for a moment, then hide — tap them back in ascending order, purely from memory. Each level adds a number, three wrong taps end the run.",
+        "2": "The format follows the chimp-test lineage from the 2007 Ayumu studies, where young chimpanzees beat adult humans at exactly this task. Typical humans land around level 6.",
+        "source": "typical value source: humanbenchmark chimp-test FAQ (levels 5–7 average) · casual benchmark, not a clinical norm"
       }
     },
     "footerLocal": "PLAYS IN YOUR BROWSER · DATA STAYS ON YOUR DEVICE"

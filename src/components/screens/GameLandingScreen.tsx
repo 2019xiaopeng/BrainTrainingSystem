@@ -9,7 +9,8 @@ import { useReactionGame } from '../../hooks/useReactionGame';
 import { useNumberMemoryGame } from '../../hooks/useNumberMemoryGame';
 import { useSequenceMemoryGame } from '../../hooks/useSequenceMemoryGame';
 import { useStroopGame } from '../../hooks/useStroopGame';
-import { useMathSprintGame } from '../../hooks/useMathSprintGame';
+import { useColorPerceptionGame } from '../../hooks/useColorPerceptionGame';
+import { useHippocampusGame } from '../../hooks/useHippocampusGame';
 import { NumericKeypad } from '../game/NumericKeypad';
 import { ProgressBar } from '../game/arcade';
 import { COLOR_WORDS, INK_CLASSES, SWATCH_CLASSES } from '../../lib/stroop';
@@ -28,7 +29,8 @@ const MODE_HUE: Record<string, string> = {
   numberMemory: '#4A6B8A',
   sequence: '#2B6E68',
   stroop: '#7C5F98',
-  mathSprint: '#84663B',
+  colorPerception: '#84663B',
+  hippocampus: '#4E6E8E',
   numeric: '#5F7040',
   mouse: '#6B6B3B',
   spatial: '#9C5346',
@@ -37,8 +39,8 @@ const MODE_HUE: Record<string, string> = {
 
 /** Catalog order index per mode, for the "NAME — NN" kicker */
 const MODE_INDEX: Record<string, number> = {
-  reaction: 1, numberMemory: 2, sequence: 3, stroop: 4, mathSprint: 5,
-  numeric: 6, mouse: 7, spatial: 8, house: 9,
+  reaction: 1, numberMemory: 2, sequence: 3, stroop: 4, colorPerception: 5, hippocampus: 6,
+  numeric: 7, mouse: 8, spatial: 9, house: 10,
 };
 export function GameLandingScreen() {
   const { slug = '' } = useParams<{ slug: string }>();
@@ -112,8 +114,11 @@ export function GameLandingScreen() {
     case 'stroop':
       helpText = t('home.stroopHelp');
       break;
+    case 'colorPerception':
+      helpText = t('home.colorPerceptionHelp');
+      break;
     default:
-      helpText = t('home.mathSprintHelp');
+      helpText = t('home.hippocampusHelp');
       break;
   }
 
@@ -163,8 +168,12 @@ export function GameLandingScreen() {
     return <StroopInstrumentLanding slug={game.slug} helpText={helpText} faqPairs={faqPairs} />;
   }
 
-  if (game.mode === 'mathSprint') {
-    return <MathSprintInstrumentLanding slug={game.slug} helpText={helpText} faqPairs={faqPairs} />;
+  if (game.mode === 'colorPerception') {
+    return <ColorPerceptionInstrumentLanding slug={game.slug} helpText={helpText} faqPairs={faqPairs} />;
+  }
+
+  if (game.mode === 'hippocampus') {
+    return <HippocampusInstrumentLanding slug={game.slug} helpText={helpText} faqPairs={faqPairs} />;
   }
 
   return (
@@ -485,11 +494,10 @@ function digitSizeClass(length: number): string {
 }
 
 /**
- * Math Sprint's landing — equation card + keypad under a shared timer bar;
- * no typical value (unique difficulty curve), history-only readout
- * (docs/game-dossiers/05-math-sprint.md).
+ * Color Perception's landing — the tile grid is the hero; one shade differs,
+ * find it (docs/game-dossiers/05-color-perception.md).
  */
-function MathSprintInstrumentLanding({
+function ColorPerceptionInstrumentLanding({
   slug,
   helpText,
   faqPairs,
@@ -499,99 +507,204 @@ function MathSprintInstrumentLanding({
   faqPairs: readonly (readonly [string, string])[];
 }) {
   const { t } = useTranslation();
-  const durationSec = useGameStore((s) => s.gameConfigs.mathSprint.durationSec);
   const sessionHistory = useGameStore((s) => s.sessionHistory);
-  const engine = useMathSprintGame();
-  const {
-    phase, question, input, solved, attempts, timeLeftMs, durationMs,
-    best, wrongFlash, startGame, retry, inputDigit, backspace, submit,
-  } = engine;
+  const engine = useColorPerceptionGame();
+  const { phase, level, current, wrongFlash, finalLevel, best, start, tap } = engine;
   const startedRef = useRef(false);
 
   useEffect(() => {
     if (!startedRef.current) {
       startedRef.current = true;
-      startGame(durationSec);
+      start();
     }
-  }, [startGame, durationSec]);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (phase !== 'playing') return;
-      if (e.key === 'Enter') { e.preventDefault(); submit(); }
-      if (e.key === 'Backspace') { e.preventDefault(); backspace(); }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [phase, submit, backspace]);
+  }, [start]);
 
   const historySeries = sessionHistory
-    .filter((h) => h.mode === 'mathSprint')
+    .filter((h) => h.mode === 'colorPerception' && h.totalRounds > 0)
     .slice(-10)
-    .map((h) => h.score);
+    .map((h) => h.totalRounds);
 
-  const accuracy = attempts > 0 ? Math.round((solved / attempts) * 100) : 0;
+  const cells = Array.from({ length: current.gridSize * current.gridSize }, (_, i) => i);
 
   return (
     <article className="max-w-3xl mx-auto pt-6 pb-4 animate-fade-in">
       <header className="space-y-2">
-        <p className="font-mono text-xs tracking-[0.22em] text-sage-700">MATH SPRINT — 05</p>
-        <h1 className="text-[clamp(1.4rem,3.4vw,1.75rem)] font-semibold leading-tight text-zen-900">{t('gameLanding.hook.mathSprint')}</h1>
+        <p className="font-mono text-xs tracking-[0.22em] text-sage-700">COLOR PERCEPTION — 05</p>
+        <h1 className="text-[clamp(1.4rem,3.4vw,1.75rem)] font-semibold leading-tight text-zen-900">{t('gameLanding.hook.colorPerception')}</h1>
         <p className="font-mono text-[12.5px] text-zen-700">
-          {t('game.mathSprint.personalBest')} <b className="text-sage-700 font-bold">{best}</b>
+          {t('game.colorPerception.personalBest')} <b className="text-sage-700 font-bold">{best > 0 ? best : '—'}</b>
         </p>
       </header>
 
-      {phase !== 'finished' && (
-        <div className="mt-4 space-y-3">
-          <div className="flex items-center justify-between font-mono text-xs text-zen-700">
-            <span>{t('game.mathSprint.solved')} <b className="text-zen-900 text-base tabular-nums">{solved}</b></span>
-            <span className="tabular-nums">{Math.max(0, Math.ceil(timeLeftMs / 1000))}s</span>
-          </div>
-          <ProgressBar remainingMs={timeLeftMs} durationMs={durationMs} />
-        </div>
-      )}
-
-      {/* The equation card — the hero */}
-      <div className={`mt-3 min-h-[30vh] rounded-[10px] border-2 flex flex-col items-center justify-center gap-3 px-4
-        ${phase === 'finished' ? 'bg-zen-100 border-zen-200' : 'bg-white border-zen-200'} ${wrongFlash ? 'border-rose-400' : ''}`}>
-        {phase === 'playing' && question && (
-          <>
-            <p className="font-mono font-bold text-5xl sm:text-6xl tabular-nums text-zen-900">
-              {question.a} {question.op} {question.b} = ?
-            </p>
-            <p className={`font-mono text-2xl tabular-nums min-h-[1.4em] ${input ? 'text-sage-700' : 'text-zen-400'}`}>
-              {input || '···'}
-            </p>
-          </>
-        )}
-        {phase === 'idle' && <p className="font-bold text-2xl uppercase text-zen-700">{t('game.mathSprint.tapToStart')}</p>}
-        {phase === 'finished' && <p className="font-bold text-2xl uppercase text-zen-700">{t('game.mathSprint.finished')}</p>}
-      </div>
-
       {phase === 'playing' && (
-        <div className="mt-3 flex justify-center">
-          <NumericKeypad value={input} onInput={inputDigit} onBackspace={backspace} onSubmit={submit} canInput />
+        <div className="mt-4 min-h-[44vh] rounded-[10px] border-2 border-dashed border-zen-300 bg-zen-100
+          flex flex-col items-center justify-center gap-4 px-4 py-8">
+          <p className="font-mono text-xs text-zen-500">
+            {t('game.colorPerception.level')} <b className="text-zen-900">{level}</b> · {current.gridSize}×{current.gridSize}
+          </p>
+          <div
+            className={`grid gap-1.5 w-full max-w-xs rounded-2xl p-2 bg-white border-2 ${wrongFlash ? 'border-rose-400' : 'border-zen-200'}`}
+            style={{ gridTemplateColumns: `repeat(${current.gridSize}, minmax(0, 1fr))` }}
+          >
+            {cells.map((i) => (
+              <button
+                key={i}
+                type="button"
+                aria-label={String(i + 1)}
+                onClick={() => tap(i)}
+                className="aspect-square rounded-lg active:scale-95 transition-transform"
+                style={{ backgroundColor: i === current.oddIndex ? current.oddColor : current.baseColor }}
+              />
+            ))}
+          </div>
+          <p className="font-mono text-xs text-zen-500">{t('game.colorPerception.prompt')}</p>
         </div>
       )}
 
       {phase === 'finished' && (
         <InstrumentReadout
-          mode="mathSprint"
-          hue={MODE_HUE.mathSprint}
-          score={solved}
-          scoreUnit={t('game.mathSprint.solvedUnit')}
-          scoreCaption={t('instrument.stroopCaption', { attempted: attempts, accuracy })}
+          mode="colorPerception"
+          hue={MODE_HUE.colorPerception}
+          score={finalLevel}
+          scoreUnit={t('game.colorPerception.levelsUnit')}
+          scoreCaption={t('instrument.levelsReached')}
           series={historySeries}
-          onPlayAgain={() => { retry(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          onPlayAgain={() => { start(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
           onAllGames={() => document.getElementById('games-index')?.scrollIntoView({ behavior: 'smooth' })}
         />
       )}
 
       <section className="mt-16 pt-6 border-t-2 border-zen-300 space-y-3" aria-labelledby="about-heading">
         <h2 id="about-heading" className="font-mono text-xs tracking-[0.22em] text-sage-700">{t('gameLanding.aboutTitle')}</h2>
-        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.mathSprint.1')}</p>
-        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.mathSprint.2')}</p>
-        <p className="font-mono text-[11px] text-zen-500">{t('gameLanding.about.mathSprint.source')}</p>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.colorPerception.1')}</p>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.colorPerception.2')}</p>
+        <p className="font-mono text-[11px] text-zen-500">{t('gameLanding.about.selfBuilt.source')}</p>
+      </section>
+
+      <div className="mt-10" id="games-index">
+        <LandingGamesIndex currentSlug={slug} />
+      </div>
+      <div className="mt-8">
+        <LandingFaq faqPairs={faqPairs} />
+      </div>
+      <p className="mt-8 font-mono text-[11px] tracking-[0.12em] text-zen-500 text-center">
+        BRAIN FLOW — {t('gameLanding.footerLocal')}
+      </p>
+      <span className="sr-only">{helpText}</span>
+    </article>
+  );
+}
+
+/**
+ * Hippocampus Test's landing — numbers flash, hide, tap in order
+ * (docs/game-dossiers/06-hippocampus-test.md).
+ */
+function HippocampusInstrumentLanding({
+  slug,
+  helpText,
+  faqPairs,
+}: {
+  slug: string;
+  helpText: string;
+  faqPairs: readonly (readonly [string, string])[];
+}) {
+  const { t } = useTranslation();
+  const sessionHistory = useGameStore((s) => s.sessionHistory);
+  const engine = useHippocampusGame();
+  const {
+    phase, level, current, nextToTap, lastRevealed, wrongCell, strikes,
+    finalLevel, best, gridSize, maxStrikes, start, tapCell,
+  } = engine;
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (!startedRef.current) {
+      startedRef.current = true;
+      start();
+    }
+  }, [start]);
+
+  const historySeries = sessionHistory
+    .filter((h) => h.mode === 'hippocampus' && h.totalRounds > 0)
+    .slice(-10)
+    .map((h) => h.totalRounds);
+
+  const cells = Array.from({ length: gridSize * gridSize }, (_, i) => i);
+  const ref = getReference('hippocampus');
+
+  const phaseText =
+    phase === 'showing' ? t('game.hippocampus.memorize')
+    : phase === 'recall' ? t('game.hippocampus.recall', { next: nextToTap })
+    : phase === 'feedback' ? t('game.hippocampus.levelClear')
+    : '';
+
+  return (
+    <article className="max-w-3xl mx-auto pt-6 pb-4 animate-fade-in">
+      <header className="space-y-2">
+        <p className="font-mono text-xs tracking-[0.22em] text-sage-700">HIPPOCAMPUS TEST — 06</p>
+        <h1 className="text-[clamp(1.4rem,3.4vw,1.75rem)] font-semibold leading-tight text-zen-900">{t('gameLanding.hook.hippocampus')}</h1>
+        <p className="font-mono text-[12.5px] text-zen-700">
+          {t('game.hippocampus.personalBest')} <b className="text-sage-700 font-bold">{best > 0 ? best : '—'}</b>
+          {ref && <> · {t('instrument.typical')} <b className="text-sage-700 font-bold">{ref.value} {t('game.hippocampus.levelsUnit')}</b>{' '}
+            <span className="text-zen-500">({ref.source})</span></>}
+        </p>
+      </header>
+
+      {phase !== 'finished' && (
+        <div className="mt-4 min-h-[48vh] rounded-[10px] border-2 border-dashed border-zen-300 bg-zen-100
+          flex flex-col items-center justify-center gap-4 px-4 py-8">
+          <p className="font-mono text-xs text-zen-500">
+            {t('game.hippocampus.level')} <b className="text-zen-900">{level}</b> · {'✕'.repeat(strikes)}{'·'.repeat(maxStrikes - strikes)}
+          </p>
+          <div
+            className="grid gap-1.5 w-full max-w-xs sm:max-w-sm rounded-2xl p-2 bg-white border-2 border-zen-200"
+            style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
+          >
+            {cells.map((i) => {
+              const value = current.cells[i];
+              const revealed = lastRevealed === i;
+              const isWrong = wrongCell === i;
+              const showNumber = (phase === 'showing' && value !== null) || revealed;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={String(i + 1)}
+                  disabled={phase !== 'recall'}
+                  onClick={() => tapCell(i)}
+                  className={`aspect-square rounded-lg border-2 flex items-center justify-center
+                    font-mono font-bold text-base sm:text-lg transition-colors duration-150
+                    ${isWrong ? 'bg-rose-100 border-rose-400 text-rose-600'
+                      : showNumber ? 'bg-sage-200 border-sage-400 text-sage-900'
+                      : 'bg-zen-100 border-zen-200 text-transparent'}`}
+                >
+                  {value ?? '·'}
+                </button>
+              );
+            })}
+          </div>
+          <p className="font-mono text-xs text-zen-500 min-h-[1.2em]">{phaseText}</p>
+        </div>
+      )}
+
+      {phase === 'finished' && (
+        <InstrumentReadout
+          mode="hippocampus"
+          hue={MODE_HUE.hippocampus}
+          score={finalLevel}
+          scoreUnit={t('game.hippocampus.levelsUnit')}
+          scoreCaption={t('instrument.levelsReached')}
+          series={historySeries}
+          onPlayAgain={() => { start(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          onAllGames={() => document.getElementById('games-index')?.scrollIntoView({ behavior: 'smooth' })}
+        />
+      )}
+
+      <section className="mt-16 pt-6 border-t-2 border-zen-300 space-y-3" aria-labelledby="about-heading">
+        <h2 id="about-heading" className="font-mono text-xs tracking-[0.22em] text-sage-700">{t('gameLanding.aboutTitle')}</h2>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.hippocampus.1')}</p>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.hippocampus.2')}</p>
+        <p className="font-mono text-[11px] text-zen-500">{t('gameLanding.about.hippocampus.source')}</p>
       </section>
 
       <div className="mt-10" id="games-index">

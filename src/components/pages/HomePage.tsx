@@ -69,10 +69,6 @@ export function HomePage() {
         updateGameConfig('stroop', { durationSec: rounds });
       }
 
-      if (mode === 'mathSprint') {
-        updateGameConfig('mathSprint', { durationSec: rounds });
-      }
-
       setNextConfig({ nLevel, totalRounds: rounds, mode, gridSize });
       navigate(`/train/${mode}`);
     },

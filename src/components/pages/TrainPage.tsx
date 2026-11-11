@@ -11,7 +11,8 @@ import { ReactionGameScreen } from '../screens/ReactionGameScreen';
 import { NumberMemoryGameScreen } from '../screens/NumberMemoryGameScreen';
 import { SequenceMemoryGameScreen } from '../screens/SequenceMemoryGameScreen';
 import { StroopGameScreen } from '../screens/StroopGameScreen';
-import { MathSprintGameScreen } from '../screens/MathSprintGameScreen';
+import { ColorPerceptionGameScreen } from '../screens/ColorPerceptionGameScreen';
+import { HippocampusGameScreen } from '../screens/HippocampusGameScreen';
 import { buildMouseGameConfig, buildHouseGameConfig } from '../../types/game';
 import type { GameMode, HouseSpeed } from '../../types/game';
 
@@ -38,9 +39,10 @@ export function TrainPage() {
   const isNumberMemoryMode = gameMode === 'numberMemory';
   const isSequenceMode = gameMode === 'sequence';
   const isStroopMode = gameMode === 'stroop';
-  const isMathMode = gameMode === 'mathSprint';
+  const isColorMode = gameMode === 'colorPerception';
+  const isHippocampusMode = gameMode === 'hippocampus';
   const isArcadeStub =
-    isReactionMode || isNumberMemoryMode || isSequenceMode || isStroopMode || isMathMode;
+    isReactionMode || isNumberMemoryMode || isSequenceMode || isStroopMode || isColorMode || isHippocampusMode;
 
   // 自动启动游戏（仅首次mount）
   useEffect(() => {
@@ -113,9 +115,13 @@ export function TrainPage() {
     return <StroopGameScreen />;
   }
 
-  // 口算冲刺：屏幕组件自管引擎生命周期（挂载即开始，结束时自带结果面板）
-  if (isMathMode) {
-    return <MathSprintGameScreen />;
+  // 色觉挑战 / 海马体测试：屏幕组件自管引擎生命周期
+  if (isColorMode) {
+    return <ColorPerceptionGameScreen />;
+  }
+
+  if (isHippocampusMode) {
+    return <HippocampusGameScreen />;
   }
 
   if (isHouseMode) {
