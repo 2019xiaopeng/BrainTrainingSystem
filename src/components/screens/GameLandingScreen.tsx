@@ -9,6 +9,7 @@ import { useReactionGame } from '../../hooks/useReactionGame';
 import { useNumberMemoryGame } from '../../hooks/useNumberMemoryGame';
 import { useSequenceMemoryGame } from '../../hooks/useSequenceMemoryGame';
 import { useStroopGame } from '../../hooks/useStroopGame';
+import { useMathSprintGame } from '../../hooks/useMathSprintGame';
 import { NumericKeypad } from '../game/NumericKeypad';
 import { ProgressBar } from '../game/arcade';
 import { COLOR_WORDS, INK_CLASSES, SWATCH_CLASSES } from '../../lib/stroop';
@@ -27,6 +28,7 @@ const MODE_HUE: Record<string, string> = {
   numberMemory: '#4A6B8A',
   sequence: '#2B6E68',
   stroop: '#7C5F98',
+  mathSprint: '#84663B',
 };
 export function GameLandingScreen() {
   const { slug = '' } = useParams<{ slug: string }>();
@@ -149,6 +151,10 @@ export function GameLandingScreen() {
 
   if (game.mode === 'stroop') {
     return <StroopInstrumentLanding slug={game.slug} helpText={helpText} faqPairs={faqPairs} />;
+  }
+
+  if (game.mode === 'mathSprint') {
+    return <MathSprintInstrumentLanding slug={game.slug} helpText={helpText} faqPairs={faqPairs} />;
   }
 
   return (
@@ -396,6 +402,130 @@ function digitSizeClass(length: number): string {
   if (length <= 8) return 'text-5xl sm:text-6xl';
   if (length <= 12) return 'text-4xl sm:text-5xl';
   return 'text-3xl sm:text-4xl';
+}
+
+/**
+ * Math Sprint's landing — equation card + keypad under a shared timer bar;
+ * no typical value (unique difficulty curve), history-only readout
+ * (docs/game-dossiers/05-math-sprint.md).
+ */
+function MathSprintInstrumentLanding({
+  slug,
+  helpText,
+  faqPairs,
+}: {
+  slug: string;
+  helpText: string;
+  faqPairs: readonly (readonly [string, string])[];
+}) {
+  const { t } = useTranslation();
+  const durationSec = useGameStore((s) => s.gameConfigs.mathSprint.durationSec);
+  const sessionHistory = useGameStore((s) => s.sessionHistory);
+  const engine = useMathSprintGame();
+  const {
+    phase, question, input, solved, attempts, timeLeftMs, durationMs,
+    best, wrongFlash, startGame, retry, inputDigit, backspace, submit,
+  } = engine;
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (!startedRef.current) {
+      startedRef.current = true;
+      startGame(durationSec);
+    }
+  }, [startGame, durationSec]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (phase !== 'playing') return;
+      if (e.key === 'Enter') { e.preventDefault(); submit(); }
+      if (e.key === 'Backspace') { e.preventDefault(); backspace(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [phase, submit, backspace]);
+
+  const historySeries = sessionHistory
+    .filter((h) => h.mode === 'mathSprint')
+    .slice(-10)
+    .map((h) => h.score);
+
+  const accuracy = attempts > 0 ? Math.round((solved / attempts) * 100) : 0;
+
+  return (
+    <article className="max-w-3xl mx-auto pt-6 pb-4 animate-fade-in">
+      <header className="space-y-2">
+        <p className="font-mono text-xs tracking-[0.22em] text-sage-700">MATH SPRINT — 05</p>
+        <h1 className="text-[clamp(1.4rem,3.4vw,1.75rem)] font-semibold leading-tight text-zen-900">{t('gameLanding.hook.mathSprint')}</h1>
+        <p className="font-mono text-[12.5px] text-zen-700">
+          {t('game.mathSprint.personalBest')} <b className="text-sage-700 font-bold">{best}</b>
+        </p>
+      </header>
+
+      {phase !== 'finished' && (
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between font-mono text-xs text-zen-700">
+            <span>{t('game.mathSprint.solved')} <b className="text-zen-900 text-base tabular-nums">{solved}</b></span>
+            <span className="tabular-nums">{Math.max(0, Math.ceil(timeLeftMs / 1000))}s</span>
+          </div>
+          <ProgressBar remainingMs={timeLeftMs} durationMs={durationMs} />
+        </div>
+      )}
+
+      {/* The equation card — the hero */}
+      <div className={`mt-3 min-h-[30vh] rounded-[10px] border-2 flex flex-col items-center justify-center gap-3 px-4
+        ${phase === 'finished' ? 'bg-zen-100 border-zen-200' : 'bg-white border-zen-200'} ${wrongFlash ? 'border-rose-400' : ''}`}>
+        {phase === 'playing' && question && (
+          <>
+            <p className="font-mono font-bold text-5xl sm:text-6xl tabular-nums text-zen-900">
+              {question.a} {question.op} {question.b} = ?
+            </p>
+            <p className={`font-mono text-2xl tabular-nums min-h-[1.4em] ${input ? 'text-sage-700' : 'text-zen-400'}`}>
+              {input || '···'}
+            </p>
+          </>
+        )}
+        {phase === 'idle' && <p className="font-bold text-2xl uppercase text-zen-700">{t('game.mathSprint.tapToStart')}</p>}
+        {phase === 'finished' && <p className="font-bold text-2xl uppercase text-zen-700">{t('game.mathSprint.finished')}</p>}
+      </div>
+
+      {phase === 'playing' && (
+        <div className="mt-3 flex justify-center">
+          <NumericKeypad value={input} onInput={inputDigit} onBackspace={backspace} onSubmit={submit} canInput />
+        </div>
+      )}
+
+      {phase === 'finished' && (
+        <InstrumentReadout
+          mode="mathSprint"
+          hue={MODE_HUE.mathSprint}
+          score={solved}
+          scoreUnit={t('game.mathSprint.solvedUnit')}
+          scoreCaption={t('instrument.stroopCaption', { attempted: attempts, accuracy })}
+          series={historySeries}
+          onPlayAgain={() => { retry(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          onAllGames={() => document.getElementById('games-index')?.scrollIntoView({ behavior: 'smooth' })}
+        />
+      )}
+
+      <section className="mt-16 pt-6 border-t-2 border-zen-300 space-y-3" aria-labelledby="about-heading">
+        <h2 id="about-heading" className="font-mono text-xs tracking-[0.22em] text-sage-700">{t('gameLanding.aboutTitle')}</h2>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.mathSprint.1')}</p>
+        <p className="text-sm text-zen-700 max-w-[60ch] leading-relaxed">{t('gameLanding.about.mathSprint.2')}</p>
+        <p className="font-mono text-[11px] text-zen-500">{t('gameLanding.about.mathSprint.source')}</p>
+      </section>
+
+      <div className="mt-10" id="games-index">
+        <LandingGamesIndex currentSlug={slug} />
+      </div>
+      <div className="mt-8">
+        <LandingFaq faqPairs={faqPairs} />
+      </div>
+      <p className="mt-8 font-mono text-[11px] tracking-[0.12em] text-zen-500 text-center">
+        BRAIN FLOW — {t('gameLanding.footerLocal')}
+      </p>
+      <span className="sr-only">{helpText}</span>
+    </article>
+  );
 }
 
 /**

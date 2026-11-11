@@ -133,6 +133,8 @@
       "title": "Math Sprint",
       "personalBest": "Personal Best",
       "solved": "Solved",
+      "solvedUnit": "solved",
+      "tapToStart": "Starting…",
       "timeLeft": "Time Left",
       "finished": "Time's up!",
       "again": "Try Again"
@@ -407,7 +409,8 @@
       "reaction": "How fast are your reflexes?",
       "numberMemory": "How many digits can you hold?",
       "sequence": "Repeat the pattern. One more step every round.",
-      "stroop": "Your brain lies to you. Catch it."
+      "stroop": "Your brain lies to you. Catch it.",
+      "mathSprint": "60 seconds. No calculator."
     },
     "reactionSub": "5-tap series · score is your median · Space works too",
     "aboutTitle": "ABOUT THE TEST",
@@ -431,6 +434,11 @@
         "1": "The Stroop effect: reading is automatic, so when a color word is printed in a conflicting ink, naming the ink takes measurable effort. Your job is to answer the ink color, not the word — as fast as you can for 60 seconds.",
         "2": "Stroop scores are not comparable across sites: durations, key mappings and scoring all differ, so we show no typical value — race your own history instead. Everything stays in your browser.",
         "source": "no published reference: protocols differ across sites — self-history comparison only"
+      },
+      "mathSprint": {
+        "1": "Mental arithmetic under a 60-second clock: type your answer, Enter to submit. Questions start easy and get harder the more you solve — the difficulty curve is ours, so there is no published typical score; race your own history.",
+        "2": "A hidden or backgrounded tab never pauses your clock unfairly — the timer only counts visible time. Everything runs and stays in your browser.",
+        "source": "no published reference: proprietary difficulty curve — self-history comparison only"
       }
     },
     "footerLocal": "PLAYS IN YOUR BROWSER · DATA STAYS ON YOUR DEVICE"
